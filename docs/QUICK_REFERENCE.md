@@ -5,8 +5,8 @@
 ## Current Status
 - **Phase**: 0 (Environment Setup)
 - **Focus**: Setting up development environment
-- **Blocker**: None
-- **Next**: Install Xcode and build whisper.cpp
+- **Blocker**: Waiting for Xcode to expand
+- **Next**: Create Xcode project and start Phase 1
 
 ## Key Commands
 
@@ -24,11 +24,18 @@ cd scripts
 cd ~/Developer/whisper.cpp
 WHISPER_METAL=1 make -j
 
-# Run Xcode
+# Test whisper
+./build/bin/whisper-cli -m models/ggml-base.en.bin -f samples/jfk.wav
+
+# Run Xcode (once installed)
 open WhisperKey.xcodeproj
 
-# Test Karabiner
-tail -f /tmp/whisperkey-test.log
+# Test F5 capture
+./scripts/test-f5-capture.sh
+
+# Accept Xcode license
+sudo xcodebuild -license accept
+sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 ```
 
 ### Git Workflow
@@ -63,10 +70,10 @@ ISSUE: Any issues discovered"
 - Format: Float32 → Int16
 - Buffer: 512 samples
 
-### Model Sizes
-- base.en: ~39MB
-- small.en: ~141MB  
-- medium.en: ~466MB
+### Model Sizes & Paths
+- base.en: 141MB - `~/Developer/whisper.cpp/models/ggml-base.en.bin`
+- small.en: 465MB - `~/Developer/whisper.cpp/models/ggml-small.en.bin`
+- medium.en: 1.4GB - `~/Developer/whisper.cpp/models/ggml-medium.en.bin`
 
 ### Key APIs
 ```swift
