@@ -1,0 +1,50 @@
+# macOS
+.DS_Store
+*.xcuserdatad/
+*.xcworkspace/xcuserdata/
+
+# Xcode
+build/
+DerivedData/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.xccheckout
+*.moved-aside
+*.xcuserstate
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# WhisperKey specific
+*.ipa
+*.dSYM.zip
+*.dSYM
+timeline.log
+whisper-models/
+*.bin
+*.mlmodel
+
+# Local settings
+.claude/settings.local.json
+CLAUDE.local.md
+
+# Temporary files
+*.tmp
+*.log
+/tmp/
+
+# Security - never commit these
+*.p12
+*.cer
+*.key
+*.mobileprovision
+Secrets.swift
