@@ -29,6 +29,13 @@ struct ContentView: View {
                 .padding(.vertical)
             
             HStack {
+                Text("Permission:")
+                    .fontWeight(.medium)
+                Text(keyCaptureService.checkAccessibilityPermission() ? "Granted" : "Not Granted")
+                    .foregroundStyle(keyCaptureService.checkAccessibilityPermission() ? .green : .red)
+            }
+            
+            HStack {
                 Text("Status:")
                     .fontWeight(.medium)
                 Text(keyCaptureService.isListening ? "Listening" : "Not Listening")

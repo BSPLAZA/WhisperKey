@@ -29,7 +29,13 @@ class KeyCaptureService: ObservableObject {
             print("Accessibility permission granted")
         } else {
             print("Waiting for accessibility permission...")
+            // Show current app bundle identifier for debugging
+            print("App Bundle ID: \(Bundle.main.bundleIdentifier ?? "unknown")")
         }
+    }
+    
+    func checkAccessibilityPermission() -> Bool {
+        return AXIsProcessTrusted()
     }
     
     func startListening() {
@@ -39,7 +45,11 @@ class KeyCaptureService: ObservableObject {
             return
         }
         
-        let eventMask = (1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.keyUp.rawValue)
+        // Include system defined events to catch F5 dictation key
+        let eventMask = (1 << CGEventType.keyDown.rawValue) | 
+                       (1 << CGEventType.keyUp.rawValue) |
+                       (1 << CGEventType.systemDefined.rawValue) |
+                       (1 << CGEventType.flagsChanged.rawValue)
         
         guard let eventTap = CGEvent.tapCreate(
             tap: .cgSessionEventTap,
@@ -51,17 +61,39 @@ class KeyCaptureService: ObservableObject {
                 
                 let service = Unmanaged<KeyCaptureService>.fromOpaque(refcon).takeUnretainedValue()
                 
+                // Handle regular F5 key press
                 if type == .keyDown {
                     let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
                     
                     // F5 key code
                     if keyCode == 0x60 {
-                        print("F5 pressed!")
+                        print("F5 key down detected")
                         DispatchQueue.main.async {
                             service.keyPressCount += 1
                             service.handleF5Press()
                         }
-                        // Consume the event
+                        // Consume the event to prevent system dictation
+                        return nil
+                    }
+                }
+                
+                // Handle system-defined events (special keys like dictation)
+                if type == .systemDefined {
+                    let subtype = event.getIntegerValueField(.systemDefinedEventSubtype)
+                    let keyCode = (event.data1 & 0xFFFF0000) >> 16
+                    let keyFlags = event.data1 & 0x0000FFFF
+                    let keyState = (keyFlags & 0xFF00) >> 8
+                    
+                    // F5 dictation key: subtype 8, key code 0x00cf
+                    if subtype == 8 && keyCode == 0x00cf {
+                        print("F5 dictation key detected - state: \(keyState)")
+                        if keyState == 0x0A { // Key down
+                            DispatchQueue.main.async {
+                                service.keyPressCount += 1
+                                service.handleF5Press()
+                            }
+                        }
+                        // Consume the event to prevent system dictation
                         return nil
                     }
                 }
