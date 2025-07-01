@@ -45,10 +45,10 @@ class KeyCaptureService: ObservableObject {
             return
         }
         
-        // Include system defined events to catch F5 dictation key
+        // Include NSSystemDefined events to catch F5 dictation key
         let eventMask = (1 << CGEventType.keyDown.rawValue) | 
                        (1 << CGEventType.keyUp.rawValue) |
-                       (1 << CGEventType.systemDefined.rawValue) |
+                       (1 << 14) | // NSSystemDefined = 14
                        (1 << CGEventType.flagsChanged.rawValue)
         
         guard let eventTap = CGEvent.tapCreate(
@@ -78,23 +78,30 @@ class KeyCaptureService: ObservableObject {
                 }
                 
                 // Handle system-defined events (special keys like dictation)
-                if type == .systemDefined {
-                    let subtype = event.getIntegerValueField(.systemDefinedEventSubtype)
-                    let keyCode = (event.data1 & 0xFFFF0000) >> 16
-                    let keyFlags = event.data1 & 0x0000FFFF
-                    let keyState = (keyFlags & 0xFF00) >> 8
+                if type.rawValue == 14 { // NSSystemDefined
+                    // For NSSystemDefined events, we need to check the subtype
+                    let nsEvent = NSEvent(cgEvent: event)
                     
-                    // F5 dictation key: subtype 8, key code 0x00cf
-                    if subtype == 8 && keyCode == 0x00cf {
-                        print("F5 dictation key detected - state: \(keyState)")
-                        if keyState == 0x0A { // Key down
-                            DispatchQueue.main.async {
-                                service.keyPressCount += 1
-                                service.handleF5Press()
+                    if let nsEvent = nsEvent {
+                        // Check if this is a special system key event
+                        if nsEvent.subtype.rawValue == 8 { // Special system keys
+                            let keyCode = Int((nsEvent.data1 & 0xFFFF0000) >> 16)
+                            let keyFlags = nsEvent.data1 & 0x0000FFFF
+                            let keyState = (keyFlags & 0xFF00) >> 8
+                            
+                            // F5 dictation key code
+                            if keyCode == 0x00cf {
+                                print("F5 dictation key detected - state: \(keyState)")
+                                if keyState == 0x0A { // Key down
+                                    DispatchQueue.main.async {
+                                        service.keyPressCount += 1
+                                        service.handleF5Press()
+                                    }
+                                }
+                                // Consume the event to prevent system dictation
+                                return nil
                             }
                         }
-                        // Consume the event to prevent system dictation
-                        return nil
                     }
                 }
                 
