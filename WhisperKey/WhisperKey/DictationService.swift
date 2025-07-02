@@ -28,6 +28,7 @@ class DictationService: NSObject, ObservableObject {
     private let sampleRate: Double = 16000 // 16kHz for Whisper
     private let silenceThreshold: Float = 0.015  // Increased threshold to prevent premature cutoff
     private let silenceDuration: TimeInterval = 2.5  // Stop after 2.5 seconds of silence
+    private let maxRecordingDuration: TimeInterval = 60.0  // Maximum 60 seconds recording
     private let minimumRecordingDuration: TimeInterval = 1.0  // Record at least 1 second
     private var lastSoundTime: Date = Date()
     private var recordingStartTime: Date = Date()
@@ -107,12 +108,28 @@ class DictationService: NSObject, ObservableObject {
         guard hasAccessibilityPermission else {
             print("DictationService: No accessibility permission")
             requestAccessibilityPermission()
+            Task { @MainActor in
+                ErrorHandler.shared.handle(.noAccessibilityPermission)
+            }
             return
         }
         
         guard hasMicrophonePermission else {
             print("DictationService: No microphone permission")
-            transcriptionStatus = "Microphone permission required"
+            transcriptionStatus = "🎤 Grant microphone access in System Settings"
+            Task { @MainActor in
+                ErrorHandler.shared.handle(.noMicrophonePermission)
+            }
+            return
+        }
+        
+        // Check for secure field
+        if TextInsertionService.isInSecureField() {
+            print("DictationService: Secure field detected")
+            transcriptionStatus = "⚠️ Cannot dictate into password fields"
+            Task { @MainActor in
+                ErrorHandler.shared.handle(.secureFieldDetected)
+            }
             return
         }
         
@@ -121,11 +138,17 @@ class DictationService: NSObject, ObservableObject {
         do {
             try startAudioRecording()
             isRecording = true
-            transcriptionStatus = "Listening..."
+            transcriptionStatus = "🔴 Recording... Speak clearly"
+            
+            // Show visual feedback
+            Task { @MainActor in
+                RecordingIndicatorManager.shared.showRecordingIndicator()
+            }
+            
             print("DictationService: Recording started successfully")
         } catch {
             print("DictationService: Failed to start recording: \(error)")
-            transcriptionStatus = "Failed to start recording: \(error.localizedDescription)"
+            transcriptionStatus = "❌ Recording failed: \(error.localizedDescription)"
         }
     }
     
@@ -137,11 +160,16 @@ class DictationService: NSObject, ObservableObject {
         audioEngine?.stop()
         audioEngine?.inputNode.removeTap(onBus: 0)
         
+        // Hide visual feedback
+        Task { @MainActor in
+            RecordingIndicatorManager.shared.hideRecordingIndicator()
+        }
+        
         
         // Close the audio file to ensure all data is written
         audioFile = nil
         
-        transcriptionStatus = "Processing..."
+        transcriptionStatus = "⏳ Processing your speech..."
         
         // Process the audio file (for both streaming and non-streaming)
         if let fileURL = audioFileURL {
@@ -225,6 +253,16 @@ class DictationService: NSObject, ObservableObject {
                     self.stopRecording()
                 }
             }
+            
+            // Check for maximum recording duration
+            let recordingDuration = Date().timeIntervalSince(self.recordingStartTime)
+            if recordingDuration > self.maxRecordingDuration {
+                print("DictationService: Maximum recording duration reached (60 seconds), stopping...")
+                DispatchQueue.main.async {
+                    self.transcriptionStatus = "⏱️ Recording stopped (60s limit)"
+                    self.stopRecording()
+                }
+            }
         }
         
         // Start engine
@@ -265,11 +303,11 @@ class DictationService: NSObject, ObservableObject {
                 let transcribedText = try await self.transcriber.transcribe(audioFileURL: convertedURL)
                 
                 DispatchQueue.main.async { [weak self] in
-                    self?.transcriptionStatus = "Ready"
+                    self?.transcriptionStatus = "✅ Ready to dictate"
                     
                     if transcribedText.isEmpty {
                         print("DictationService: No speech detected")
-                        self?.transcriptionStatus = "No speech detected"
+                        self?.transcriptionStatus = "🔇 No speech detected - try again"
                     } else {
                         print("DictationService: Final transcription: \(transcribedText)")
                         
@@ -277,10 +315,10 @@ class DictationService: NSObject, ObservableObject {
                         Task {
                             do {
                                 try await self?.textInsertion.insertText(transcribedText)
-                                self?.transcriptionStatus = "Text inserted"
+                                self?.transcriptionStatus = "✅ Text inserted successfully"
                                 print("DictationService: Text inserted successfully")
                             } catch {
-                                self?.transcriptionStatus = "Failed to insert: \(error.localizedDescription)"
+                                self?.transcriptionStatus = "❌ Insert failed: \(error.localizedDescription)"
                                 print("DictationService: Failed to insert text: \(error)")
                             }
                         }
@@ -288,16 +326,10 @@ class DictationService: NSObject, ObservableObject {
                 }
                     
                 // Clean up audio files
-                // DEBUG: Keep the file for inspection
-                print("DictationService: DEBUG - Audio file saved at: \(url.path)")
-                // try? FileManager.default.removeItem(at: url)
-                // if convertedURL != url {
-                //     try? FileManager.default.removeItem(at: convertedURL)
-                // }
-                // print("DictationService: Cleaned up audio files")
+                self.cleanupTempFiles(primaryFile: url, convertedFile: convertedURL != url ? convertedURL : nil)
             } catch {
                 print("DictationService: Error processing audio: \(error)")
-                self.transcriptionStatus = "Processing failed"
+                self.transcriptionStatus = "❌ Processing failed - please try again"
             }
         }
     }
@@ -323,6 +355,59 @@ class DictationService: NSObject, ObservableObject {
         // Model will be read from UserDefaults by transcriber
         let modelName = UserDefaults.standard.string(forKey: "whisperModel") ?? "small.en"
         print("DictationService: Updated to model: \(modelName)")
+    }
+    
+    // MARK: - Cleanup
+    
+    private func cleanupTempFiles(primaryFile: URL?, convertedFile: URL?) {
+        // Clean up primary file
+        if let primaryFile = primaryFile {
+            do {
+                try FileManager.default.removeItem(at: primaryFile)
+                print("DictationService: Cleaned up primary audio file")
+            } catch {
+                print("DictationService: Failed to clean up primary file: \(error)")
+            }
+        }
+        
+        // Clean up converted file if different
+        if let convertedFile = convertedFile {
+            do {
+                try FileManager.default.removeItem(at: convertedFile)
+                print("DictationService: Cleaned up converted audio file")
+            } catch {
+                print("DictationService: Failed to clean up converted file: \(error)")
+            }
+        }
+        
+        // Clear stored reference
+        audioFileURL = nil
+    }
+    
+    /// Clean up all WhisperKey temp files (called on app termination)
+    static func cleanupAllTempFiles() {
+        let tempDir = FileManager.default.temporaryDirectory
+        do {
+            let files = try FileManager.default.contentsOfDirectory(at: tempDir, includingPropertiesForKeys: nil)
+            let whisperKeyFiles = files.filter { $0.lastPathComponent.hasPrefix("whisperkey_") }
+            
+            for file in whisperKeyFiles {
+                try? FileManager.default.removeItem(at: file)
+            }
+            
+            if !whisperKeyFiles.isEmpty {
+                print("DictationService: Cleaned up \(whisperKeyFiles.count) temp files on termination")
+            }
+        } catch {
+            print("DictationService: Failed to enumerate temp files: \(error)")
+        }
+    }
+    
+    deinit {
+        // Clean up any remaining temp file
+        if let fileURL = audioFileURL {
+            try? FileManager.default.removeItem(at: fileURL)
+        }
     }
 }
 

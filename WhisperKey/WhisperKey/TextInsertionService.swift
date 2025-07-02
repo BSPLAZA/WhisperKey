@@ -9,8 +9,26 @@
 
 import Cocoa
 import ApplicationServices
+import IOKit
 
 class TextInsertionService {
+    
+    /// Static method to check if we're in a secure field
+    static func isInSecureField() -> Bool {
+        let service = TextInsertionService()
+        
+        // First check Terminal secure input
+        if service.isTerminalSecureInputEnabled() {
+            return true
+        }
+        
+        // Then check focused element
+        if let element = service.getFocusedElement() {
+            return service.isSecureField(element)
+        }
+        
+        return false
+    }
     
     enum InsertionError: LocalizedError {
         case noFocusedElement
@@ -76,14 +94,76 @@ class TextInsertionService {
         AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &role)
         
         if let roleString = role as? String {
-            return roleString == "AXSecureTextField"
+            // Direct secure field check
+            if roleString == "AXSecureTextField" {
+                return true
+            }
         }
         
-        // Also check for password attribute
-        var isPassword: CFTypeRef?
-        AXUIElementCopyAttributeValue(element, "AXSecureTextField" as CFString, &isPassword)
+        // Check subrole
+        var subrole: CFTypeRef?
+        AXUIElementCopyAttributeValue(element, kAXSubroleAttribute as CFString, &subrole)
+        if let subroleString = subrole as? String,
+           subroleString.lowercased().contains("secure") || subroleString.lowercased().contains("password") {
+            return true
+        }
         
-        return isPassword as? Bool ?? false
+        // Check description
+        var description: CFTypeRef?
+        AXUIElementCopyAttributeValue(element, kAXDescriptionAttribute as CFString, &description)
+        if let descString = description as? String,
+           descString.lowercased().contains("password") || descString.lowercased().contains("secure") {
+            return true
+        }
+        
+        // Check placeholder
+        var placeholder: CFTypeRef?
+        AXUIElementCopyAttributeValue(element, kAXPlaceholderValueAttribute as CFString, &placeholder)
+        if let placeholderString = placeholder as? String,
+           placeholderString.lowercased().contains("password") {
+            return true
+        }
+        
+        // Check if Terminal has secure input enabled
+        if isTerminalSecureInputEnabled() {
+            return true
+        }
+        
+        return false
+    }
+    
+    /// Check if Terminal has secure input mode enabled
+    private func isTerminalSecureInputEnabled() -> Bool {
+        // Use IOKit to check secure input state
+        var attrs: CFDictionary? = nil
+        let result = IORegistryEntryCreateCFProperties(
+            IORegistryEntryFromPath(kIOMasterPortDefault, "IOService:/IOResources/IOHIDSystem"),
+            &attrs,
+            kCFAllocatorDefault,
+            0
+        )
+        
+        if result == KERN_SUCCESS, let dict = attrs as? [String: Any] {
+            // Check for secure event input
+            if let secureEventInput = dict["SecureEventInput"] as? Int, secureEventInput != 0 {
+                return true
+            }
+        }
+        
+        // Also check using private API (more reliable but undocumented)
+        let lib = dlopen("/System/Library/Frameworks/Carbon.framework/Carbon", RTLD_NOW)
+        if lib != nil {
+            typealias IsSecureEventInputEnabledFunc = @convention(c) () -> Bool
+            if let sym = dlsym(lib, "IsSecureEventInputEnabled") {
+                let isSecureEventInputEnabled = unsafeBitCast(sym, to: IsSecureEventInputEnabledFunc.self)
+                let result = isSecureEventInputEnabled()
+                dlclose(lib)
+                return result
+            }
+            dlclose(lib)
+        }
+        
+        return false
     }
     
     /// Method 1: Direct insertion via Accessibility API

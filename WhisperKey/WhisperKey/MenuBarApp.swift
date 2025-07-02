@@ -23,8 +23,16 @@ struct WhisperKeyMenuBarApp: App {
                     appDelegate.dictationService = dictationService
                 }
         } label: {
-            Image(systemName: dictationService.isRecording ? "mic.fill" : "mic")
-                .foregroundStyle(dictationService.isRecording ? .red : .primary)
+            if dictationService.isRecording {
+                Image(systemName: "mic.circle.fill")
+                    .foregroundStyle(.red)
+            } else if dictationService.transcriptionStatus.contains("Processing") {
+                Image(systemName: "waveform.circle")
+                    .foregroundStyle(.blue)
+            } else {
+                Image(systemName: "mic.circle")
+                    .foregroundStyle(.primary)
+            }
         }
         .menuBarExtraStyle(.menu)
     }
@@ -100,6 +108,11 @@ struct MenuBarContentView: View {
                 }
             }
             
+            Button("Preferences...") {
+                appDelegate?.showPreferences()
+            }
+            .keyboardShortcut(",", modifiers: .command)
+            
             Menu("Settings") {
                 Menu("Whisper Model: \(currentModelName)") {
                     Button("✓ Base (Fast)".replacingOccurrences(of: "✓ ", with: currentModel == "base.en" ? "✓ " : "")) {
@@ -174,6 +187,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var commandPressTimer: Timer?
     private var eventMonitor: Any?
     private var isRightOptionPressed = false
+    private var preferencesWindow: PreferencesWindowController?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Remove from dock
@@ -186,6 +200,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Set up hotkey
         updateHotkey()
+        
+        // Clean up any leftover temp files from previous sessions
+        DictationService.cleanupAllTempFiles()
+    }
+    
+    func applicationWillTerminate(_ notification: Notification) {
+        // Clean up temp files on exit
+        DictationService.cleanupAllTempFiles()
     }
     
     func updateHotkey() {
@@ -276,6 +298,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 dictationService.startRecording()
             }
         }
+    }
+    
+    func showPreferences() {
+        if preferencesWindow == nil {
+            preferencesWindow = PreferencesWindowController()
+        }
+        preferencesWindow?.showWindow(nil)
     }
 }
 
