@@ -125,10 +125,6 @@ struct MenuBarContentView: View {
                     }
                 }
                 
-                Toggle("Streaming Mode", isOn: .init(
-                    get: { UserDefaults.standard.bool(forKey: "streamingMode") },
-                    set: { UserDefaults.standard.set($0, forKey: "streamingMode") }
-                ))
             }
             
             Divider()

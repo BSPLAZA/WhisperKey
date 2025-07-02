@@ -19,22 +19,15 @@ class DictationService: NSObject, ObservableObject {
     
     private let textInsertion = TextInsertionService()
     private let transcriber = WhisperCppTranscriber()
-    private let streamingTranscriber = WhisperStreamingTranscriber()
     private var audioEngine: AVAudioEngine?
     private var audioFile: AVAudioFile?
     private var audioFileURL: URL?
     private var audioConverter: AVAudioConverter?
     
-    // Streaming mode
-    private var isStreamingMode: Bool {
-        UserDefaults.standard.bool(forKey: "streamingMode")
-    }
-    private var streamingText = ""
-    
     // Audio settings
     private let sampleRate: Double = 16000 // 16kHz for Whisper
-    private let silenceThreshold: Float = 0.005  // Threshold for detecting speech
-    private let silenceDuration: TimeInterval = 2.0  // Stop after 2 seconds of silence
+    private let silenceThreshold: Float = 0.015  // Increased threshold to prevent premature cutoff
+    private let silenceDuration: TimeInterval = 2.5  // Stop after 2.5 seconds of silence
     private let minimumRecordingDuration: TimeInterval = 1.0  // Record at least 1 second
     private var lastSoundTime: Date = Date()
     private var recordingStartTime: Date = Date()
@@ -47,26 +40,6 @@ class DictationService: NSObject, ObservableObject {
         // Initialize model selection
         if UserDefaults.standard.string(forKey: "whisperModel") == nil {
             UserDefaults.standard.set("small.en", forKey: "whisperModel")
-        }
-        
-        // Setup streaming callbacks
-        streamingTranscriber.onPartialTranscription = { [weak self] newText in
-            guard let self = self else { return }
-            
-            // Insert the new text immediately for seamless streaming
-            Task {
-                do {
-                    try await self.textInsertion.insertText(newText)
-                    self.transcriptionStatus = "Transcribing..."
-                } catch {
-                    print("DictationService: Failed to insert streaming text: \(error)")
-                }
-            }
-        }
-        
-        streamingTranscriber.onError = { [weak self] error in
-            print("DictationService: Streaming error: \(error)")
-            self?.transcriptionStatus = "Streaming error"
         }
         
         // Check permissions periodically but less frequently
@@ -145,21 +118,10 @@ class DictationService: NSObject, ObservableObject {
         
         print("DictationService: Starting audio recording...")
         
-        // Reset streaming state
-        streamingText = ""
-        
-        // Start streaming transcriber if in streaming mode
-        if isStreamingMode {
-            print("DictationService: Starting in STREAMING mode")
-            streamingTranscriber.startStreaming()
-        } else {
-            print("DictationService: Starting in NON-STREAMING mode")
-        }
-        
         do {
             try startAudioRecording()
             isRecording = true
-            transcriptionStatus = isStreamingMode ? "Listening... (Streaming)" : "Listening..."
+            transcriptionStatus = "Listening..."
             print("DictationService: Recording started successfully")
         } catch {
             print("DictationService: Failed to start recording: \(error)")
@@ -175,27 +137,18 @@ class DictationService: NSObject, ObservableObject {
         audioEngine?.stop()
         audioEngine?.inputNode.removeTap(onBus: 0)
         
-        // Stop streaming if active
-        if isStreamingMode {
-            streamingTranscriber.stopStreaming()
-        }
         
         // Close the audio file to ensure all data is written
         audioFile = nil
         
-        if !isStreamingMode {
-            transcriptionStatus = "Processing..."
-            
-            // Process the audio file
-            if let fileURL = audioFileURL {
-                print("DictationService: Processing audio file at: \(fileURL.path)")
-                processAudioFile(at: fileURL)
-            } else {
-                print("DictationService: No audio file to process!")
-            }
+        transcriptionStatus = "Processing..."
+        
+        // Process the audio file (for both streaming and non-streaming)
+        if let fileURL = audioFileURL {
+            print("DictationService: Processing audio file at: \(fileURL.path)")
+            processAudioFile(at: fileURL)
         } else {
-            // In streaming mode, we're done
-            transcriptionStatus = "Complete"
+            print("DictationService: No audio file to process!")
         }
     }
     
@@ -250,10 +203,6 @@ class DictationService: NSObject, ObservableObject {
                 try audioFile.write(from: buffer)
                 samplesRecorded += Int(buffer.frameLength)
                 
-                // If streaming mode, also process for real-time transcription
-                if self.isStreamingMode {
-                    self.streamingTranscriber.processAudioBuffer(buffer)
-                }
                 
                 if tapCount % 50 == 0 {
                     print("DictationService: Recorded \(samplesRecorded) samples (\(Double(samplesRecorded) / recordingFormat.sampleRate) seconds)")
@@ -310,42 +259,29 @@ class DictationService: NSObject, ObservableObject {
         // Convert to 16kHz WAV for Whisper if needed
         Task {
             do {
-                let transcribedText: String
+                // Process entire file at once
+                let convertedURL = try await convertAudioToWhisperFormat(url: url)
+                print("DictationService: Starting whisper transcription...")
+                let transcribedText = try await self.transcriber.transcribe(audioFileURL: convertedURL)
                 
-                if self.isStreamingMode {
-                    // In streaming mode, finalize and get accumulated text
-                    transcribedText = self.streamingTranscriber.finalize()
+                DispatchQueue.main.async { [weak self] in
+                    self?.transcriptionStatus = "Ready"
                     
-                    // Text has already been inserted incrementally, just update status
-                    DispatchQueue.main.async { [weak self] in
-                        self?.transcriptionStatus = transcribedText.isEmpty ? "No speech detected" : "Complete"
-                        print("DictationService: Streaming transcription complete: \(transcribedText)")
-                    }
-                } else {
-                    // Non-streaming mode - process entire file at once
-                    let convertedURL = try await convertAudioToWhisperFormat(url: url)
-                    print("DictationService: Starting whisper transcription...")
-                    transcribedText = try await self.transcriber.transcribe(audioFileURL: convertedURL)
-                    
-                    DispatchQueue.main.async { [weak self] in
-                        self?.transcriptionStatus = "Ready"
+                    if transcribedText.isEmpty {
+                        print("DictationService: No speech detected")
+                        self?.transcriptionStatus = "No speech detected"
+                    } else {
+                        print("DictationService: Final transcription: \(transcribedText)")
                         
-                        if transcribedText.isEmpty {
-                            print("DictationService: No speech detected")
-                            self?.transcriptionStatus = "No speech detected"
-                        } else {
-                            print("DictationService: Final transcription: \(transcribedText)")
-                            
-                            // Insert at cursor
-                            Task {
-                                do {
-                                    try await self?.textInsertion.insertText(transcribedText)
-                                    self?.transcriptionStatus = "Text inserted"
-                                    print("DictationService: Text inserted successfully")
-                                } catch {
-                                    self?.transcriptionStatus = "Failed to insert: \(error.localizedDescription)"
-                                    print("DictationService: Failed to insert text: \(error)")
-                                }
+                        // Insert at cursor
+                        Task {
+                            do {
+                                try await self?.textInsertion.insertText(transcribedText)
+                                self?.transcriptionStatus = "Text inserted"
+                                print("DictationService: Text inserted successfully")
+                            } catch {
+                                self?.transcriptionStatus = "Failed to insert: \(error.localizedDescription)"
+                                print("DictationService: Failed to insert text: \(error)")
                             }
                         }
                     }

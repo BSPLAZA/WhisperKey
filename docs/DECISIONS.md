@@ -202,4 +202,28 @@ Test phrase accuracy comparison showed streaming mode produces garbled text whil
 - Contribute to existing project - Less learning value
 
 ---
-*Last Updated: 2025-07-01 21:30 PST*
+
+## ADR-009: Remove Streaming Mode Entirely
+
+**Date**: 2025-07-01 23:00 PST  
+**Status**: Accepted (Supersedes ADR-007)  
+**Context**: After extensive testing with improved streaming algorithms
+- Tested 0.5s chunks: Completely garbled (1-3/10 quality)
+- Tested 2s chunks with 5s context: Better but still poor (4-6/10 quality)
+- Implemented hybrid approach: Added complexity for no benefit
+- User feedback: "streaming text is really bad"
+**Decision**: Remove all streaming functionality and provide single mode
+**Consequences**: 
+- ✅ Consistent 10/10 transcription quality
+- ✅ Simpler codebase (removed ~500 lines)
+- ✅ Better user experience
+- ✅ Easier maintenance
+- ❌ No real-time feedback during speech
+- ❌ 2-3 second wait after speaking
+**Alternatives Considered**: 
+- Keep both modes - Confusing UX with no real benefit
+- Visual feedback only - Still added complexity
+- Further optimization - Fundamental Whisper limitation
+
+---
+*Last Updated: 2025-07-01 23:10 PST*

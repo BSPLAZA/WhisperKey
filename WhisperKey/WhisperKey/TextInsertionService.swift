@@ -194,6 +194,29 @@ class TextInsertionService {
         }
     }
     
+    /// Clear previous text by simulating backspace key presses
+    func clearPreviousText(characterCount: Int) async throws {
+        guard characterCount > 0 else { return }
+        
+        let source = CGEventSource(stateID: .hidSystemState)
+        
+        // Simulate backspace key presses
+        for _ in 0..<characterCount {
+            // Create backspace key down event
+            if let backspaceDown = CGEvent(keyboardEventSource: source, virtualKey: 0x33, keyDown: true) {
+                backspaceDown.post(tap: .cghidEventTap)
+                
+                // Create backspace key up event
+                if let backspaceUp = CGEvent(keyboardEventSource: source, virtualKey: 0x33, keyDown: false) {
+                    backspaceUp.post(tap: .cghidEventTap)
+                }
+                
+                // Small delay to ensure proper processing
+                Thread.sleep(forTimeInterval: 0.01)
+            }
+        }
+    }
+    
     /// Get information about the current text field (for debugging)
     func getCurrentFieldInfo() -> String {
         guard let element = getFocusedElement() else {
