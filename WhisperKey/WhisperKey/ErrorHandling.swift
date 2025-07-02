@@ -9,6 +9,7 @@
 
 import Foundation
 import Cocoa
+import SwiftUI
 import UserNotifications
 
 // MARK: - Error Types
@@ -216,17 +217,27 @@ class ErrorHandler: ObservableObject {
     }
     
     private func showNotification(_ error: WhisperKeyError) {
-        // Use notification center for non-critical errors
-        let notification = NSUserNotification()
-        notification.title = "WhisperKey"
-        notification.informativeText = error.localizedDescription
-        notification.soundName = NSUserNotificationDefaultSoundName
+        // Use modern UserNotifications framework
+        let content = UNMutableNotificationContent()
+        content.title = "WhisperKey"
+        content.body = error.localizedDescription
+        content.sound = .default
         
         if let suggestion = error.recoverySuggestion {
-            notification.subtitle = suggestion
+            content.subtitle = suggestion
         }
         
-        NSUserNotificationCenter.default.deliver(notification)
+        let request = UNNotificationRequest(
+            identifier: UUID().uuidString,
+            content: content,
+            trigger: nil
+        )
+        
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("Failed to show notification: \(error)")
+            }
+        }
     }
     
     // MARK: - Error Recovery

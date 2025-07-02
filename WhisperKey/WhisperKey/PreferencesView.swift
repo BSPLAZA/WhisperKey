@@ -76,7 +76,7 @@ struct GeneralTab: View {
                         Text("⌘⇧Space").tag("cmd_shift_space")
                     }
                     .pickerStyle(RadioGroupPickerStyle())
-                    .onChange(of: selectedHotkey) { _ in
+                    .onChange(of: selectedHotkey) { _, _ in
                         // Update hotkey in AppDelegate
                         if let appDelegate = NSApp.delegate as? AppDelegate {
                             appDelegate.updateHotkey()
@@ -93,7 +93,7 @@ struct GeneralTab: View {
                 
                 // Launch at login
                 Toggle("Launch WhisperKey at login", isOn: $launchAtLogin)
-                    .onChange(of: launchAtLogin) { enabled in
+                    .onChange(of: launchAtLogin) { _, enabled in
                         updateLaunchAtLogin(enabled)
                     }
                 
@@ -201,46 +201,23 @@ struct RecordingTab: View {
 struct ModelsTab: View {
     @AppStorage("whisperModel") private var whisperModel = "small.en"
     @AppStorage("autoSelectModel") private var autoSelectModel = false
-    
-    private let modelPath = NSString(string: "~/Developer/whisper.cpp/models").expandingTildeInPath
+    @StateObject private var modelManager = ModelManager.shared
     
     var body: some View {
         Form {
             Section {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Whisper Model")
+                    Text("Whisper Models")
                         .font(.headline)
                     
-                    // Model selection
-                    ForEach(availableModels, id: \.filename) { model in
-                        HStack {
-                            RadioButton(
-                                isSelected: whisperModel == model.filename,
-                                action: { whisperModel = model.filename }
-                            )
-                            
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(model.name)
-                                    .font(.system(size: 13))
-                                HStack(spacing: 8) {
-                                    Text(model.description)
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                    if isModelInstalled(model.filename) {
-                                        Label("Installed", systemImage: "checkmark.circle.fill")
-                                            .font(.caption)
-                                            .foregroundColor(.green)
-                                    }
-                                }
-                            }
-                            
-                            Spacer()
-                            
-                            Text(model.size)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        .padding(.vertical, 4)
+                    Text("Download and select AI models for transcription")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .padding(.bottom, 8)
+                    
+                    // Model selection with download support
+                    ForEach(modelManager.availableModels, id: \.filename) { model in
+                        ModelDownloadRow(model: model)
                     }
                     
                     Divider()
@@ -250,54 +227,21 @@ struct ModelsTab: View {
                         .disabled(true) // Not implemented yet
                         .help("Coming soon: Let WhisperKey choose the best model")
                     
-                    // Download instructions
+                    // Model location info
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Missing models?")
+                        Text("Model Location")
                             .font(.caption)
                             .fontWeight(.medium)
-                        Text("Download from whisper.cpp/models directory")
+                        Text("~/Developer/whisper.cpp/models/")
                             .font(.caption)
                             .foregroundColor(.secondary)
+                            .textSelection(.enabled)
                     }
                     .padding(.top, 8)
                 }
             }
             .padding()
         }
-    }
-    
-    private var availableModels: [WhisperModel] {
-        [
-            WhisperModel(
-                filename: "base.en",
-                name: "Base (English)",
-                description: "Fastest, good for quick notes",
-                size: "141 MB"
-            ),
-            WhisperModel(
-                filename: "small.en",
-                name: "Small (English)",
-                description: "Balanced speed and accuracy",
-                size: "465 MB"
-            ),
-            WhisperModel(
-                filename: "medium.en",
-                name: "Medium (English)",
-                description: "Higher accuracy, slower",
-                size: "1.4 GB"
-            ),
-            WhisperModel(
-                filename: "large-v3-turbo",
-                name: "Large Turbo",
-                description: "Best accuracy, multilingual",
-                size: "1.6 GB"
-            )
-        ]
-    }
-    
-    private func isModelInstalled(_ filename: String) -> Bool {
-        let fullPath = "\(modelPath)/ggml-\(filename).bin"
-        return FileManager.default.fileExists(atPath: fullPath)
     }
 }
 
@@ -416,14 +360,6 @@ struct RadioButton: View {
     }
 }
 
-// MARK: - Models
-
-struct WhisperModel {
-    let filename: String
-    let name: String
-    let description: String
-    let size: String
-}
 
 // MARK: - Preferences Window Controller
 

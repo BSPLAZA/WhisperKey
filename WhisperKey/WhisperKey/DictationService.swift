@@ -84,15 +84,10 @@ class DictationService: NSObject, ObservableObject {
         let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
         let trusted = AXIsProcessTrustedWithOptions(options)
         
+        // Don't show our own dialog - the system already showed one
+        // Just log that restart is needed
         if !trusted {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                let alert = NSAlert()
-                alert.messageText = "Restart Required"
-                alert.informativeText = "After granting accessibility permission, please quit and restart WhisperKey for the changes to take effect."
-                alert.alertStyle = .informational
-                alert.addButton(withTitle: "OK")
-                alert.runModal()
-            }
+            print("Accessibility permission requested - app restart will be required")
         }
     }
     
@@ -108,18 +103,15 @@ class DictationService: NSObject, ObservableObject {
         guard hasAccessibilityPermission else {
             print("DictationService: No accessibility permission")
             requestAccessibilityPermission()
-            Task { @MainActor in
-                ErrorHandler.shared.handle(.noAccessibilityPermission)
-            }
+            // System dialog will show - don't show our own
             return
         }
         
         guard hasMicrophonePermission else {
             print("DictationService: No microphone permission")
             transcriptionStatus = "🎤 Grant microphone access in System Settings"
-            Task { @MainActor in
-                ErrorHandler.shared.handle(.noMicrophonePermission)
-            }
+            // If permission was never determined, system dialog will show automatically
+            // Don't show our own dialog on top
             return
         }
         
@@ -241,6 +233,14 @@ class DictationService: NSObject, ObservableObject {
             
             // Check for silence
             let level = self.getAudioLevel(from: buffer)
+            
+            // Update recording indicator with audio level
+            if tapCount % 5 == 0 { // Update every 5th buffer to avoid too frequent updates
+                Task { @MainActor in
+                    RecordingIndicatorManager.shared.updateAudioLevel(level)
+                }
+            }
+            
             if level > self.silenceThreshold {
                 self.lastSoundTime = Date()
                 if tapCount <= 10 || tapCount % 10 == 0 {

@@ -10,6 +10,7 @@
 import SwiftUI
 import HotKey
 import Carbon
+import UserNotifications
 
 @main
 struct WhisperKeyMenuBarApp: App {
@@ -24,13 +25,13 @@ struct WhisperKeyMenuBarApp: App {
                 }
         } label: {
             if dictationService.isRecording {
-                Image(systemName: "mic.circle.fill")
+                Image(systemName: "mic.fill")
                     .foregroundStyle(.red)
             } else if dictationService.transcriptionStatus.contains("Processing") {
-                Image(systemName: "waveform.circle")
+                Image(systemName: "waveform")
                     .foregroundStyle(.blue)
             } else {
-                Image(systemName: "mic.circle")
+                Image(systemName: "mic")
                     .foregroundStyle(.primary)
             }
         }
@@ -203,6 +204,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Clean up any leftover temp files from previous sessions
         DictationService.cleanupAllTempFiles()
+        
+        // Request notification permissions
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
+            if granted {
+                print("Notification permission granted")
+            }
+        }
     }
     
     func applicationWillTerminate(_ notification: Notification) {

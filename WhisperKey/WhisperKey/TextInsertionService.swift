@@ -135,15 +135,16 @@ class TextInsertionService {
     /// Check if Terminal has secure input mode enabled
     private func isTerminalSecureInputEnabled() -> Bool {
         // Use IOKit to check secure input state
-        var attrs: CFDictionary? = nil
+        var attrs: Unmanaged<CFMutableDictionary>? = nil
         let result = IORegistryEntryCreateCFProperties(
-            IORegistryEntryFromPath(kIOMasterPortDefault, "IOService:/IOResources/IOHIDSystem"),
+            IORegistryEntryFromPath(kIOMainPortDefault, "IOService:/IOResources/IOHIDSystem"),
             &attrs,
             kCFAllocatorDefault,
             0
         )
         
-        if result == KERN_SUCCESS, let dict = attrs as? [String: Any] {
+        if result == KERN_SUCCESS, let cfDict = attrs?.takeRetainedValue() as CFDictionary?,
+           let dict = cfDict as? [String: Any] {
             // Check for secure event input
             if let secureEventInput = dict["SecureEventInput"] as? Int, secureEventInput != 0 {
                 return true
@@ -225,7 +226,7 @@ class TextInsertionService {
                     }
                     
                     // Small delay to simulate natural typing
-                    Thread.sleep(forTimeInterval: 0.005)
+                    usleep(5000) // 5ms
                 }
             }
         }
@@ -292,7 +293,7 @@ class TextInsertionService {
                 }
                 
                 // Small delay to ensure proper processing
-                Thread.sleep(forTimeInterval: 0.01)
+                usleep(10000) // 10ms
             }
         }
     }

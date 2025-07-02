@@ -15,7 +15,7 @@ import Cocoa
 class RecordingIndicatorWindow: NSWindow {
     init() {
         super.init(
-            contentRect: NSRect(x: 0, y: 0, width: 200, height: 60),
+            contentRect: NSRect(x: 0, y: 0, width: 320, height: 60),
             styleMask: [.borderless],
             backing: .buffered,
             defer: false
@@ -71,7 +71,7 @@ class RecordingIndicatorWindow: NSWindow {
 
 struct RecordingIndicatorView: View {
     @State private var isAnimating = false
-    @State private var audioLevel: Float = 0.0
+    @ObservedObject var audioLevelMonitor: AudioLevelMonitor
     let onStop: () -> Void
     
     var body: some View {
@@ -95,13 +95,15 @@ struct RecordingIndicatorView: View {
             }
             
             // Status text
-            Text("Recording...")
+            Text("Recording")
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(.white)
             
+            Spacer()
+            
             // Audio level indicator
-            AudioLevelView(level: audioLevel)
-                .frame(width: 60, height: 16)
+            AudioLevelView(level: audioLevelMonitor.currentLevel)
+                .frame(width: 100, height: 16)
             
             // Stop button (for future use)
             /*
@@ -127,10 +129,6 @@ struct RecordingIndicatorView: View {
             isAnimating = true
         }
     }
-    
-    func updateAudioLevel(_ level: Float) {
-        audioLevel = level
-    }
 }
 
 // MARK: - Audio Level View
@@ -141,11 +139,12 @@ struct AudioLevelView: View {
     var body: some View {
         GeometryReader { geometry in
             HStack(spacing: 2) {
-                ForEach(0..<8) { index in
+                ForEach(0..<10) { index in
                     Rectangle()
                         .fill(barColor(for: index))
-                        .frame(width: geometry.size.width / 10, height: geometry.size.height)
-                        .opacity(shouldShowBar(index) ? 1.0 : 0.3)
+                        .frame(width: geometry.size.width / 12, height: geometry.size.height)
+                        .opacity(shouldShowBar(index) ? 1.0 : 0.2)
+                        .cornerRadius(2)
                 }
             }
         }
@@ -153,14 +152,14 @@ struct AudioLevelView: View {
     
     private func shouldShowBar(_ index: Int) -> Bool {
         let normalizedLevel = min(max(level, 0), 1)
-        let threshold = Float(index) / 8.0
+        let threshold = Float(index) / 10.0
         return normalizedLevel > threshold
     }
     
     private func barColor(for index: Int) -> Color {
-        if index < 3 {
+        if index < 4 {
             return .green
-        } else if index < 6 {
+        } else if index < 7 {
             return .yellow
         } else {
             return .red
@@ -170,26 +169,15 @@ struct AudioLevelView: View {
 
 // MARK: - Menu Bar Recording Animation
 
-extension MenuBarApp {
-    func startRecordingAnimation() {
-        recordingAnimationTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
-            if let button = self.statusItem?.button {
-                if button.image == self.recordingIcon {
-                    button.image = self.defaultIcon
-                } else {
-                    button.image = self.recordingIcon
-                }
-            }
-        }
-    }
-    
-    func stopRecordingAnimation() {
-        recordingAnimationTimer?.invalidate()
-        recordingAnimationTimer = nil
-        if let button = statusItem?.button {
-            button.image = defaultIcon
-        }
-    }
+extension AppDelegate {
+    // These would need to be implemented in AppDelegate if menu bar animation is needed
+    // For now, we're using the SwiftUI menu bar extra which handles this automatically
+}
+
+// MARK: - Audio Level Monitor
+
+class AudioLevelMonitor: ObservableObject {
+    @Published var currentLevel: Float = 0.0
 }
 
 // MARK: - Recording Indicator Manager
@@ -200,6 +188,7 @@ class RecordingIndicatorManager: ObservableObject {
     
     private var indicatorWindow: RecordingIndicatorWindow?
     private var indicatorView: NSHostingView<RecordingIndicatorView>?
+    private let audioLevelMonitor = AudioLevelMonitor()
     
     private init() {}
     
@@ -209,9 +198,12 @@ class RecordingIndicatorManager: ObservableObject {
             indicatorWindow = RecordingIndicatorWindow()
             
             // Create and set content view
-            let view = RecordingIndicatorView(onStop: { [weak self] in
-                self?.hideRecordingIndicator()
-            })
+            let view = RecordingIndicatorView(
+                audioLevelMonitor: audioLevelMonitor,
+                onStop: { [weak self] in
+                    self?.hideRecordingIndicator()
+                }
+            )
             let hostingView = NSHostingView(rootView: view)
             indicatorWindow?.contentView = hostingView
             indicatorView = hostingView
@@ -223,11 +215,14 @@ class RecordingIndicatorManager: ObservableObject {
     
     func hideRecordingIndicator() {
         indicatorWindow?.hideIndicator()
+        // Reset audio level
+        audioLevelMonitor.currentLevel = 0.0
     }
     
     func updateAudioLevel(_ level: Float) {
-        // Update audio level in the view
-        // This would require making the view observable
+        // Normalize the level for better visualization - increased sensitivity
+        let normalizedLevel = min(max(level * 30, 0), 1.0)
+        audioLevelMonitor.currentLevel = normalizedLevel
     }
 }
 
