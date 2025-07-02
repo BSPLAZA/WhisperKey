@@ -21,9 +21,9 @@
 	<key>LSMinimumSystemVersion</key>
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>WhisperKey needs access to your microphone to transcribe your speech into text when you press F5.</string>
+	<string>WhisperKey needs access to your microphone to transcribe your speech into text when you press Right Option.</string>
 	<key>NSAccessibilityUsageDescription</key>
-	<string>WhisperKey needs accessibility access to monitor the F5 key and insert transcribed text into your applications.</string>
+	<string>WhisperKey needs accessibility access to detect hotkeys and insert transcribed text at your cursor position.</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.productivity</string>
 	<key>CFBundleURLTypes</key>

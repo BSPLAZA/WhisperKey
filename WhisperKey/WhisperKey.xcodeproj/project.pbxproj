@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		DB2430022E1484CF0041DD00 /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = DB2430012E1484CF0041DD00 /* HotKey */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		DBF2AD862E13D0D1008852A2 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -29,9 +33,22 @@
 		DBF2AD8F2E13D0D1008852A2 /* WhisperKeyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WhisperKeyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		DB2430052E14864E0041DD00 /* Exceptions for "WhisperKey" folder in "WhisperKey" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = DBF2AD732E13D0D0008852A2 /* WhisperKey */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		DBF2AD762E13D0D0008852A2 /* WhisperKey */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				DB2430052E14864E0041DD00 /* Exceptions for "WhisperKey" folder in "WhisperKey" target */,
+			);
 			path = WhisperKey;
 			sourceTree = "<group>";
 		};
@@ -52,6 +69,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DB2430022E1484CF0041DD00 /* HotKey in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +130,7 @@
 			);
 			name = WhisperKey;
 			packageProductDependencies = (
+				DB2430012E1484CF0041DD00 /* HotKey */,
 			);
 			productName = WhisperKey;
 			productReference = DBF2AD742E13D0D0008852A2 /* WhisperKey.app */;
@@ -195,6 +214,9 @@
 			);
 			mainGroup = DBF2AD6B2E13D0D0008852A2;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				DB2430002E1484CF0041DD00 /* XCRemoteSwiftPackageReference "HotKey" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DBF2AD752E13D0D0008852A2 /* Products */;
 			projectDirPath = "";
@@ -398,7 +420,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"WhisperKey/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = WhisperKey/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -423,7 +446,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"WhisperKey/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = WhisperKey/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -541,6 +565,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		DB2430002E1484CF0041DD00 /* XCRemoteSwiftPackageReference "HotKey" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/soffes/HotKey";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		DB2430012E1484CF0041DD00 /* HotKey */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DB2430002E1484CF0041DD00 /* XCRemoteSwiftPackageReference "HotKey" */;
+			productName = HotKey;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = DBF2AD6C2E13D0D0008852A2 /* Project object */;
 }

@@ -1,76 +1,76 @@
-# WhisperKey Documentation Hub
+# WhisperKey Developer Documentation
 
-> Local dictation app using Whisper AI - Complete privacy, superior performance
+> For users, see the main [README.md](../README.md)
 
-## 🚀 Project Status
+## Current Status
 
-**Current Phase**: Environment Setup (Phase 0)  
-**Current Focus**: Setting up development environment  
-**Current Blocker**: None  
-**Last Updated**: 2025-07-01
+**Phase**: Core App Implementation  
+**Focus**: Right Option hotkey with menu bar UI  
+**Approach**: Clean architecture with proven libraries
 
-## 📍 Quick Navigation
+## Development Plan
 
-### Core Documentation
-- [📅 Timeline](TIMELINE.md) - Development progress tracking
-- [📝 Daily Log](DAILY_LOG.md) - Daily development notes
-- [🎯 Decisions](DECISIONS.md) - Architecture decisions record
-- [🔧 Issues & Solutions](ISSUES_AND_SOLUTIONS.md) - Problem/solution archive
-- [📖 API Reference](API_REFERENCE.md) - Internal API documentation
-- [🧪 Testing Guide](TESTING_GUIDE.md) - Test scenarios and results
-- [⚙️ Setup Guide](SETUP_GUIDE.md) - Environment setup instructions
+See [SIMPLE_PLAN.md](SIMPLE_PLAN.md) for the streamlined roadmap.
 
-### Planning Documents
-- [Original Plan](../docs-archive/planning/WhisperKey-Planning.md) - Initial planning document
+### Quick Progress Check
+- ✅ Menu bar app structure created
+- ✅ HotKey library integrated
+- ⏳ Right Option key binding 
+- ⏳ Audio recording pipeline
+- ⏳ Whisper integration
 
-## 🎯 Current Sprint Goals
+## Key Documents
 
-1. Set up development environment
-2. Build whisper.cpp with Metal support
-3. Create basic Xcode project structure
-4. Implement proof-of-concept key interception
+### Active Development
+- [SIMPLE_PLAN](SIMPLE_PLAN.md) - Current development roadmap
+- [DAILY_LOG](DAILY_LOG.md) - Development diary
+- [DECISIONS](DECISIONS.md) - Architecture Decision Records
 
-## 📊 Progress Overview
+### Implementation Guides  
+- [RIGHT_OPTION_SETUP](RIGHT_OPTION_SETUP.md) - Hotkey implementation
+- [QUICK_REFERENCE](QUICK_REFERENCE.md) - Constants and snippets
+- [API_REFERENCE](API_REFERENCE.md) - Internal APIs
 
-| Phase | Status | Planned | Actual | Notes |
-|-------|--------|---------|--------|-------|
-| Phase 0: Setup | 🟡 In Progress | 1 day | - | Environment setup |
-| Phase 1: Core Prototype | ⏳ Not Started | 4 days | - | - |
-| Phase 2: Audio Pipeline | ⏳ Not Started | 3 days | - | - |
-| Phase 3: Whisper Integration | ⏳ Not Started | 4 days | - | - |
-| Phase 4: Text Processing | ⏳ Not Started | 3 days | - | - |
-| Phase 5: UI Polish | ⏳ Not Started | 3 days | - | - |
-| Phase 6: Optimization | ⏳ Not Started | 2 days | - | - |
-| Phase 7: Testing | ⏳ Not Started | 4 days | - | - |
+### Process
+- [TIMELINE](TIMELINE.md) - Detailed phase tracking
+- [ISSUES_AND_SOLUTIONS](ISSUES_AND_SOLUTIONS.md) - Problem archive
+- [TESTING_GUIDE](TESTING_GUIDE.md) - Test scenarios
 
-## 🔑 Key Decisions Made
+## Quick Start for Developers
 
-1. **Architecture**: MVVM with Swift Actors for concurrency
-2. **Key Interception**: CGEventTap (primary) with Karabiner fallback
-3. **Audio**: AVAudioEngine with 16kHz sampling
-4. **Models**: Core ML format for M4 optimization
+1. **Clone and open project**:
+   ```bash
+   git clone https://github.com/BSPLAZA/WhisperKey.git
+   cd WhisperKey
+   open WhisperKey/WhisperKey.xcodeproj
+   ```
 
-## 🛠 Development Commands
+2. **Add HotKey package**: 
+   - File → Add Package Dependencies
+   - Enter: `https://github.com/soffes/HotKey`
 
-```bash
-# Update documentation
-./scripts/update-timeline.sh "Phase 0" "completed" "8 hours"
-./scripts/new-decision.sh "Switched to Core ML for better M4 performance"
-./scripts/log-issue.sh "CGEventTap timeout" "Process events async"
+3. **Build and run**: Cmd+R
 
-# Build commands
-cd /Users/orion/Omni/WhisperKey
-# ... (to be added)
+## Architecture Overview
+
+```
+MenuBarApp (SwiftUI)
+    ├── DictationService (Recording & Transcription)
+    │   ├── AVAudioEngine (Audio capture)
+    │   └── WhisperService (whisper.cpp wrapper)
+    ├── HotkeyManager (Global shortcuts)
+    │   └── HotKey library (Carbon Events)
+    └── TextInsertion (Cursor interaction)
+        └── AXUIElement (Accessibility API)
 ```
 
-## 📋 Quick Checklist
+## Key Technical Decisions
 
-- [ ] Development environment ready
-- [ ] whisper.cpp compiled with Metal
-- [ ] Xcode project created
-- [ ] Signing certificates configured
-- [ ] Documentation structure established
+1. **Right Option over F5**: System doesn't interfere
+2. **Menu bar over window**: Always accessible
+3. **HotKey library**: Battle-tested shortcuts
+4. **whisper.cpp**: Fast local transcription
 
 ---
-*Auto-generated navigation. Update via README template.*
-*Created: 2025-07-01 00:02 PST*
+
+*Building dictation that respects privacy and just works.*

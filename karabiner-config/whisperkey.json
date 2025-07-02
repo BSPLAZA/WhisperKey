@@ -1,0 +1,117 @@
+{
+  "title": "WhisperKey - F5 Dictation Remapping",
+  "rules": [
+    {
+      "description": "Remap F5 dictation key to F13 for WhisperKey",
+      "manipulators": [
+        {
+          "type": "basic",
+          "from": {
+            "key_code": "f5",
+            "modifiers": {
+              "optional": ["any"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "f13"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "frontmost_application_unless",
+              "bundle_identifiers": [
+                "^com\\.apple\\.systempreferences$"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "Alternative: Remap F5 to launch WhisperKey URL scheme",
+      "manipulators": [
+        {
+          "type": "basic",
+          "from": {
+            "key_code": "f5"
+          },
+          "to": [
+            {
+              "shell_command": "open -g 'whisperkey://start-dictation'"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "Double-tap Right Command for dictation",
+      "manipulators": [
+        {
+          "type": "basic",
+          "from": {
+            "key_code": "right_command",
+            "modifiers": {
+              "optional": ["any"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "right_command"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "variable_if",
+              "name": "right_command_pressed",
+              "value": 1
+            }
+          ],
+          "to_if_alone": [
+            {
+              "key_code": "f13"
+            }
+          ]
+        },
+        {
+          "type": "basic",
+          "from": {
+            "key_code": "right_command",
+            "modifiers": {
+              "optional": ["any"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "right_command"
+            },
+            {
+              "set_variable": {
+                "name": "right_command_pressed",
+                "value": 1
+              }
+            }
+          ],
+          "to_delayed_action": {
+            "to_if_invoked": [
+              {
+                "set_variable": {
+                  "name": "right_command_pressed",
+                  "value": 0
+                }
+              }
+            ],
+            "to_if_canceled": [
+              {
+                "set_variable": {
+                  "name": "right_command_pressed",
+                  "value": 0
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

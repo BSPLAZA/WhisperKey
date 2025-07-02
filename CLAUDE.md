@@ -1,5 +1,8 @@
 # WhisperKey Project Guidelines
 
+## Important: Time Zone
+**Always use PST (Pacific Standard Time) for all timestamps and documentation**
+
 ## Project Overview
 WhisperKey is a privacy-focused local dictation app for macOS that intercepts the F5 dictation key and uses Whisper AI for transcription. All processing happens locally with zero network connections.
 

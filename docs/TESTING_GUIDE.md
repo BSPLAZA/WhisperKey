@@ -50,10 +50,10 @@
 Legend: ✅ Pass | ❌ Fail | ⏳ Not Tested | N/A Not Applicable
 
 ### 🧠 Whisper Model Tests
-- [ ] Base model accuracy
-- [ ] Small model accuracy
-- [ ] Medium model accuracy
-- [ ] Model switching performance
+- [x] Base model accuracy - Tested
+- [x] Small model accuracy - Tested  
+- [x] Medium model accuracy - Tested
+- [x] Model switching performance - Works well
 - [ ] Memory usage per model
 - [ ] Inference speed benchmarks
 
@@ -162,4 +162,36 @@ swift test
 ```
 
 ---
-*Last Updated: 2025-07-01*
+
+## Streaming vs Non-Streaming Quality Test Results
+
+**Test Date**: 2025-07-01 21:00 PST  
+**Test Phrase**: "If streaming mode is off, you'll only see the complete transcription at the end. Make sure to enable it in the settings!"
+
+### Streaming Mode ON (Poor Quality)
+| Model | Output | Quality Score |
+|-------|--------|---------------|
+| base.en | "It's true.Dreamingmode isoff.you'llonlysee thePleaseWeinscription.at theend.AndMake suresure toenablein thesetting.Thanks.you" | 2/10 |
+| small.en | "It'sstreamstreamingmode is off.your ownonly seethe comcomplete transition.Inscriptionat the end.Make suretoenable it insettings." | 3/10 |
+| medium.en | "youIfStreetstreaming mode.mode is on.off.you'll almost" | 1/10 |
+
+### Streaming Mode OFF (Excellent Quality)
+| Model | Output | Quality Score |
+|-------|--------|---------------|
+| base.en | "If streaming mode is off, you'll only see the complete transcription at the end. Make sure to enable it in the settings." | 10/10 |
+| small.en | "If streaming. modeis off, you'll only see the complete transcription at the end. Make sure to enable it in the settings." | 9/10 |
+| medium.en | "If streaming mode. isoff, you'll only see the complete transcription at the end. Make sure to enable it in the settings." | 9/10 |
+
+### Key Findings
+1. **Streaming with 0.5s chunks is unusable** - Produces garbled, nonsensical output
+2. **Non-streaming mode has near-perfect accuracy** - All models perform excellently
+3. **Whisper needs 2-5s of context** - Fundamental architecture requirement
+4. **Medium model not necessarily better** - Sometimes performs worse on short chunks
+
+### Recommended Configuration
+- **Default**: Non-streaming mode for accuracy
+- **Streaming**: Only with 2s+ chunks and 5s context window
+- **Model**: Small.en offers best balance of speed and accuracy
+
+---
+*Last Updated: 2025-07-01 21:30 PST*

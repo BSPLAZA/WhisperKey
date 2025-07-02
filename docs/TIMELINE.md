@@ -40,42 +40,57 @@
 ## Phase 1: Core Prototype
 
 **Planned Duration**: 4 days (Days 2-5)  
-**Started**: 2025-07-01  
-**Completed**: _In Progress_  
-**Actual Hours**: _TBD_  
+**Started**: 2025-07-01 08:00 PST  
+**Completed**: 2025-07-01 21:00 PST  
+**Actual Hours**: 13 hours  
 
 ### Tasks
-- [ ] Create Xcode project "WhisperKey" with SwiftUI
-- [ ] Configure entitlements and Info.plist
-- [ ] Implement basic HID event monitoring
-- [ ] Test dictation key interception
-- [ ] Basic CoreAudio recording setup
-- [ ] Simple whisper.cpp integration (file-based)
-- [ ] Proof-of-concept text insertion
-- [ ] Verify permissions flow
+- [x] Create Xcode project "WhisperKey" with SwiftUI
+- [x] Configure entitlements and Info.plist
+- [x] Implement basic HID event monitoring
+- [x] Test dictation key interception (FAILED - F5 impossible)
+- [x] Basic CoreAudio recording setup (AVAudioEngine)
+- [x] Simple whisper.cpp integration (file-based)
+- [x] Proof-of-concept text insertion
+- [x] Verify permissions flow
 
 ### Blockers
-_None yet_
+- F5 key interception impossible at user level (system-reserved)
+- Pivoted to menu bar app with Right Option key
 
 ### Key Decisions
-_None yet_
+- Abandoned F5 key approach for menu bar + hotkey
+- Selected HotKey library for global hotkeys
+- Implemented Right Option key via NSEvent monitoring
+- Added both streaming and non-streaming modes
 
 ---
 
-## Phase 2: Audio Pipeline
+## Phase 2: Audio Pipeline & Streaming
 
 **Planned Duration**: 3 days (Days 6-8)  
-**Started**: _Not Started_  
-**Completed**: _Not Started_  
-**Actual Hours**: _TBD_  
+**Started**: 2025-07-01 17:00 PST  
+**Completed**: 2025-07-01 21:30 PST  
+**Actual Hours**: 4.5 hours  
 
 ### Tasks
-- [ ] Implement ring buffer for audio
-- [ ] Add real-time audio level monitoring
-- [ ] Create silence detection algorithm
-- [ ] Test various silence thresholds
-- [ ] Implement pre-roll buffer
-- [ ] Add audio format conversion
+- [x] Implement audio buffer for streaming
+- [x] Add real-time audio level monitoring
+- [x] Create silence detection algorithm (2-second threshold)
+- [x] Test various silence thresholds (0.001 → 0.005)
+- [x] Implement streaming transcription mode
+- [x] Add audio format conversion (48kHz → 16kHz)
+- [x] Build whisper-stream with SDL2
+
+### Key Achievements
+- Successfully implemented both streaming and non-streaming modes
+- Built whisper-stream binary for potential future use
+- Discovered critical audio quality issues with streaming
+
+### Blockers
+- Whisper.cpp requires significant audio context (2-5s) for accuracy
+- Streaming with small chunks (0.5s) produces garbled output
+- True real-time streaming not feasible with current Whisper architecture
 
 ---
 
@@ -179,4 +194,4 @@ _None yet_
 | - | - | - | - |
 
 ---
-*Last Updated: 2025-07-01 - Phase 0 in progress*
+*Last Updated: 2025-07-01 21:30 PST - Phase 2 completed, streaming quality issues discovered*

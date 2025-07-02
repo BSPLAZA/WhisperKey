@@ -36,7 +36,7 @@
 ## ADR-002: Use CGEventTap for Primary Key Interception
 
 **Date**: 2025-07-01  
-**Status**: Proposed  
+**Status**: Superseded by ADR-005  
 **Context**: Need to intercept F5 media key system-wide on macOS  
 **Decision**: Use CGEventTap as primary method over IOKit HID  
 **Consequences**: 
@@ -92,4 +92,114 @@
 - [ ] Testing framework selection
 
 ---
-*Last Updated: 2025-07-01*
+
+## ADR-005: Pivot to Menu Bar App with Configurable Hotkeys
+
+**Date**: 2025-07-01  
+**Status**: Accepted  
+**Context**: 
+- F5 is intercepted by macOS at system level for dictation
+- CGEventTap cannot reliably block system-reserved keys  
+- Even Karabiner-Elements has issues with F5 on newer Macs
+- Accessibility permission shows false positives (TCC database issues)
+- Fighting the system leads to poor user experience  
+**Decision**: 
+- Switch to menu bar app architecture
+- Use HotKey library (Carbon-based, proven to work)
+- Default to F13 key (no system conflicts)
+- Allow user-configurable hotkeys
+- Stop trying to intercept F5  
+**Consequences**: 
+- ✅ Reliable hotkey interception
+- ✅ No permission issues or TCC database problems
+- ✅ Better user experience
+- ✅ Menu bar shows recording status
+- ❌ Not using F5 (but document workarounds)
+- ❌ Uses deprecated Carbon APIs (but they work)  
+**Alternatives Considered**: 
+- Continue fighting F5 - Too unreliable
+- Use NSEvent monitors - Can't capture system keys
+- Create kernel extension - Overkill, deprecated
+- Hijack system dictation window - Complex, fragile
+
+---
+
+## ADR-006: Use Proven Libraries Over Custom Solutions
+
+**Date**: 2025-07-01  
+**Status**: Accepted  
+**Context**:
+- Custom CGEventTap implementation was complex
+- Many edge cases and system conflicts
+- Reinventing the wheel for solved problems  
+**Decision**:
+- Use HotKey library for global shortcuts
+- Consider KeyboardShortcuts by Sindre Sorhus for UI later
+- Focus on core functionality (Whisper integration)  
+**Consequences**:
+- ✅ Faster development
+- ✅ Battle-tested code
+- ✅ Less maintenance burden
+- ❌ Additional dependency  
+**Alternatives Considered**:
+- Write custom hotkey handling - Too complex
+- Use only NSEvent - Limited capabilities
+
+---
+
+## ADR-007: Streaming vs Non-Streaming Transcription Architecture
+
+**Date**: 2025-07-01 21:00 PST  
+**Status**: Accepted  
+**Context**: 
+- Users expect real-time text appearance like native dictation
+- Whisper requires significant audio context (2-5s) for accuracy
+- Small audio chunks (0.5s) produce completely garbled output
+- Tested comprehensively with multiple models and chunk sizes
+**Decision**: 
+- Implement both streaming and non-streaming modes
+- Non-streaming as default for accuracy
+- Streaming uses 2s chunks with 5s context window
+- Acknowledge fundamental Whisper limitation for real-time use
+**Consequences**: 
+- ✅ Perfect accuracy in non-streaming mode
+- ✅ User choice between accuracy and feedback
+- ❌ Streaming has 2-3 second latency minimum
+- ❌ Cannot achieve true real-time like native dictation
+**Alternatives Considered**: 
+- whisper-stream binary - Gives up control over audio pipeline
+- 0.5s chunks - Completely unusable output quality
+- Apple Speech Recognition - Would work but requires different architecture
+- Hybrid approach - Too complex for initial version
+
+**Test Results Documented**:
+Test phrase accuracy comparison showed streaming mode produces garbled text while non-streaming is near-perfect across all models.
+
+---
+
+## ADR-008: Continue as Learning Project Despite Market Saturation
+
+**Date**: 2025-07-01 21:15 PST  
+**Status**: Accepted  
+**Context**:
+- Discovered 10+ existing solutions (MacWhisper, SuperWhisper, etc.)
+- Many are open source with similar features
+- No clear differentiation for WhisperKey currently
+- Success probability <5% as commercial product
+**Decision**:
+- Continue development as learning project
+- Focus on technical excellence over market viability
+- Keep architecture flexible for future innovation
+- Document all learnings thoroughly
+**Consequences**:
+- ✅ No pressure for commercial success
+- ✅ Freedom to experiment with approaches
+- ✅ Learning opportunity for future projects
+- ❌ Limited motivation without clear user need
+**Alternatives Considered**:
+- Abandon project - Loses learning opportunity
+- Pivot to niche market - Premature without research
+- Contribute to existing project - Less learning value
+
+---
+*Last Updated: 2025-07-01 21:30 PST*
