@@ -34,6 +34,8 @@ class TextInsertionService {
         case noFocusedElement
         case insertionFailed
         case secureField
+        case readOnlyField
+        case disabledField
         
         var errorDescription: String? {
             switch self {
@@ -43,6 +45,10 @@ class TextInsertionService {
                 return "Failed to insert text"
             case .secureField:
                 return "Cannot dictate into password fields"
+            case .readOnlyField:
+                return "Cannot dictate into read-only fields"
+            case .disabledField:
+                return "Cannot dictate into disabled fields"
             }
         }
     }
@@ -59,6 +65,16 @@ class TextInsertionService {
             // Check if it's a secure field
             if isSecureField(focusedElement) {
                 throw InsertionError.secureField
+            }
+            
+            // Check if it's readonly
+            if isReadOnlyField(focusedElement) {
+                throw InsertionError.readOnlyField
+            }
+            
+            // Check if it's disabled
+            if isDisabledField(focusedElement) {
+                throw InsertionError.disabledField
             }
             
             // Try direct AX insertion first
@@ -164,6 +180,48 @@ class TextInsertionService {
             dlclose(lib)
         }
         
+        return false
+    }
+    
+    /// Check if the element is read-only
+    private func isReadOnlyField(_ element: AXUIElement) -> Bool {
+        // Check if settable
+        var settable: CFTypeRef?
+        let result = AXUIElementCopyAttributeValue(element, "AXValueIsSettable" as CFString, &settable)
+        if result == .success, let isSettable = settable as? Bool {
+            return !isSettable
+        }
+        
+        // Check if editable
+        var editable: CFTypeRef?
+        let editableResult = AXUIElementCopyAttributeValue(element, "AXEditable" as CFString, &editable)
+        if editableResult == .success, let isEditable = editable as? Bool {
+            return !isEditable
+        }
+        
+        // Check role-specific attributes
+        var role: CFTypeRef?
+        AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &role)
+        if let roleString = role as? String {
+            // Static text and labels are always readonly
+            if roleString == "AXStaticText" || roleString == "AXLabel" {
+                return true
+            }
+        }
+        
+        return false
+    }
+    
+    /// Check if the element is disabled
+    private func isDisabledField(_ element: AXUIElement) -> Bool {
+        // Check enabled state
+        var enabled: CFTypeRef?
+        let result = AXUIElementCopyAttributeValue(element, kAXEnabledAttribute as CFString, &enabled)
+        if result == .success, let isEnabled = enabled as? Bool {
+            return !isEnabled
+        }
+        
+        // If no enabled attribute, assume it's enabled
         return false
     }
     

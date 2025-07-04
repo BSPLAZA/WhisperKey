@@ -17,11 +17,25 @@ struct WhisperKeyMenuBarApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var dictationService = DictationService()
     
+    init() {
+        // Connection will be set up in onAppear
+    }
+    
     var body: some Scene {
         MenuBarExtra {
             MenuBarContentView(dictationService: dictationService)
                 .onAppear {
-                    appDelegate.dictationService = dictationService
+                    // Ensure the dictation service is connected to AppDelegate (backup)
+                    print("WhisperKeyMenuBarApp: onAppear called")
+                    if let delegate = NSApplication.shared.delegate as? AppDelegate {
+                        delegate.dictationService = dictationService
+                        print("WhisperKeyMenuBarApp: Connected dictationService to AppDelegate in onAppear")
+                        print("WhisperKeyMenuBarApp: DictationService reference: \(dictationService)")
+                        // Trigger hotkey update again to ensure it's working
+                        delegate.updateHotkey()
+                    } else {
+                        print("WhisperKeyMenuBarApp: Failed to get AppDelegate!")
+                    }
                 }
         } label: {
             if dictationService.isRecording {
@@ -39,9 +53,90 @@ struct WhisperKeyMenuBarApp: App {
     }
 }
 
+class WindowManager: ObservableObject {
+    static let shared = WindowManager()
+    
+    private var preferencesWindow: NSWindow?
+    private var onboardingWindow: NSWindow?
+    
+    private init() {
+        print("WindowManager: Initialized")
+    }
+    
+    func showPreferences() {
+        print("WindowManager: showPreferences called")
+        
+        if let window = preferencesWindow, window.isVisible {
+            print("WindowManager: Preferences window already visible, bringing to front")
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+        
+        print("WindowManager: Creating new preferences window")
+        let preferencesView = PreferencesView()
+        let hostingController = NSHostingController(rootView: preferencesView)
+        
+        let window = NSWindow(contentViewController: hostingController)
+        window.title = "WhisperKey Preferences"
+        window.styleMask = [.titled, .closable, .miniaturizable]
+        window.setContentSize(NSSize(width: 500, height: 400))
+        window.center()
+        window.isReleasedWhenClosed = false
+        
+        preferencesWindow = window
+        window.makeKeyAndOrderFront(nil)
+        window.level = .floating
+        NSApp.activate(ignoringOtherApps: true)
+        
+        print("WindowManager: Preferences window should be visible now")
+    }
+    
+    func showOnboarding() {
+        print("WindowManager: showOnboarding called")
+        
+        if let window = onboardingWindow, window.isVisible {
+            print("WindowManager: Onboarding window already visible, bringing to front")
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+        
+        print("WindowManager: Creating new onboarding window")
+        UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
+        
+        let onboardingView = OnboardingView(showOnboarding: .init(
+            get: { self.onboardingWindow != nil },
+            set: { show in
+                if !show {
+                    print("WindowManager: Closing onboarding window")
+                    self.onboardingWindow?.close()
+                    self.onboardingWindow = nil
+                }
+            }
+        ))
+        let hostingController = NSHostingController(rootView: onboardingView)
+        
+        let window = NSWindow(contentViewController: hostingController)
+        window.title = "Welcome to WhisperKey"
+        window.styleMask = [.titled, .closable]
+        window.setContentSize(NSSize(width: 500, height: 500))
+        window.center()
+        window.isReleasedWhenClosed = false
+        
+        onboardingWindow = window
+        window.level = .floating
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        
+        print("WindowManager: Onboarding window should be visible now")
+    }
+}
+
 struct MenuBarContentView: View {
     @ObservedObject var dictationService: DictationService
     @AppStorage("selectedHotkey") private var selectedHotkey = "right_option"
+    @StateObject private var windowManager = WindowManager.shared
     
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
@@ -70,31 +165,48 @@ struct MenuBarContentView: View {
             Divider()
             
             Menu("Hotkey: \(hotkeyDisplayName)") {
-                Button("Right Option ⌥ (Default)") {
+                Button(selectedHotkey == "right_option" ? "✓ Right Option ⌥ (Default)" : "Right Option ⌥ (Default)") {
                     selectedHotkey = "right_option"
-                    appDelegate?.updateHotkey()
+                    if let delegate = NSApplication.shared.delegate as? AppDelegate {
+                        delegate.updateHotkey()
+                    }
                 }
                 
-                Button("Caps Lock") {
+                Button(selectedHotkey == "caps_lock" ? "✓ Caps Lock" : "Caps Lock") {
                     selectedHotkey = "caps_lock"
-                    appDelegate?.updateHotkey()
+                    if let delegate = NSApplication.shared.delegate as? AppDelegate {
+                        delegate.updateHotkey()
+                    }
                 }
                 
                 Divider()
                 
-                Button("⌘⇧Space") {
+                Button(selectedHotkey == "cmd_shift_space" ? "✓ ⌘⇧Space" : "⌘⇧Space") {
                     selectedHotkey = "cmd_shift_space"
-                    appDelegate?.updateHotkey()
+                    if let delegate = NSApplication.shared.delegate as? AppDelegate {
+                        delegate.updateHotkey()
+                    }
                 }
                 
-                Button("F13") {
+                Button(selectedHotkey == "f13" ? "✓ F13" : "F13") {
                     selectedHotkey = "f13"
-                    appDelegate?.updateHotkey()
+                    if let delegate = NSApplication.shared.delegate as? AppDelegate {
+                        delegate.updateHotkey()
+                    }
                 }
                 
-                Button("F14") {
+                Button(selectedHotkey == "f14" ? "✓ F14" : "F14") {
                     selectedHotkey = "f14"
-                    appDelegate?.updateHotkey()
+                    if let delegate = NSApplication.shared.delegate as? AppDelegate {
+                        delegate.updateHotkey()
+                    }
+                }
+                
+                Button(selectedHotkey == "f15" ? "✓ F15" : "F15") {
+                    selectedHotkey = "f15"
+                    if let delegate = NSApplication.shared.delegate as? AppDelegate {
+                        delegate.updateHotkey()
+                    }
                 }
             }
             
@@ -108,11 +220,6 @@ struct MenuBarContentView: View {
                     dictationService.requestAccessibilityPermission()
                 }
             }
-            
-            Button("Preferences...") {
-                appDelegate?.showPreferences()
-            }
-            .keyboardShortcut(",", modifiers: .command)
             
             Menu("Settings") {
                 Menu("Whisper Model: \(currentModelName)") {
@@ -143,6 +250,44 @@ struct MenuBarContentView: View {
             
             Divider()
             
+            Button("Preferences...") {
+                print("MenuBarContentView: Preferences clicked")
+                windowManager.showPreferences()
+            }
+            .keyboardShortcut(",", modifiers: .command)
+            
+            #if DEBUG
+            Divider()
+            
+            Button("Show Onboarding") {
+                print("MenuBarContentView: Show Onboarding clicked")
+                windowManager.showOnboarding()
+            }
+            
+            Button("Test Recording") {
+                print("Test Recording button clicked")
+                dictationService.startRecording()
+            }
+            
+            Button("Check Permissions") {
+                let accessibilityPermission = AXIsProcessTrusted()
+                print("Accessibility: \(accessibilityPermission)")
+                dictationService.checkPermissions()
+            }
+            
+            Button("Test Hotkey") {
+                print("MenuBarContentView: Testing hotkey setup")
+                if let delegate = NSApplication.shared.delegate as? AppDelegate {
+                    print("Found AppDelegate, calling updateHotkey")
+                    delegate.updateHotkey()
+                } else {
+                    print("Could not find AppDelegate!")
+                }
+            }
+            #endif
+            
+            Divider()
+            
             Button("Quit WhisperKey") {
                 NSApplication.shared.terminate(nil)
             }
@@ -158,12 +303,13 @@ struct MenuBarContentView: View {
         case "cmd_shift_space": return "⌘⇧Space"
         case "f13": return "F13"
         case "f14": return "F14"
+        case "f15": return "F15"
         default: return "Right ⌥"
         }
     }
     
     var appDelegate: AppDelegate? {
-        NSApp.delegate as? AppDelegate
+        NSApplication.shared.delegate as? AppDelegate
     }
     
     var currentModel: String {
@@ -188,19 +334,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var commandPressTimer: Timer?
     private var eventMonitor: Any?
     private var isRightOptionPressed = false
-    private var preferencesWindow: PreferencesWindowController?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Remove from dock
         NSApp.setActivationPolicy(.accessory)
+        
+        // Check if onboarding is needed
+        let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
+        if !hasCompletedOnboarding {
+            showOnboarding()
+        }
         
         // Set default to right_option if no preference exists
         if UserDefaults.standard.string(forKey: "selectedHotkey") == nil {
             UserDefaults.standard.set("right_option", forKey: "selectedHotkey")
         }
         
-        // Set up hotkey
-        updateHotkey()
+        // Set up hotkey with a small delay to ensure everything is initialized
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            self?.updateHotkey()
+        }
         
         // Clean up any leftover temp files from previous sessions
         DictationService.cleanupAllTempFiles()
@@ -246,6 +399,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         case "f14":
             hotKey = HotKey(key: .f14, modifiers: [])
             
+        case "f15":
+            hotKey = HotKey(key: .f15, modifiers: [])
+            
         default:
             hotKey = HotKey(key: .space, modifiers: [.command, .shift])
         }
@@ -261,31 +417,45 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupRightOptionMonitoring() {
         print("AppDelegate: Setting up Right Option monitoring via NSEvent")
         
-        // Monitor for flags changed events
-        eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
-            guard let self = self else { return }
-            
-            // Check if option key is pressed and it's the right one (keyCode 61)
-            if event.keyCode == 61 { // Right Option key code
-                if event.modifierFlags.contains(.option) && !self.isRightOptionPressed {
-                    // Right Option pressed down
-                    self.isRightOptionPressed = true
-                    print("AppDelegate: Right Option pressed")
-                    self.handleHotkeyPress()
-                } else if !event.modifierFlags.contains(.option) && self.isRightOptionPressed {
-                    // Right Option released
-                    self.isRightOptionPressed = false
-                    print("AppDelegate: Right Option released")
-                    // If you want to stop recording on release, uncomment:
-                    // self.handleHotkeyPress()
-                }
+        // First check if we have accessibility permission
+        if !AXIsProcessTrusted() {
+            print("AppDelegate: No accessibility permission for global monitoring")
+            // Try local monitoring as fallback
+            eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
+                self?.handleFlagsChanged(event)
+                return event
             }
+            print("AppDelegate: Using local event monitoring (limited to app windows)")
+        } else {
+            // Monitor for flags changed events globally
+            eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
+                self?.handleFlagsChanged(event)
+            }
+            print("AppDelegate: Global event monitoring active")
         }
         
         if eventMonitor != nil {
             print("AppDelegate: Right Option monitoring active")
         } else {
-            print("AppDelegate: Failed to set up Right Option monitoring - check Accessibility permission")
+            print("AppDelegate: Failed to set up Right Option monitoring")
+        }
+    }
+    
+    private func handleFlagsChanged(_ event: NSEvent) {
+        // Check if option key is pressed and it's the right one (keyCode 61)
+        if event.keyCode == 61 { // Right Option key code
+            if event.modifierFlags.contains(.option) && !self.isRightOptionPressed {
+                // Right Option pressed down
+                self.isRightOptionPressed = true
+                print("AppDelegate: Right Option pressed")
+                self.handleHotkeyPress()
+            } else if !event.modifierFlags.contains(.option) && self.isRightOptionPressed {
+                // Right Option released
+                self.isRightOptionPressed = false
+                print("AppDelegate: Right Option released")
+                // If you want to stop recording on release, uncomment:
+                // self.handleHotkeyPress()
+            }
         }
     }
     
@@ -293,8 +463,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func handleHotkeyPress() {
         print("AppDelegate: Hotkey pressed!")
         DispatchQueue.main.async { [weak self] in
-            guard let dictationService = self?.dictationService else {
-                print("AppDelegate: No dictation service!")
+            guard let self = self else { 
+                print("AppDelegate: Self is nil in hotkey handler")
+                return 
+            }
+            
+            if self.dictationService == nil {
+                print("AppDelegate: No dictation service! Trying to find it...")
+                // Try to get the dictation service from the app
+                if let app = NSApp.delegate as? AppDelegate {
+                    self.dictationService = app.dictationService
+                    print("AppDelegate: Found dictation service from app delegate: \(self.dictationService != nil)")
+                }
+            }
+            
+            guard let dictationService = self.dictationService else {
+                print("AppDelegate: Still no dictation service!")
+                
+                // Show alert to user
+                let alert = NSAlert()
+                alert.messageText = "WhisperKey Error"
+                alert.informativeText = "Unable to start recording. Please restart WhisperKey."
+                alert.alertStyle = .warning
+                alert.runModal()
                 return
             }
             
@@ -309,10 +500,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func showPreferences() {
-        if preferencesWindow == nil {
-            preferencesWindow = PreferencesWindowController()
-        }
-        preferencesWindow?.showWindow(nil)
+        print("AppDelegate: showPreferences called")
+        WindowManager.shared.showPreferences()
+    }
+    
+    func showOnboarding() {
+        print("AppDelegate: showOnboarding called")
+        WindowManager.shared.showOnboarding()
     }
 }
 

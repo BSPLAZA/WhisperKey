@@ -67,19 +67,41 @@ struct GeneralTab: View {
                     Text("Activation Hotkey")
                         .font(.headline)
                     
-                    Picker("", selection: $selectedHotkey) {
-                        Text("Right Option ⌥").tag("right_option")
-                        Text("Caps Lock").tag("caps_lock")
-                        Text("F13").tag("f13")
-                        Text("F14").tag("f14")
-                        Text("F15").tag("f15")
-                        Text("⌘⇧Space").tag("cmd_shift_space")
-                    }
-                    .pickerStyle(RadioGroupPickerStyle())
-                    .onChange(of: selectedHotkey) { _, _ in
-                        // Update hotkey in AppDelegate
-                        if let appDelegate = NSApp.delegate as? AppDelegate {
-                            appDelegate.updateHotkey()
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach([
+                            ("right_option", "Right Option ⌥", "Hold the right Option key"),
+                            ("caps_lock", "Caps Lock", "Hold the Caps Lock key"),
+                            ("f13", "F13", "Press F13 (if available)"),
+                            ("f14", "F14", "Press F14 (if available)"),
+                            ("f15", "F15", "Press F15 (if available)"),
+                            ("cmd_shift_space", "⌘⇧Space", "Press Command+Shift+Space")
+                        ], id: \.0) { value, label, description in
+                            HStack(alignment: .top, spacing: 8) {
+                                RadioButton(isSelected: selectedHotkey == value) {
+                                    selectedHotkey = value
+                                    // Update hotkey immediately
+                                    if let appDelegate = NSApp.delegate as? AppDelegate {
+                                        appDelegate.updateHotkey()
+                                    }
+                                }
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(label)
+                                        .font(.system(size: 13))
+                                    Text(description)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                
+                                Spacer()
+                            }
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                selectedHotkey = value
+                                if let appDelegate = NSApp.delegate as? AppDelegate {
+                                    appDelegate.updateHotkey()
+                                }
+                            }
                         }
                     }
                     
@@ -93,7 +115,7 @@ struct GeneralTab: View {
                 
                 // Launch at login
                 Toggle("Launch WhisperKey at login", isOn: $launchAtLogin)
-                    .onChange(of: launchAtLogin) { _, enabled in
+                    .onChange(of: launchAtLogin) { enabled in
                         updateLaunchAtLogin(enabled)
                     }
                 
@@ -363,7 +385,7 @@ struct RadioButton: View {
 
 // MARK: - Preferences Window Controller
 
-class PreferencesWindowController: NSWindowController {
+class PreferencesWindowController: NSWindowController, NSWindowDelegate {
     convenience init() {
         let preferencesView = PreferencesView()
         let hostingController = NSHostingController(rootView: preferencesView)
@@ -375,11 +397,18 @@ class PreferencesWindowController: NSWindowController {
         window.setFrameAutosaveName("PreferencesWindow")
         
         self.init(window: window)
+        window.delegate = self
     }
     
     override func showWindow(_ sender: Any?) {
+        print("PreferencesWindowController: showWindow called")
         super.showWindow(sender)
         window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        print("PreferencesWindowController: window shown")
+    }
+    
+    func windowWillClose(_ notification: Notification) {
+        print("PreferencesWindowController: window will close")
     }
 }

@@ -237,4 +237,107 @@ Let whisper.cpp handle resampling internally - it's more reliable
 **Time Lost**: 2 hours
 
 ---
-*Last Updated: 2025-07-01 21:30 PST*
+
+## Issue #008: Streaming Mode Quality Issues
+
+**Discovered**: 2025-07-01 - Phase 2  
+**Severity**: High  
+**Symptoms**: 
+- Streaming transcription produced garbled text
+- Quality peaked at 6/10 even with improvements
+- User feedback: "streaming text is really bad"
+
+**Root Cause**: 
+Whisper requires 2-5 seconds of audio context for accurate transcription. Small chunks (0.5-2s) lack sufficient context.
+
+**Solution**: 
+Removed streaming mode entirely. Single-mode operation with 2-3 second wait provides consistent 10/10 quality.
+
+**Prevention**: 
+- Research model requirements before implementing features
+- Test quality early in development
+- Listen to user feedback
+
+**Time Lost**: 4 hours
+
+---
+
+## Issue #009: Recording Indicator UI Issues
+
+**Discovered**: 2025-07-02 - Day 2  
+**Severity**: Medium  
+**Symptoms**:
+- Recording indicator too narrow (text truncated)
+- Double ellipses appeared
+- Audio level bars not responding
+- Menu bar icon too small
+
+**Root Cause**:
+- Window width only 200px
+- AudioLevelMonitor not connected
+- Used `mic.circle` icon which reduced visibility
+
+**Solution**:
+- Increased window to 320px width
+- Connected audio levels with 30x sensitivity
+- Changed to plain `mic` icon
+
+**Prevention**:
+- Test UI on actual device early
+- Consider icon visibility in menu bar
+- Connect all UI elements to data sources
+
+**Time Lost**: 30 minutes
+
+---
+
+## Issue #010: Duplicate Permission Dialogs
+
+**Discovered**: 2025-07-02 - Day 2  
+**Severity**: High  
+**Symptoms**:
+- Users saw system permission dialog
+- Then immediately saw our custom alert
+- Confusing and annoying experience
+
+**Root Cause**:
+Code showed custom alerts after system dialogs
+
+**Solution**:
+Removed custom dialogs when system handles permissions
+
+**Prevention**:
+- Trust system UI for system features
+- Don't duplicate OS functionality
+- Test permission flows thoroughly
+
+**Time Lost**: 15 minutes
+
+---
+
+## Issue #011: Swift 6 Build Errors
+
+**Discovered**: 2025-07-02 - Day 2  
+**Severity**: High  
+**Symptoms**:
+- Sendable conformance errors
+- Deprecated API warnings
+- Missing imports
+
+**Root Cause**:
+Swift 6 stricter concurrency and deprecated APIs
+
+**Solution**:
+- Added `@unchecked Sendable`
+- Migrated to UserNotifications framework
+- Updated to modern APIs
+
+**Prevention**:
+- Keep up with Swift evolution
+- Address warnings promptly
+- Use modern APIs from start
+
+**Time Lost**: 20 minutes
+
+---
+*Last Updated: 2025-07-02 16:30 PST*

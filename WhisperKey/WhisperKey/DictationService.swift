@@ -37,6 +37,7 @@ class DictationService: NSObject, ObservableObject {
         super.init()
         checkPermissions()
         setupAudioEngine()
+        setupAudioNotifications()
         
         // Initialize model selection
         if UserDefaults.standard.string(forKey: "whisperModel") == nil {
@@ -122,6 +123,13 @@ class DictationService: NSObject, ObservableObject {
             Task { @MainActor in
                 ErrorHandler.shared.handle(.secureFieldDetected)
             }
+            return
+        }
+        
+        // Check memory pressure
+        if !MemoryMonitor.shared.checkBeforeRecording() {
+            print("DictationService: Memory pressure too high")
+            transcriptionStatus = "⚠️ Low memory - close some apps"
             return
         }
         
@@ -317,6 +325,25 @@ class DictationService: NSObject, ObservableObject {
                                 try await self?.textInsertion.insertText(transcribedText)
                                 self?.transcriptionStatus = "✅ Text inserted successfully"
                                 print("DictationService: Text inserted successfully")
+                            } catch let error as TextInsertionService.InsertionError {
+                                // Handle specific insertion errors
+                                switch error {
+                                case .secureField:
+                                    self?.transcriptionStatus = "🔒 Cannot insert into password field"
+                                    ErrorHandler.shared.handle(.secureFieldDetected)
+                                case .readOnlyField:
+                                    self?.transcriptionStatus = "📝 Cannot insert into read-only field"
+                                    ErrorHandler.shared.handle(.readOnlyField)
+                                case .disabledField:
+                                    self?.transcriptionStatus = "🚫 Cannot insert into disabled field"
+                                    ErrorHandler.shared.handle(.disabledField)
+                                case .noFocusedElement:
+                                    self?.transcriptionStatus = "❓ No text field selected"
+                                    ErrorHandler.shared.handle(.noActiveTextField)
+                                case .insertionFailed:
+                                    self?.transcriptionStatus = "❌ Insert failed"
+                                    print("DictationService: Generic insertion failure")
+                                }
                             } catch {
                                 self?.transcriptionStatus = "❌ Insert failed: \(error.localizedDescription)"
                                 print("DictationService: Failed to insert text: \(error)")
@@ -408,13 +435,43 @@ class DictationService: NSObject, ObservableObject {
         if let fileURL = audioFileURL {
             try? FileManager.default.removeItem(at: fileURL)
         }
+        
+        // Remove audio notifications
+        NotificationCenter.default.removeObserver(self)
     }
 }
 
 // MARK: - Audio Notifications
 extension DictationService {
     private func setupAudioNotifications() {
-        // On macOS, we can monitor for audio device changes differently
-        // For now, we'll skip this as AVAudioEngine handles device changes
+        // Monitor for audio device changes
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAudioDeviceChange),
+            name: .AVAudioEngineConfigurationChange,
+            object: audioEngine
+        )
+        
+        // Note: AVAudioSession is iOS-only, on macOS we rely on AVAudioEngine notifications
     }
+    
+    @objc private func handleAudioDeviceChange(_ notification: Notification) {
+        print("DictationService: Audio device configuration changed")
+        
+        if isRecording {
+            // Stop recording gracefully
+            print("DictationService: Stopping recording due to audio device change")
+            transcriptionStatus = "⚠️ Audio device changed - recording stopped"
+            stopRecording()
+            
+            // Notify user
+            Task { @MainActor in
+                ErrorHandler.shared.handle(.audioEngineFailure("Audio device changed during recording"))
+            }
+        }
+        
+        // Recreate audio engine with new configuration
+        setupAudioEngine()
+    }
+    
 }

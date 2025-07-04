@@ -226,4 +226,152 @@ Test phrase accuracy comparison showed streaming mode produces garbled text whil
 - Further optimization - Fundamental Whisper limitation
 
 ---
-*Last Updated: 2025-07-01 23:10 PST*
+
+## ADR-010: Right Option Key Implementation
+
+**Date**: 2025-07-02  
+**Status**: Accepted  
+**Context**: 
+- HotKey library doesn't support modifier-only keys
+- Users expect Right Option as default (muscle memory from other apps)
+- Need to differentiate between left and right Option keys
+**Decision**: 
+- Use NSEvent.addGlobalMonitorForEvents for Right Option
+- Check keyCode 61 specifically (Right Option)
+- Keep HotKey library for other hotkey options
+**Consequences**: 
+- ✅ Right Option works as expected
+- ✅ Can differentiate left/right modifiers
+- ✅ Flexible hotkey system
+- ❌ Two different hotkey implementations
+**Alternatives Considered**: 
+- Force users to use F13 - Poor UX
+- Find different library - None support this well
+- Custom implementation only - More maintenance
+
+---
+
+## ADR-011: Visual Recording Indicator Design
+
+**Date**: 2025-07-02  
+**Status**: Accepted  
+**Context**:
+- Users need clear feedback that recording is active
+- Menu bar alone isn't prominent enough
+- Need to show audio levels for confidence
+**Decision**:
+- Floating window at bottom center of screen
+- 320x60px size with recording status
+- Live audio level visualization
+- Non-interactive (mouse events pass through)
+**Consequences**:
+- ✅ Clear visual feedback
+- ✅ Users know when they're being heard
+- ✅ Professional appearance
+- ❌ Another window to manage
+**Alternatives Considered**:
+- Menu bar animation only - Not visible enough
+- System notification - Too intrusive
+- No indicator - Poor UX
+
+---
+
+## ADR-012: Comprehensive Error Handling System
+
+**Date**: 2025-07-02  
+**Status**: Accepted  
+**Context**:
+- Many failure points (permissions, audio, transcription)
+- Users need clear guidance on fixing issues
+- Different errors need different UI treatments
+**Decision**:
+- Create ErrorHandler with 30+ specific error types
+- Each error has description and recovery suggestion
+- Use appropriate UI (alerts, notifications, banners)
+- Automatic recovery where possible
+**Consequences**:
+- ✅ Professional error handling
+- ✅ Users can self-resolve issues
+- ✅ Reduced support burden
+- ❌ More code to maintain
+**Alternatives Considered**:
+- Generic error messages - Poor UX
+- Console logging only - Users won't see
+- Simple alerts for everything - Alert fatigue
+
+---
+
+## ADR-013: Preferences Window Architecture
+
+**Date**: 2025-07-02  
+**Status**: Accepted  
+**Context**:
+- Many settings to expose (hotkey, audio, models)
+- Need organized, discoverable UI
+- Should follow macOS design patterns
+**Decision**:
+- 4-tab preferences window
+- SwiftUI implementation
+- @AppStorage for all settings
+- Immediate effect (no apply button)
+**Consequences**:
+- ✅ Familiar macOS pattern
+- ✅ Settings persist automatically
+- ✅ Clean organization
+- ✅ Real-time updates
+**Alternatives Considered**:
+- Menu-based settings - Too cramped
+- Single page - Too overwhelming
+- Modal dialogs - Poor UX
+
+---
+
+## ADR-014: Model Download Strategy
+
+**Date**: 2025-07-02  
+**Status**: Accepted  
+**Context**:
+- Models are large (141MB - 2.9GB)
+- Users may not have all models
+- Need progress feedback for downloads
+**Decision**:
+- In-app download from HuggingFace
+- Progress tracking with cancel support
+- Download to whisper.cpp models directory
+- Show download UI in preferences
+**Consequences**:
+- ✅ Better onboarding experience
+- ✅ Users can manage models easily
+- ✅ Progress visualization
+- ❌ Need to handle download failures
+**Alternatives Considered**:
+- External download instructions - Poor UX
+- Bundle models in app - Too large
+- Auto-download all - Wasteful
+
+---
+
+## ADR-015: No Duplicate Permission Dialogs
+
+**Date**: 2025-07-02  
+**Status**: Accepted  
+**Context**:
+- System shows permission dialogs already
+- Our additional dialogs were confusing
+- Users complained about multiple popups
+**Decision**:
+- Trust system permission UI
+- Don't show custom dialogs after system ones
+- Only log that restart may be needed
+**Consequences**:
+- ✅ Cleaner permission flow
+- ✅ Less user confusion
+- ✅ Follows macOS patterns
+- ❌ Less control over messaging
+**Alternatives Considered**:
+- Keep custom dialogs - Too annoying
+- Custom permission UI - Not possible
+- No permissions - App won't work
+
+---
+*Last Updated: 2025-07-02 16:45 PST*

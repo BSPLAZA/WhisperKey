@@ -46,6 +46,8 @@ enum WhisperKeyError: LocalizedError {
     case noActiveTextField
     case unsupportedApplication(String)
     case clipboardFailure
+    case readOnlyField
+    case disabledField
     
     var errorDescription: String? {
         switch self {
@@ -100,6 +102,10 @@ enum WhisperKeyError: LocalizedError {
             return "WhisperKey doesn't work with \(app) yet"
         case .clipboardFailure:
             return "Failed to access clipboard"
+        case .readOnlyField:
+            return "This field is read-only and cannot be edited"
+        case .disabledField:
+            return "This field is disabled and cannot be edited"
         }
     }
     
@@ -121,6 +127,10 @@ enum WhisperKeyError: LocalizedError {
             return "Type your password manually"
         case .noActiveTextField:
             return "Click where you want to insert text"
+        case .readOnlyField:
+            return "Click in an editable text field"
+        case .disabledField:
+            return "This field needs to be enabled first"
         default:
             return nil
         }
@@ -128,7 +138,7 @@ enum WhisperKeyError: LocalizedError {
     
     var isRecoverable: Bool {
         switch self {
-        case .secureFieldDetected, .noActiveTextField, .diskFull, .memoryPressure:
+        case .secureFieldDetected, .noActiveTextField, .diskFull, .memoryPressure, .readOnlyField, .disabledField:
             return true
         default:
             return false
