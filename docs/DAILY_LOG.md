@@ -4,6 +4,148 @@
 
 ---
 
+## 2025-07-04 (Friday) - Continued Session
+
+**Goal**: Fix window management and hotkey issues from previous session
+
+**Completed**:
+- ✅ Implemented WindowManager singleton for proper window lifecycle
+- ✅ Fixed window references being garbage collected
+- ✅ Added comprehensive debug logging throughout app
+- ✅ Enhanced hotkey connection debugging
+- ✅ Improved error handling with user alerts
+- ✅ Fixed duplicate onboarding window references
+
+**Discovered**:
+- Window references must be retained strongly or they get GC'd
+- Menu bar apps need careful window lifecycle management
+- xcodebuild requires full Xcode.app, swift build works with CLI tools
+- NSHostingController windows need isReleasedWhenClosed = false
+
+**Blockers**:
+- User needs to rebuild and test if windows now open correctly
+- Hotkey activation still needs verification
+
+**Time Spent**: 2 hours
+
+**Tomorrow's Focus**:
+- Verify window fixes work for user
+- Debug hotkey if still not working
+- Complete testing across applications
+- Prepare for release
+
+**Code Snippets/Commands**:
+```swift
+// Proper window management pattern
+class WindowManager: ObservableObject {
+    static let shared = WindowManager()
+    private var window: NSWindow?
+    
+    func showWindow() {
+        let window = NSWindow(...)
+        window.isReleasedWhenClosed = false
+        self.window = window // Keep strong reference
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+}
+```
+
+---
+
+## 2025-07-02 (Tuesday) - Part 2
+
+**Goal**: Fix UI issues and implement remaining features
+
+**Completed**:
+- ✅ Implemented readonly/disabled field detection in TextInsertionService
+- ✅ Created comprehensive onboarding experience (4-step flow)
+- ✅ Built memory pressure monitoring system with model recommendations
+- ✅ Added audio device change detection and graceful handling
+- ✅ Fixed window management with WindowManager singleton
+- ✅ Added extensive debug logging throughout the app
+- ✅ Enhanced error handling with user notifications
+
+**Discovered**:
+- Window references were being garbage collected without strong refs
+- AVAudioSession is iOS-only, must use AVAudioEngine notifications on macOS
+- PageTabViewStyle unavailable on macOS, use .automatic instead
+- onChange signature changed in newer macOS versions
+- Menu bar apps need careful window lifecycle management
+
+**Blockers**:
+- User reports preferences/onboarding windows still not opening
+- Hotkey (Right Option) not triggering recording
+
+**Time Spent**: 6 hours
+
+**Tomorrow's Focus**:
+- Debug why windows aren't showing despite code changes
+- Fix hotkey activation issue
+- Test all functionality thoroughly
+- Complete testing across different applications
+
+**Code Snippets/Commands**:
+```swift
+// Window management pattern that should work
+class WindowManager: ObservableObject {
+    static let shared = WindowManager()
+    private var window: NSWindow?
+    
+    func showWindow() {
+        window = NSWindow(...)
+        window.isReleasedWhenClosed = false
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+}
+```
+
+---
+
+## 2025-07-02 (Tuesday)
+
+**Goal**: Build and test WhisperKey, implement remaining critical features
+
+**Completed**:
+- ✅ Built and launched WhisperKey successfully from Xcode  
+- ✅ Verified menu bar icon appears and changes state properly
+- ✅ Tested basic recording functionality - works but needs refinement
+- ✅ Fixed secure field detection for password inputs
+- ✅ Removed streaming mode for better accuracy
+- ✅ Implemented comprehensive error handling system
+- ✅ Created visual recording indicator
+- ✅ Improved menu bar UI with better status messages
+
+**Discovered**:
+- Menu bar apps need @NSApplicationDelegateAdaptor for proper initialization
+- HotKey library doesn't support modifier-only keys like Right Option
+- Streaming transcription causes accuracy issues with whisper.cpp
+- Need explicit NSEvent monitoring for Right Option key
+- Password field detection works via IORegistry SecureInputMode
+
+**Blockers**:
+- None currently
+
+**Time Spent**: 8 hours
+
+**Tomorrow's Focus**:
+- Test thoroughly across different applications
+- Implement any remaining high-priority features
+- Create demo video or screenshots
+- Prepare for initial release
+
+**Code Snippets/Commands**:
+```bash
+# Build and run from Xcode
+# Cmd+R in Xcode
+
+# Monitor for secure input fields
+ioreg -c IOHIDSystem | grep SecureInput
+```
+
+---
+
 ## 2025-07-01 (Day 1)
 
 **Goal**: Set up project documentation and begin environment setup
@@ -99,312 +241,37 @@ bash download-ggml-model.sh medium.en
 - **Menu bar apps are ideal**: Standard pattern for this type of utility
 - **F13-F19 are perfect**: Designed for custom functions, no conflicts
 
-**Key Insight**:
-We were solving the wrong problem. Instead of "How to intercept F5?", we should ask "How to give users the best dictation experience?" The answer isn't F5.
-
 **Blockers**:
-- None - clear path forward with new architecture
+- F5 cannot be intercepted (system limitation) - RESOLVED by architecture change
+- False TCC status requires app restart - documented in UI
 
-**Time Spent**: 3 hours
+**Time Spent**: 5 hours
 
 **Tomorrow's Focus**:
-1. Update Xcode project to use menu bar architecture
-2. Add HotKey Swift package dependency
-3. Test F13 hotkey functionality
-4. Begin Whisper integration with new architecture
+- Build and test new menu bar architecture
+- Implement recording with customizable hotkeys
+- Test accessibility features work properly
+- Document any new issues discovered
 
 **Code Snippets/Commands**:
-```swift
-// New simple architecture
-let hotKey = HotKey(key: .f13, modifiers: [])
-hotKey.keyDownHandler = { startDictation() }
-```
-
 ```bash
-# For users who insist on F5
-./scripts/comprehensive-fix.sh
-# Then enable standard function keys in System Settings
+# Fix attempts (for documentation)
+defaults write com.apple.HIToolbox AppleDictationAutoEnable -int 0
+sudo killall tccd
+tccutil reset Accessibility com.example.WhisperKey
+
+# New architecture testing
+swift package init --type executable
+swift package update
 ```
 
 **Links/References**:
 - [HotKey Library](https://github.com/soffes/HotKey)
-- [KeyboardShortcuts](https://github.com/sindresorhus/KeyboardShortcuts) - Alternative
+- [Apple TCC Documentation](https://developer.apple.com/documentation/security/1399291-axtrustedcheckoptionprompt)
 
 ---
 
-## 2025-07-01 Session 3 (Day 1 - 4:00 PM)
-
-**Goal**: Debug hotkey and accessibility permission issues
-
-**Completed**:
-- ✅ Identified why AXIsProcessTrusted() returns false
-- ✅ Implemented custom Right Option key detection
-- ✅ Fixed double hotkey initialization bug
-- ✅ Added user notification for app restart requirement
-
-**Discovered**:
-- HotKey library cannot handle modifier-only keys (like Right Option alone)
-- NSEvent.addGlobalMonitorForEvents works for Right Option (keyCode 61)
-- Accessibility permission requires app restart to take effect
-- Xcode development builds may have inconsistent bundle IDs affecting permissions
-
-**Blockers**:
-- Need to verify Right Option works after proper app restart
-
-**Time Spent**: 1 hour
-
-**Tomorrow's Focus**:
-- Verify Right Option key functionality after restart
-- Complete audio recording pipeline
-- Integrate whisper.cpp for actual transcription
-
-**Code Snippets/Commands**:
-```swift
-// Right Option detection via NSEvent
-eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { event in
-    if event.keyCode == 61 { // Right Option
-        // Handle key press
-    }
-}
-```
-
-**Links/References**:
-- [NSEvent Monitoring](https://developer.apple.com/documentation/appkit/nsevent)
-
----
-
-## 2025-07-01 (Day 1 - Session 4 - 17:00 PST)
-
-**Goal**: Implement streaming transcription and test audio quality
-
-**Completed**:
-- ✅ Implemented WhisperStreamingTranscriber with configurable chunks
-- ✅ Added model selection in menu bar (Base, Small, Medium)
-- ✅ Created streaming mode toggle
-- ✅ Fixed model path issues (missing / in path)
-- ✅ Built whisper-stream binary with SDL2 support
-- ✅ Conducted comprehensive quality testing
-- ✅ Researched alternative streaming approaches
-
-**Discovered**:
-- **Critical**: Whisper requires 2-5 seconds of audio context for accurate transcription
-- **Streaming quality is terrible**: Small chunks (0.5s) produce garbled output
-- **Non-streaming is near perfect**: Full context gives excellent results
-- **Market analysis**: 10+ competitors already exist (MacWhisper, SuperWhisper, etc.)
-- **whisper-stream exists**: But requires SDL2 and direct audio capture
-
-**Quality Test Results (21:00 PST)**:
-Test phrase: "If streaming mode is off, you'll only see the complete transcription at the end. Make sure to enable it in the settings!"
-
-**Streaming ON (Poor Quality)**:
-- Base: "It's true.Dreamingmode isoff.you'llonlysee thePleaseWeinscription..."
-- Small: "It'sstreamstreamingmode is off.your ownonly seethe comcomplete transition..."
-- Medium: "youIfStreetstreaming mode.mode is on.off.you'll almost"
-
-**Streaming OFF (Excellent Quality)**:
-- Base: "If streaming mode is off, you'll only see the complete transcription at the end. Make sure to enable it in the settings."
-- Small: "If streaming. modeis off, you'll only see the complete transcription at the end. Make sure to enable it in the settings."
-- Medium: "If streaming mode. isoff, you'll only see the complete transcription at the end. Make sure to enable it in the settings."
-
-**Blockers**:
-- Whisper architecture fundamentally incompatible with real-time streaming
-- Need 2+ seconds of context for reasonable accuracy
-- True sub-second streaming not feasible with current approach
-
-**Time Spent**: 4.5 hours
-
-**Key Decisions**:
-- Updated streaming to use 2s chunks with 5s context window
-- Acknowledged this is a learning project with potential for future innovation
-- Decided to continue despite market saturation
-
-**Tomorrow's Focus**:
-- Test improved streaming implementation (2s chunks)
-- Document all technical limitations clearly
-- Consider hybrid approaches (Apple Speech Recognition for streaming)
-- Explore unique differentiators for future development
-
-**Code Snippets/Commands**:
-```bash
-# Build whisper-stream
-brew install sdl2
-cmake -B build -S /Users/orion/Developer/whisper.cpp -DWHISPER_SDL2=ON -DWHISPER_METAL=1
-cmake --build build --config Release -j8
-```
-
-```swift
-// Streaming configuration for better accuracy
-private let minimumProcessingDuration: TimeInterval = 2.0
-private let processingInterval: TimeInterval = 2.0
-private let contextWindow: TimeInterval = 5.0
-```
-
-**Links/References**:
-- [whisper.cpp streaming](https://github.com/ggerganov/whisper.cpp/tree/master/examples/stream)
-- [OpenSuperWhisper](https://github.com/search?q=OpenSuperWhisper) - Open source competitor
-
----
-
-## 2025-07-01 (Day 1 - Session 5 - 22:00-23:10 PST)
-
-**Goal**: Improve streaming quality and make final decision on streaming
-
-**Completed**:
-- ✅ Corrected all timestamps to July 1st PST (not July 2nd)
-- ✅ Tested improved streaming with 2s chunks and 5s context
-- ✅ Implemented hybrid approach (streaming feedback + accurate final)
-- ✅ Tried visual-only feedback ("Transcribing...")
-- ✅ **Removed streaming mode entirely**
-
-**Discovered**:
-- Even with 2s chunks, streaming quality peaked at 6/10
-- Hybrid approach added complexity for minimal benefit
-- User feedback: "streaming text is really bad"
-- Whisper fundamentally requires full context
-- Simpler is better - one mode that works perfectly
-
-**Test Results (22:15 PST)**:
-- Streaming ON (2s chunks): Still incomplete/fragmented
-- Final decision: Remove streaming entirely
-
-**Time Spent**: 1.5 hours
-
-**Key Decisions**:
-- Removed all streaming code
-- Deleted WhisperStreamingTranscriber.swift
-- Deleted HybridStreamingTranscriber.swift
-- Single mode: 2-3s wait for perfect transcription
-
-**Tomorrow's Focus**:
-- Test simplified app thoroughly
-- Consider Phase 3 or additional features
-- Update all documentation
-
----
-
-## 2025-07-01 (Day 1 - Session 6 - 23:45-23:55 PST)
-
-**Goal**: Create comprehensive testing plan and organize remaining work
-
-**Completed**:
-- ✅ Created expert-level TESTING_GUIDE.md
-- ✅ Created TEST_CHECKLIST.md for pre-release verification
-- ✅ Created ErrorHandling.swift with 30+ error types
-- ✅ Organized 26 remaining tasks into 4 categories
-- ✅ Updated TIMELINE.md with new phase structure
-
-**Discovered**:
-- We completed MVP in 1 day (10x faster than planned)
-- 26 tasks remain for polish and production readiness
-- Clear path from MVP to shipping
-
-**Task Breakdown**:
-- Testing: 8 tasks
-- Edge Cases: 6 tasks
-- UX Improvements: 5 tasks
-- Preferences: 7 tasks
-
-**Time Spent**: 0.5 hours
-
-**Tomorrow's Focus**:
-1. Start with visual recording indicator
-2. Test across major apps
-3. Add preferences window
-
----
-
-## 2025-07-02 (Day 2 - Session 1 - 00:00-01:00 PST)
-
-**Goal**: Implement high-priority features from the 26-task plan
-
-**Completed**:
-- ✅ Visual recording indicator (floating window)
-- ✅ Menu bar icon states (recording/processing)
-- ✅ Enhanced secure field detection
-- ✅ 60-second recording timeout
-- ✅ Temp file cleanup system
-- ✅ Improved status messages with emojis
-- ✅ Error notification system
-- ✅ Comprehensive preferences window
-- ✅ All preference settings functional
-
-**Discovered**:
-- Completed 13 of 26 tasks in 1 hour
-- Preferences window came together beautifully
-- Error handling system integrates nicely
-- Recording indicator provides great feedback
-
-**Time Spent**: 1 hour
-
-**Remaining Tasks**: 13
-- Testing: 8 tasks (all pending)
-- Edge Cases: 3 tasks (readonly fields, memory, audio switching)
-- UX: 1 task (onboarding)
-- Settings: 1 task (recording quality - low priority)
-
-**Tomorrow's Focus**:
-1. Start systematic testing across apps
-2. Handle readonly fields
-3. Create onboarding experience
-
----
-
-## 2025-07-02 (Day 2 - Session 2 - 16:00-16:30 PST)
-
-**Goal**: Fix UI issues based on user feedback and update documentation
-
-**Completed**:
-- ✅ Fixed recording indicator width (320px)
-- ✅ Fixed double ellipses bug
-- ✅ Connected audio levels to visual bars (30x sensitivity)
-- ✅ Changed menu bar icon to plain microphone
-- ✅ Fixed duplicate permission dialogs
-- ✅ Added model download functionality
-- ✅ Fixed build errors (Sendable, deprecated APIs)
-- ✅ Comprehensive documentation update
-
-**Discovered**:
-- User feedback led to significant UX improvements
-- Audio level visualization needed 30x multiplication for good sensitivity
-- Menu bar icons should be simple for visibility
-- Documentation was significantly out of date
-
-**User Feedback Addressed**:
-1. Recording indicator too narrow → Fixed (320px)
-2. Double ellipses confusing → Removed
-3. Audio bars not responsive → Connected with 30x sensitivity
-4. Menu bar icon too small → Changed to plain mic
-5. Duplicate dialogs annoying → Fixed
-
-**Time Spent**: 0.5 hours
-
-**Current Status**:
-- MVP feature-complete and polished
-- 10 tasks remaining (8 testing, 2 features)
-- Ready for systematic testing phase
-
----
-
-## Summary Statistics
-
-**Total Development Time**: ~20 hours over 2 days
-- Day 1: 14.5 hours (Phases 0-2 + partial 3)
-- Day 2: 5.5 hours (Phases 3-4 completion)
-
-**Velocity**: 
-- Planned: 8 days for MVP
-- Actual: 2 days for MVP
-- Efficiency: 4x faster than planned
-
-**Features Implemented**: 17 major features
-**Tasks Completed**: 16 of 26 planned tasks
-**Remaining**: 10 tasks (mostly testing)
-
----
-
-## Template for Future Entries
-
-## YYYY-MM-DD (Day X)
+## Date (Template)
 
 **Goal**: [Primary objective for the day]
 

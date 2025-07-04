@@ -15,28 +15,16 @@ import UserNotifications
 @main
 struct WhisperKeyMenuBarApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @StateObject private var dictationService = DictationService()
     
     init() {
-        // Connection will be set up in onAppear
+        // Create shared dictation service and connect it immediately
+        let service = DictationService.shared
+        appDelegate.dictationService = service
     }
     
     var body: some Scene {
         MenuBarExtra {
-            MenuBarContentView(dictationService: dictationService)
-                .onAppear {
-                    // Ensure the dictation service is connected to AppDelegate (backup)
-                    print("WhisperKeyMenuBarApp: onAppear called")
-                    if let delegate = NSApplication.shared.delegate as? AppDelegate {
-                        delegate.dictationService = dictationService
-                        print("WhisperKeyMenuBarApp: Connected dictationService to AppDelegate in onAppear")
-                        print("WhisperKeyMenuBarApp: DictationService reference: \(dictationService)")
-                        // Trigger hotkey update again to ensure it's working
-                        delegate.updateHotkey()
-                    } else {
-                        print("WhisperKeyMenuBarApp: Failed to get AppDelegate!")
-                    }
-                }
+            MenuBarContentView(dictationService: DictationService.shared)
         } label: {
             if dictationService.isRecording {
                 Image(systemName: "mic.fill")
@@ -59,21 +47,13 @@ class WindowManager: ObservableObject {
     private var preferencesWindow: NSWindow?
     private var onboardingWindow: NSWindow?
     
-    private init() {
-        print("WindowManager: Initialized")
-    }
-    
     func showPreferences() {
-        print("WindowManager: showPreferences called")
-        
         if let window = preferencesWindow, window.isVisible {
-            print("WindowManager: Preferences window already visible, bringing to front")
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
         }
         
-        print("WindowManager: Creating new preferences window")
         let preferencesView = PreferencesView()
         let hostingController = NSHostingController(rootView: preferencesView)
         
@@ -88,28 +68,21 @@ class WindowManager: ObservableObject {
         window.makeKeyAndOrderFront(nil)
         window.level = .floating
         NSApp.activate(ignoringOtherApps: true)
-        
-        print("WindowManager: Preferences window should be visible now")
     }
     
     func showOnboarding() {
-        print("WindowManager: showOnboarding called")
-        
         if let window = onboardingWindow, window.isVisible {
-            print("WindowManager: Onboarding window already visible, bringing to front")
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
         }
         
-        print("WindowManager: Creating new onboarding window")
         UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
         
         let onboardingView = OnboardingView(showOnboarding: .init(
             get: { self.onboardingWindow != nil },
             set: { show in
                 if !show {
-                    print("WindowManager: Closing onboarding window")
                     self.onboardingWindow?.close()
                     self.onboardingWindow = nil
                 }
@@ -128,8 +101,6 @@ class WindowManager: ObservableObject {
         window.level = .floating
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
-        
-        print("WindowManager: Onboarding window should be visible now")
     }
 }
 
@@ -164,127 +135,30 @@ struct MenuBarContentView: View {
             
             Divider()
             
-            Menu("Hotkey: \(hotkeyDisplayName)") {
-                Button(selectedHotkey == "right_option" ? "✓ Right Option ⌥ (Default)" : "Right Option ⌥ (Default)") {
-                    selectedHotkey = "right_option"
-                    if let delegate = NSApplication.shared.delegate as? AppDelegate {
-                        delegate.updateHotkey()
-                    }
-                }
-                
-                Button(selectedHotkey == "caps_lock" ? "✓ Caps Lock" : "Caps Lock") {
-                    selectedHotkey = "caps_lock"
-                    if let delegate = NSApplication.shared.delegate as? AppDelegate {
-                        delegate.updateHotkey()
-                    }
-                }
-                
-                Divider()
-                
-                Button(selectedHotkey == "cmd_shift_space" ? "✓ ⌘⇧Space" : "⌘⇧Space") {
-                    selectedHotkey = "cmd_shift_space"
-                    if let delegate = NSApplication.shared.delegate as? AppDelegate {
-                        delegate.updateHotkey()
-                    }
-                }
-                
-                Button(selectedHotkey == "f13" ? "✓ F13" : "F13") {
-                    selectedHotkey = "f13"
-                    if let delegate = NSApplication.shared.delegate as? AppDelegate {
-                        delegate.updateHotkey()
-                    }
-                }
-                
-                Button(selectedHotkey == "f14" ? "✓ F14" : "F14") {
-                    selectedHotkey = "f14"
-                    if let delegate = NSApplication.shared.delegate as? AppDelegate {
-                        delegate.updateHotkey()
-                    }
-                }
-                
-                Button(selectedHotkey == "f15" ? "✓ F15" : "F15") {
-                    selectedHotkey = "f15"
-                    if let delegate = NSApplication.shared.delegate as? AppDelegate {
-                        delegate.updateHotkey()
-                    }
-                }
+            HStack {
+                Text("Hotkey:")
+                    .foregroundColor(.secondary)
+                Text(hotkeyDisplayName)
+                    .fontWeight(.medium)
             }
+            .font(.caption)
             
             Divider()
             
             if !dictationService.hasAccessibilityPermission {
-                Label("Need Accessibility Permission", systemImage: "exclamationmark.triangle")
+                Label("Grant Accessibility Permission", systemImage: "exclamationmark.triangle")
                     .foregroundColor(.orange)
-                
-                Button("Grant Permission...") {
-                    dictationService.requestAccessibilityPermission()
-                }
-            }
-            
-            Menu("Settings") {
-                Menu("Whisper Model: \(currentModelName)") {
-                    Button("✓ Base (Fast)".replacingOccurrences(of: "✓ ", with: currentModel == "base.en" ? "✓ " : "")) {
-                        UserDefaults.standard.set("base.en", forKey: "whisperModel")
-                        dictationService.updateModel()
+                    .onTapGesture {
+                        dictationService.requestAccessibilityPermission()
                     }
-                    
-                    Button("✓ Small (Balanced)".replacingOccurrences(of: "✓ ", with: currentModel == "small.en" ? "✓ " : "")) {
-                        UserDefaults.standard.set("small.en", forKey: "whisperModel")
-                        dictationService.updateModel()
-                    }
-                    
-                    Button("✓ Medium (Quality)".replacingOccurrences(of: "✓ ", with: currentModel == "medium.en" ? "✓ " : "")) {
-                        UserDefaults.standard.set("medium.en", forKey: "whisperModel")
-                        dictationService.updateModel()
-                    }
-                    
-                    if FileManager.default.fileExists(atPath: NSString(string: "~/Developer/whisper.cpp/models/ggml-large-v3-turbo.bin").expandingTildeInPath) {
-                        Button("✓ Large Turbo (Best)".replacingOccurrences(of: "✓ ", with: currentModel == "large-v3-turbo" ? "✓ " : "")) {
-                            UserDefaults.standard.set("large-v3-turbo", forKey: "whisperModel")
-                            dictationService.updateModel()
-                        }
-                    }
-                }
-                
             }
             
             Divider()
             
             Button("Preferences...") {
-                print("MenuBarContentView: Preferences clicked")
                 windowManager.showPreferences()
             }
             .keyboardShortcut(",", modifiers: .command)
-            
-            #if DEBUG
-            Divider()
-            
-            Button("Show Onboarding") {
-                print("MenuBarContentView: Show Onboarding clicked")
-                windowManager.showOnboarding()
-            }
-            
-            Button("Test Recording") {
-                print("Test Recording button clicked")
-                dictationService.startRecording()
-            }
-            
-            Button("Check Permissions") {
-                let accessibilityPermission = AXIsProcessTrusted()
-                print("Accessibility: \(accessibilityPermission)")
-                dictationService.checkPermissions()
-            }
-            
-            Button("Test Hotkey") {
-                print("MenuBarContentView: Testing hotkey setup")
-                if let delegate = NSApplication.shared.delegate as? AppDelegate {
-                    print("Found AppDelegate, calling updateHotkey")
-                    delegate.updateHotkey()
-                } else {
-                    print("Could not find AppDelegate!")
-                }
-            }
-            #endif
             
             Divider()
             
@@ -360,9 +234,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Request notification permissions
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
-            if granted {
-                print("Notification permission granted")
-            }
+            // Permission handled
         }
     }
     
@@ -380,7 +252,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         let selectedHotkey = UserDefaults.standard.string(forKey: "selectedHotkey") ?? "right_option"
-        print("AppDelegate: Setting up hotkey: \(selectedHotkey)")
         
         switch selectedHotkey {
         case "right_option":
@@ -407,7 +278,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         if hotKey != nil {
-            print("AppDelegate: HotKey created successfully")
             hotKey?.keyDownHandler = { [weak self] in
                 self?.handleHotkeyPress()
             }
@@ -415,29 +285,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     private func setupRightOptionMonitoring() {
-        print("AppDelegate: Setting up Right Option monitoring via NSEvent")
-        
-        // First check if we have accessibility permission
+        // Check if we have accessibility permission
         if !AXIsProcessTrusted() {
-            print("AppDelegate: No accessibility permission for global monitoring")
-            // Try local monitoring as fallback
-            eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
-                self?.handleFlagsChanged(event)
-                return event
+            // Request permission
+            let alert = NSAlert()
+            alert.messageText = "Accessibility Permission Required"
+            alert.informativeText = "WhisperKey needs accessibility permission to detect the Right Option key. Please grant permission in System Settings."
+            alert.addButton(withTitle: "Open System Settings")
+            alert.addButton(withTitle: "Cancel")
+            
+            if alert.runModal() == .alertFirstButtonReturn {
+                dictationService?.requestAccessibilityPermission()
             }
-            print("AppDelegate: Using local event monitoring (limited to app windows)")
-        } else {
-            // Monitor for flags changed events globally
-            eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
-                self?.handleFlagsChanged(event)
-            }
-            print("AppDelegate: Global event monitoring active")
+            return
         }
         
-        if eventMonitor != nil {
-            print("AppDelegate: Right Option monitoring active")
-        } else {
-            print("AppDelegate: Failed to set up Right Option monitoring")
+        // Monitor for flags changed events globally
+        eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
+            self?.handleFlagsChanged(event)
         }
     }
     
@@ -447,65 +312,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             if event.modifierFlags.contains(.option) && !self.isRightOptionPressed {
                 // Right Option pressed down
                 self.isRightOptionPressed = true
-                print("AppDelegate: Right Option pressed")
                 self.handleHotkeyPress()
             } else if !event.modifierFlags.contains(.option) && self.isRightOptionPressed {
                 // Right Option released
                 self.isRightOptionPressed = false
-                print("AppDelegate: Right Option released")
-                // If you want to stop recording on release, uncomment:
-                // self.handleHotkeyPress()
             }
         }
     }
     
     
     func handleHotkeyPress() {
-        print("AppDelegate: Hotkey pressed!")
         DispatchQueue.main.async { [weak self] in
-            guard let self = self else { 
-                print("AppDelegate: Self is nil in hotkey handler")
-                return 
-            }
-            
-            if self.dictationService == nil {
-                print("AppDelegate: No dictation service! Trying to find it...")
-                // Try to get the dictation service from the app
-                if let app = NSApp.delegate as? AppDelegate {
-                    self.dictationService = app.dictationService
-                    print("AppDelegate: Found dictation service from app delegate: \(self.dictationService != nil)")
-                }
-            }
-            
-            guard let dictationService = self.dictationService else {
-                print("AppDelegate: Still no dictation service!")
-                
-                // Show alert to user
-                let alert = NSAlert()
-                alert.messageText = "WhisperKey Error"
-                alert.informativeText = "Unable to start recording. Please restart WhisperKey."
-                alert.alertStyle = .warning
-                alert.runModal()
-                return
-            }
+            guard let self = self,
+                  let dictationService = self.dictationService else { return }
             
             if dictationService.isRecording {
-                print("AppDelegate: Stopping recording...")
                 dictationService.stopRecording()
             } else {
-                print("AppDelegate: Starting recording...")
                 dictationService.startRecording()
             }
         }
     }
     
     func showPreferences() {
-        print("AppDelegate: showPreferences called")
         WindowManager.shared.showPreferences()
     }
     
     func showOnboarding() {
-        print("AppDelegate: showOnboarding called")
         WindowManager.shared.showOnboarding()
     }
 }

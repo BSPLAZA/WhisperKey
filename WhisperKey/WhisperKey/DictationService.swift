@@ -12,6 +12,7 @@ import Cocoa
 
 @MainActor
 class DictationService: NSObject, ObservableObject {
+    static let shared = DictationService()
     @Published var isRecording = false
     @Published var hasAccessibilityPermission = false
     @Published var hasMicrophonePermission = false
@@ -33,7 +34,7 @@ class DictationService: NSObject, ObservableObject {
     private var lastSoundTime: Date = Date()
     private var recordingStartTime: Date = Date()
     
-    override init() {
+    private override init() {
         super.init()
         checkPermissions()
         setupAudioEngine()
@@ -44,16 +45,10 @@ class DictationService: NSObject, ObservableObject {
             UserDefaults.standard.set("small.en", forKey: "whisperModel")
         }
         
-        // Check permissions periodically but less frequently
+        // Check permissions periodically
         Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
             Task { @MainActor in
-                guard let self = self else { return }
-                let oldValue = self.hasAccessibilityPermission
-                self.checkAccessibilityPermission()
-                // Only log if status changed
-                if oldValue != self.hasAccessibilityPermission {
-                    print("DictationService: Accessibility permission changed to: \(self.hasAccessibilityPermission)")
-                }
+                self?.checkAccessibilityPermission()
             }
         }
     }
@@ -85,40 +80,35 @@ class DictationService: NSObject, ObservableObject {
         let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
         let trusted = AXIsProcessTrustedWithOptions(options)
         
-        // Don't show our own dialog - the system already showed one
-        // Just log that restart is needed
         if !trusted {
-            print("Accessibility permission requested - app restart will be required")
+            // Show a helpful alert after system dialog
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                let alert = NSAlert()
+                alert.messageText = "Almost Done!"
+                alert.informativeText = "After granting permission, you may need to restart WhisperKey for the changes to take effect."
+                alert.addButton(withTitle: "OK")
+                alert.runModal()
+            }
         }
     }
     
     private func setupAudioEngine() {
         audioEngine = AVAudioEngine()
-        // On macOS, audio session configuration is not needed
-        print("DictationService: Audio engine created")
     }
     
     func startRecording() {
-        print("DictationService: startRecording() called")
-        
         guard hasAccessibilityPermission else {
-            print("DictationService: No accessibility permission")
             requestAccessibilityPermission()
-            // System dialog will show - don't show our own
             return
         }
         
         guard hasMicrophonePermission else {
-            print("DictationService: No microphone permission")
             transcriptionStatus = "🎤 Grant microphone access in System Settings"
-            // If permission was never determined, system dialog will show automatically
-            // Don't show our own dialog on top
             return
         }
         
         // Check for secure field
         if TextInsertionService.isInSecureField() {
-            print("DictationService: Secure field detected")
             transcriptionStatus = "⚠️ Cannot dictate into password fields"
             Task { @MainActor in
                 ErrorHandler.shared.handle(.secureFieldDetected)
@@ -128,12 +118,9 @@ class DictationService: NSObject, ObservableObject {
         
         // Check memory pressure
         if !MemoryMonitor.shared.checkBeforeRecording() {
-            print("DictationService: Memory pressure too high")
             transcriptionStatus = "⚠️ Low memory - close some apps"
             return
         }
-        
-        print("DictationService: Starting audio recording...")
         
         do {
             try startAudioRecording()
@@ -144,10 +131,7 @@ class DictationService: NSObject, ObservableObject {
             Task { @MainActor in
                 RecordingIndicatorManager.shared.showRecordingIndicator()
             }
-            
-            print("DictationService: Recording started successfully")
         } catch {
-            print("DictationService: Failed to start recording: \(error)")
             transcriptionStatus = "❌ Recording failed: \(error.localizedDescription)"
         }
     }
@@ -155,7 +139,6 @@ class DictationService: NSObject, ObservableObject {
     func stopRecording() {
         guard isRecording else { return }
         
-        print("DictationService: Stopping recording...")
         isRecording = false
         audioEngine?.stop()
         audioEngine?.inputNode.removeTap(onBus: 0)
