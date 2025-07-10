@@ -47,7 +47,7 @@ struct PreferencesView: View {
                 }
                 .tag(3)
         }
-        .frame(width: 500, height: 400)
+        .frame(width: 520, height: 420)
     }
 }
 
@@ -115,8 +115,8 @@ struct GeneralTab: View {
                 
                 // Launch at login
                 Toggle("Launch WhisperKey at login", isOn: $launchAtLogin)
-                    .onChange(of: launchAtLogin) { enabled in
-                        updateLaunchAtLogin(enabled)
+                    .onChange(of: launchAtLogin) { newValue in
+                        updateLaunchAtLogin(newValue)
                     }
                 
                 // Visual feedback

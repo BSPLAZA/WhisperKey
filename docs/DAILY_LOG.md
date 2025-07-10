@@ -53,6 +53,85 @@ class WindowManager: ObservableObject {
 
 ---
 
+## 2025-07-09 (Wednesday) - Part 2: Major UX Improvements
+
+**Goal**: Improve overall user experience based on user feedback
+
+**Completed**:
+- ✅ Added recording duration timer (0:XX format) in indicator
+- ✅ Added warning when approaching max recording time ("Stopping in Xs")
+- ✅ Implemented audio feedback sounds (Tink on start, Pop on stop, Glass on success)
+- ✅ Researched common dictation app user requests
+- ✅ Added "ESC to cancel" hint in recording indicator
+- ✅ Improved success feedback - shows word count inserted
+- ✅ Added 3-second auto-clear for success messages
+- ✅ Increased indicator window size for better visibility
+
+**Key UX Improvements**:
+1. **Recording Timer** - Users now see exactly how long they've been recording
+2. **Time Limit Warning** - Yellow warning appears 10 seconds before max time
+3. **Audio Feedback** - System sounds for start/stop/success (if enabled)
+4. **Better Success Feedback** - "✅ Inserted X words" instead of generic message
+5. **Visual Hints** - ESC key hint for canceling recording
+
+**Research Findings**:
+- Users want cross-app functionality (✓ we have this)
+- Offline support is critical (✓ we have this)
+- Custom vocabulary support (future feature)
+- Voice commands for punctuation (future feature)
+
+**Time Spent**: 1.5 hours
+
+**Next Steps**:
+- Test audio feedback with different system sound settings
+- Consider adding voice commands for punctuation
+- Monitor user feedback for additional improvements
+
+---
+
+## 2025-07-09 (Wednesday) - UI Cleanup & The Great Right Option Debugging Saga
+
+**Goal**: Clean up UI and fix Right Option key detection
+
+**Completed**:
+- ✅ Removed "Test Right Option Key" diagnostic button
+- ✅ Added "About WhisperKey" menu item
+- ✅ Renamed "Preferences" to "Settings"
+- ✅ Fixed window sizing (600x500 for Settings, 600x600 for Onboarding)
+- ✅ Improved spacing in Settings dialog
+- ✅ Reduced hotkey options to just Right Option and F13
+- ✅ Implemented tap-to-toggle for hotkeys
+- ✅ Added model selection indicator in Models tab
+- ✅ SOLVED Right Option "bug" (it was set to F13 in preferences!)
+
+**The Right Option Debugging Saga**:
+- Spent 2+ hours debugging why Right Option wasn't working
+- Added extensive logging, removed permission checks, restored old code
+- Turns out the user had F13 selected in preferences, not Right Option!
+- The logs clearly showed "selectedHotkey: f13" but we missed it
+
+**Lesson Learned**:
+```
+ALWAYS CHECK USER CONFIGURATION FIRST!
+The simplest explanation is usually correct.
+```
+
+**Key Changes**:
+- Simplified menu bar UI
+- Better window sizing and spacing
+- Tap-to-toggle hotkey behavior (not press-and-hold)
+- Force set to right_option for testing (needs removal)
+
+**Time Spent**: 3 hours (mostly chasing a non-bug)
+
+**Next Steps**:
+- Remove the force setting of right_option
+- Test across 8 applications
+- Handle readonly fields gracefully
+- Remember to check settings before debugging!
+
+---
+
 ## 2025-07-02 (Tuesday) - Part 2
 
 **Goal**: Fix UI issues and implement remaining features
@@ -268,6 +347,40 @@ swift package update
 **Links/References**:
 - [HotKey Library](https://github.com/soffes/HotKey)
 - [Apple TCC Documentation](https://developer.apple.com/documentation/security/1399291-axtrustedcheckoptionprompt)
+
+---
+
+## 2025-07-10 (Wednesday) - Language Support Research
+
+**Goal**: Research multi-language dictation capabilities and plan future support
+
+**Completed**:
+- ✅ Researched Apple's dictation (auto-detection broken since iOS 13!)
+- ✅ Investigated Whisper's capabilities (99 languages, auto-detection)
+- ✅ Studied code-switching challenges (mixed languages in same utterance)
+- ✅ Created ADR-019 for multi-language strategy
+- ✅ Created ADR-020 for model flexibility
+- ✅ Updated PROJECT_STATUS.md with prioritized language roadmap
+
+**Discovered**:
+- Apple claims auto language detection but users report it's completely broken
+- Whisper has robust language detection with `--language auto` flag
+- Code-switching (mixing languages) remains challenging for all systems
+- Dragon Dictation charges $699 but has best accuracy
+- Whisper supports 99 languages from 680,000 hours of training data
+
+**Key Insights**:
+- **Start simple**: Manual language selection first, auto-detection later
+- **User control essential**: Always provide override for auto-detection
+- **Model abstraction needed**: Don't tie too tightly to Whisper
+- **Rebranding consideration**: "WhisperKey" name may be limiting
+
+**Time Spent**: 0.5 hours
+
+**Next Focus**:
+- Continue with English-only for v1.0
+- Test across 8 applications
+- Consider implementing language dropdown in v1.1
 
 ---
 

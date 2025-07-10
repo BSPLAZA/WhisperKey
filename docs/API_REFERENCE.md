@@ -1,7 +1,7 @@
 # WhisperKey API Reference
 
 > Internal API documentation for WhisperKey components  
-> Updated: 2025-07-02
+> Updated: 2025-07-10
 
 ## Core Services
 
@@ -26,13 +26,17 @@ class DictationService: ObservableObject {
     func stopRecording()
     func checkPermissions()
     func updateModel()
+    
+    // Private methods
+    private func playSound(named: String)  // Audio feedback
 }
 ```
 
 **Key Methods**:
-- `startRecording()` - Starts audio capture, shows visual feedback
-- `stopRecording()` - Stops capture, processes audio, inserts text
+- `startRecording()` - Starts audio capture, shows visual feedback, plays "Tink" sound
+- `stopRecording()` - Stops capture, processes audio, inserts text, plays "Pop" sound
 - `checkPermissions()` - Verifies mic and accessibility permissions
+- `playSound(named:)` - Plays system sounds for audio feedback
 
 ### WhisperCppTranscriber
 
@@ -102,16 +106,23 @@ class ErrorHandler: ObservableObject {
 
 ### RecordingIndicator
 
-**Purpose**: Floating window showing recording status
+**Purpose**: Floating window showing recording status with duration
 
 ```swift
 struct RecordingIndicatorView: View {
     @ObservedObject var audioLevelMonitor: AudioLevelMonitor
+    @State private var elapsedTime: TimeInterval = 0
+    @State private var timer: Timer?
     
     // Shows:
     // - Pulsing red recording dot
-    // - "Recording" text
+    // - "Recording" text with duration (0:XX format)
+    // - Time warning when <10s remaining
+    // - "ESC to cancel" hint
     // - Live audio level bars (green/yellow/red)
+    
+    private var formattedTime: String  // Minutes:seconds
+    private var warningText: String?   // "Stopping in Xs"
 }
 
 @MainActor
@@ -125,9 +136,11 @@ class RecordingIndicatorManager {
 ```
 
 **Visual Specs**:
-- Window: 320x60px, bottom center of screen
+- Window: 380x70px, bottom center of screen (increased for timer)
 - Audio bars: 10 segments, 30x sensitivity
 - Colors: Green (0-40%), Yellow (40-70%), Red (70-100%)
+- Timer updates: Every 0.1 seconds
+- Warning color: Yellow text when <10s remaining
 
 ### PreferencesView
 
@@ -136,10 +149,10 @@ class RecordingIndicatorManager {
 ```swift
 struct PreferencesView: View {
     // Tab 1: General
-    @AppStorage("selectedHotkey") // right_option, caps_lock, f13-f15
+    @AppStorage("selectedHotkey") // right_option, f13 only (simplified)
     @AppStorage("launchAtLogin") 
     @AppStorage("showRecordingIndicator")
-    @AppStorage("playFeedbackSounds")
+    @AppStorage("playFeedbackSounds")  // NEW: Audio feedback toggle
     
     // Tab 2: Recording
     @AppStorage("silenceDuration") // 1.0-5.0 seconds
@@ -152,6 +165,19 @@ struct PreferencesView: View {
     
     // Tab 4: Advanced
     @AppStorage("debugMode")
+}
+
+// NEW: Settings Section Component
+struct SettingsSection<Content: View>: View {
+    let title: String
+    let icon: String  // SF Symbol name
+    let content: Content
+    
+    // Creates visual section with:
+    // - Icon + title header
+    // - Gray background
+    // - 10pt corner radius
+    // - 16pt padding
 }
 ```
 
@@ -179,15 +205,22 @@ class ModelManager: ObservableObject {
 ## Data Flow
 
 ### Recording Flow
-1. User holds Right Option key
+1. User taps Right Option key (tap-to-toggle, not hold)
 2. `DictationService.startRecording()` called
-3. `RecordingIndicator` appears with live audio levels
-4. Audio captured to temp file (`/var/folders/*/T/whisperkey_*.wav`)
-5. Silence detected after 2.5 seconds
-6. Recording stops automatically
-7. `WhisperCppTranscriber` processes audio file
-8. `TextInsertionService` inserts transcribed text
-9. Temp file cleaned up
+3. "Tink" sound plays (if enabled)
+4. `RecordingIndicator` appears with timer and audio levels
+5. Audio captured to temp file (`/var/folders/*/T/whisperkey_*.wav`)
+6. Duration timer updates every 0.1 seconds
+7. Warning shown when <10s remaining before max time
+8. Silence detected after 2.5 seconds OR user taps hotkey again
+9. "Pop" sound plays (if enabled)
+10. Recording stops automatically
+11. `WhisperCppTranscriber` processes audio file
+12. `TextInsertionService` inserts transcribed text
+13. "Glass" sound plays on success (if enabled)
+14. Success message shows word count ("✅ Inserted X words")
+15. Status auto-clears after 3 seconds
+16. Temp file cleaned up
 
 ### Permission Flow
 1. Check `AXIsProcessTrusted()` on startup
@@ -247,5 +280,17 @@ let rms = sqrt(samples.map { $0 * $0 }.reduce(0, +) / Float(count))
 - All temp files cleaned on app exit
 - Audio buffer released after recording
 
+## Audio Feedback
+
+### System Sounds Used
+- **Start Recording**: "Tink" - Light tap sound
+- **Stop Recording**: "Pop" - Soft completion sound  
+- **Success**: "Glass" - Pleasant success chime
+
+### Sound Settings
+- Controlled by `playFeedbackSounds` preference
+- Plays via `NSSound(named:)?.play()`
+- Non-blocking (asynchronous)
+
 ---
-*This reference reflects the actual implementation as of 2025-07-02*
+*This reference reflects the actual implementation as of 2025-07-10*

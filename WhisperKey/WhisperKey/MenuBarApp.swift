@@ -17,19 +17,17 @@ struct WhisperKeyMenuBarApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     init() {
-        // Create shared dictation service and connect it immediately
-        let service = DictationService.shared
-        appDelegate.dictationService = service
+        // Connection will be established in applicationDidFinishLaunching
     }
     
     var body: some Scene {
         MenuBarExtra {
             MenuBarContentView(dictationService: DictationService.shared)
         } label: {
-            if dictationService.isRecording {
+            if DictationService.shared.isRecording {
                 Image(systemName: "mic.fill")
                     .foregroundStyle(.red)
-            } else if dictationService.transcriptionStatus.contains("Processing") {
+            } else if DictationService.shared.transcriptionStatus.contains("Processing") {
                 Image(systemName: "waveform")
                     .foregroundStyle(.blue)
             } else {
@@ -213,6 +211,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Remove from dock
         NSApp.setActivationPolicy(.accessory)
         
+        // Connect dictation service
+        dictationService = DictationService.shared
+        
         // Check if onboarding is needed
         let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
         if !hasCompletedOnboarding {
@@ -295,7 +296,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             alert.addButton(withTitle: "Cancel")
             
             if alert.runModal() == .alertFirstButtonReturn {
-                dictationService?.requestAccessibilityPermission()
+                Task { @MainActor in
+                    dictationService?.requestAccessibilityPermission()
+                }
             }
             return
         }

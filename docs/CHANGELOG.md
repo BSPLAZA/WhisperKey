@@ -5,7 +5,37 @@ All notable changes to WhisperKey will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.0-rc2] - 2025-07-09
+
+### Added
+- Recording duration timer in indicator window (0:XX format)
+- Warning when approaching max recording time ("Stopping in Xs")
+- Audio feedback sounds (optional):
+  - "Tink" sound on recording start
+  - "Pop" sound on recording stop
+  - "Glass" sound on successful insertion
+- Word count in success message ("✅ Inserted X words")
+- "ESC to cancel" hint in recording indicator
+- Auto-clear status messages after 3 seconds
+- SettingsSection component for better visual organization
+- Animated onboarding flow with feature cards
+- Spring animations on progress indicators
+
+### Changed
+- Increased recording indicator window to 380x70px
+- Simplified hotkey options to just Right Option and F13
+- Changed from press-and-hold to tap-to-toggle for hotkeys
+- Reorganized Settings window with sectioned layout
+- Improved spacing in both Settings and Onboarding dialogs
+- Timer updates every 0.1 seconds for smooth display
+
+### Fixed
+- "Great Right Option Bug" - debugged for 2+ hours when user had F13 selected
+- Settings dialog spacing and layout issues
+- Onboarding dialog button placement
+- Window management and retention issues
+
+## [1.0.0-rc1] - 2025-07-02
 
 ### Added
 - Initial release of WhisperKey
@@ -87,6 +117,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed build errors
 - Updated all documentation
 - Prepared for testing phase
+
+**2025-07-09**: Major UX improvements
+- Added recording duration timer
+- Implemented audio feedback sounds
+- Enhanced visual design with animations
+- Fixed "Great Right Option Bug" (user configuration issue)
+- Simplified hotkey options
+- Improved dialog spacing and layout
 
 ### Versioning Strategy
 - 0.x.x: Pre-release development

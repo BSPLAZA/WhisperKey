@@ -140,47 +140,13 @@ class TextInsertionService {
             return true
         }
         
-        // Check if Terminal has secure input enabled
-        if isTerminalSecureInputEnabled() {
-            return true
-        }
-        
         return false
     }
     
     /// Check if Terminal has secure input mode enabled
     private func isTerminalSecureInputEnabled() -> Bool {
         // Use IOKit to check secure input state
-        var attrs: Unmanaged<CFMutableDictionary>? = nil
-        let result = IORegistryEntryCreateCFProperties(
-            IORegistryEntryFromPath(kIOMainPortDefault, "IOService:/IOResources/IOHIDSystem"),
-            &attrs,
-            kCFAllocatorDefault,
-            0
-        )
-        
-        if result == KERN_SUCCESS, let cfDict = attrs?.takeRetainedValue() as CFDictionary?,
-           let dict = cfDict as? [String: Any] {
-            // Check for secure event input
-            if let secureEventInput = dict["SecureEventInput"] as? Int, secureEventInput != 0 {
-                return true
-            }
-        }
-        
-        // Also check using private API (more reliable but undocumented)
-        let lib = dlopen("/System/Library/Frameworks/Carbon.framework/Carbon", RTLD_NOW)
-        if lib != nil {
-            typealias IsSecureEventInputEnabledFunc = @convention(c) () -> Bool
-            if let sym = dlsym(lib, "IsSecureEventInputEnabled") {
-                let isSecureEventInputEnabled = unsafeBitCast(sym, to: IsSecureEventInputEnabledFunc.self)
-                let result = isSecureEventInputEnabled()
-                dlclose(lib)
-                return result
-            }
-            dlclose(lib)
-        }
-        
-        return false
+        return SecureInputModeEnabled()
     }
     
     /// Check if the element is read-only
@@ -385,5 +351,35 @@ class TextInsertionService {
         info += "Secure: \(isSecureField(element))\n"
         
         return info
+    }
+}
+
+// MARK: - Static Helper Methods
+
+// Function to check secure input mode
+private func SecureInputModeEnabled() -> Bool {
+    // Use IOKit to check secure input state
+    var secureInputEnabled: DarwinBoolean = false
+    if let ioFramework = CFBundleGetBundleWithIdentifier("com.apple.iokit" as CFString),
+       let funcPointer = CFBundleGetFunctionPointerForName(ioFramework, "IOHIDCheckSecureInputMode" as CFString) {
+        typealias IOHIDCheckSecureInputModeFunc = @convention(c) () -> DarwinBoolean
+        let checkFunc = unsafeBitCast(funcPointer, to: IOHIDCheckSecureInputModeFunc.self)
+        secureInputEnabled = checkFunc()
+    }
+    return secureInputEnabled.boolValue
+}
+
+extension TextInsertionService {
+    /// Check if Terminal or another app has secure input mode enabled
+    static func getSecureInputApp() -> String? {
+        // Check if secure input mode is enabled
+        if SecureInputModeEnabled() {
+            // Get the frontmost app
+            let workspace = NSWorkspace.shared
+            if let activeApp = workspace.frontmostApplication {
+                return activeApp.localizedName
+            }
+        }
+        return nil
     }
 }

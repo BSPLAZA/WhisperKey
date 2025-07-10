@@ -109,9 +109,28 @@ class DictationService: NSObject, ObservableObject {
         
         // Check for secure field
         if TextInsertionService.isInSecureField() {
-            transcriptionStatus = "⚠️ Cannot dictate into password fields"
-            Task { @MainActor in
-                ErrorHandler.shared.handle(.secureFieldDetected)
+            // Check which app has secure input
+            if let appName = TextInsertionService.getSecureInputApp() {
+                if appName == "Terminal" {
+                    transcriptionStatus = "⚠️ Terminal has secure input enabled"
+                    Task { @MainActor in
+                        let alert = NSAlert()
+                        alert.messageText = "Cannot dictate in Terminal"
+                        alert.informativeText = "Terminal has secure input mode enabled. Try disabling it:\n\nEdit → Secure Keyboard Entry\n\nOr use a different terminal app."
+                        alert.addButton(withTitle: "OK")
+                        alert.runModal()
+                    }
+                } else {
+                    transcriptionStatus = "⚠️ \(appName) has secure input enabled"
+                    Task { @MainActor in
+                        ErrorHandler.shared.handle(.secureFieldDetected)
+                    }
+                }
+            } else {
+                transcriptionStatus = "⚠️ Cannot dictate into secure fields"
+                Task { @MainActor in
+                    ErrorHandler.shared.handle(.secureFieldDetected)
+                }
             }
             return
         }

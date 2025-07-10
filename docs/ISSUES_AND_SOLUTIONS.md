@@ -315,7 +315,43 @@ Removed custom dialogs when system handles permissions
 
 ---
 
-## Issue #011: Swift 6 Build Errors
+## Issue #011: Right Option Key Not Working (False Debugging Rabbit Hole)
+
+**Discovered**: 2025-07-09  
+**Severity**: User Error / Debugging Confusion  
+**Symptoms**:
+- Right Option key not triggering recording
+- No keyboard events in logs
+- Thought it was accessibility permission issue
+
+**Root Cause**:
+**The user had F13 selected in preferences, not Right Option!**
+
+The logs clearly showed:
+```
+=== WHISPERKEY: Current hotkey preference: f13 ===
+```
+
+**Solution**:
+Select "Right Option ⌥" in Settings → General tab
+
+**What Went Wrong**:
+1. **Tunnel Vision**: Focused on complex permission issues
+2. **Ignored Logs**: Logs clearly stated "selectedHotkey: f13"
+3. **Over-engineering**: Added complex debugging for a simple preference issue
+4. **Assumption Error**: Assumed Right Option was broken when it wasn't enabled
+
+**Lessons Learned**:
+- ALWAYS check user preferences first
+- Read logs carefully before debugging
+- Start with simple explanations
+- Configuration > Code issues
+
+**Time Lost**: 2 hours
+
+---
+
+## Issue #012: Swift 6 Build Errors
 
 **Discovered**: 2025-07-02 - Day 2  
 **Severity**: High  
@@ -340,4 +376,4 @@ Swift 6 stricter concurrency and deprecated APIs
 **Time Lost**: 20 minutes
 
 ---
-*Last Updated: 2025-07-02 16:30 PST*
+*Last Updated: 2025-07-10 08:07 PST*

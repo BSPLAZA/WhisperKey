@@ -1,10 +1,10 @@
 # WhisperKey Project Status
 
-> Comprehensive status report as of 2025-07-02 16:45 PST
+> Comprehensive status report as of 2025-07-10 08:07 PST
 
 ## Executive Summary
 
-WhisperKey has achieved MVP status in just 2 days (vs 8 days planned). The core dictation functionality is complete and polished, with professional UI, error handling, and preferences. The app is ready for systematic testing across various applications.
+WhisperKey has evolved from MVP to a polished release candidate in just 3 days. The app now features enhanced UX with real-time recording feedback, audio cues, and refined visual design. All core functionality is complete and the app is ready for final testing across applications.
 
 ## What's Complete ✅
 
@@ -16,21 +16,39 @@ WhisperKey has achieved MVP status in just 2 days (vs 8 days planned). The core 
 - **Text insertion** at cursor position in any app
 - **Multiple model support** (base.en, small.en, medium.en)
 
-### User Experience
-- **Visual recording indicator** - Floating window with live audio levels
+### User Experience (Enhanced 2025-07-09)
+- **Enhanced recording indicator** (380x70px) with:
+  - Real-time duration timer (0:XX format)
+  - Warning when approaching max time ("Stopping in Xs")
+  - "ESC to cancel" hint for user control
+  - Live audio level visualization
+- **Audio feedback sounds** (optional):
+  - Start recording: "Tink" sound
+  - Stop recording: "Pop" sound
+  - Success: "Glass" sound
+- **Improved visual design**:
+  - Settings window with sectioned layout and icons
+  - Animated onboarding with feature cards
+  - Spring animations on progress indicators
+  - Better spacing and visual hierarchy
+- **Smart status messages**:
+  - "✅ Inserted X words" with word count
+  - Auto-clears after 3 seconds
+  - Context-aware error messages
 - **Menu bar icon states** - Changes for idle/recording/processing
-- **Comprehensive preferences** - 4-tab window with all settings
 - **Model download manager** - In-app downloads from HuggingFace
 - **Error handling system** - 30+ specific errors with recovery
-- **Status messages** - Clear feedback with emoji indicators
 
 ### Technical Features
 - **Secure field detection** - Blocks recording in password fields
-- **60-second timeout** - Prevents accidental long recordings
+- **60-second timeout** - With visual countdown warning
 - **Temp file cleanup** - Automatic cleanup on exit
 - **Permission handling** - Clean flow without duplicate dialogs
 - **Audio level visualization** - 30x sensitivity for clear feedback
 - **Launch at login** - Optional auto-start
+- **Tap-to-toggle hotkeys** - Right Option or F13 (simplified from 6 options)
+- **Real-time duration tracking** - Updates every 0.1 seconds
+- **Audio feedback integration** - System sounds for user actions
 
 ## What's Remaining 📝
 
@@ -44,23 +62,50 @@ WhisperKey has achieved MVP status in just 2 days (vs 8 days planned). The core 
 7. Password managers - Security verification
 8. Multiple displays - Multi-monitor setup
 
-### Features (2 tasks) - MEDIUM PRIORITY
-1. **Readonly field handling** - Graceful failure for non-editable fields
-2. **First-run onboarding** - Welcome experience for new users
+### Features (1 task) - MEDIUM PRIORITY
+1. **Readonly field handling** - Graceful failure for non-editable fields (partially complete)
 
-### Future Enhancements (LOW PRIORITY)
+### Completed Features (2025-07-09)
+- ✅ **Enhanced onboarding experience** - Animated welcome flow with feature cards
+- ✅ **Recording duration timer** - Real-time feedback during recording
+- ✅ **Audio feedback sounds** - Optional sounds for start/stop/success
+- ✅ **Visual design improvements** - Better spacing and organization
+
+### Future Enhancements (PRIORITIZED)
+
+#### Phase 1: Language Support (HIGH)
+- **Manual language selection** - Add dropdown for 99 Whisper languages
+- **Multilingual models** - Support base/small/medium (not just .en versions)
+- **Language persistence** - Remember last used language
+
+#### Phase 2: Advanced Language Features (MEDIUM)
+- **Auto language detection** - Use Whisper's built-in detection
+- **Language indicator** - Show detected/selected language in UI
+- **Quick language switcher** - Hotkey for common languages
+- **Mixed language warning** - Alert users about code-switching limitations
+
+#### Phase 3: Model Flexibility (MEDIUM)
+- **Abstract transcription interface** - Support multiple backends
+- **Plugin architecture** - Allow community models
+- **Model marketplace** - Easy discovery of new models
+- **Rebranding consideration** - "VoiceKey" or "DictateAnywhere"
+
+#### Phase 4: Other Enhancements (LOW)
 - Memory pressure detection
 - Audio device switching handling
 - Recording quality settings
-- Model auto-selection
+- Model auto-selection based on language
+- Per-app language preferences
+- Cloud model support (opt-in only)
 
 ## Key Metrics
 
 ### Development Velocity
 - **Planned**: 24 days total (8 days to MVP)
-- **Actual**: 2 days to feature-complete MVP
+- **Actual**: 2 days to MVP, 3 days to release candidate
 - **Efficiency**: 4x faster than planned
-- **Total hours**: ~20 hours
+- **Total hours**: ~27.5 hours (20 MVP + 7.5 polish)
+- **Key insight**: Spent 2+ hours debugging non-existent bug (user had wrong setting)
 
 ### Code Statistics
 - **Swift files**: 10 main components
@@ -89,6 +134,9 @@ WhisperKey has achieved MVP status in just 2 days (vs 8 days planned). The core 
 3. **Permissions matter** - Don't duplicate system dialogs
 4. **Visual feedback crucial** - Users need to see recording state
 5. **Simple is better** - Removed streaming for better UX
+6. **Check user settings first** - Wasted 2+ hours on working code
+7. **Audio feedback matters** - Makes app feel more responsive
+8. **Duration visibility** - Users want to know recording time
 
 ## Next Steps
 
@@ -108,6 +156,9 @@ WhisperKey has achieved MVP status in just 2 days (vs 8 days planned). The core 
 2. Add power user features
 3. Consider App Store distribution
 4. Build user community
+5. **Model-agnostic architecture** - Abstract transcription engine to support multiple AI models (Whisper, MMS, USM, etc.)
+6. **Generic branding** - Consider names like "VoiceKey" or "LocalScribe" for broader appeal
+7. **Plugin system** - Allow community to add new transcription models
 
 ## Risk Assessment
 
@@ -134,4 +185,5 @@ WhisperKey has exceeded initial expectations, achieving a polished MVP in record
 The app demonstrates that with focused development and smart architectural choices, complex functionality can be delivered quickly without sacrificing quality.
 
 ---
-*Generated: 2025-07-02 16:45 PST*
+*Generated: 2025-07-10 08:07 PST*
+*Version: 1.0.0-rc2*

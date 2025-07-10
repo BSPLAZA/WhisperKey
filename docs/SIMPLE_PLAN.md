@@ -11,34 +11,38 @@ Build a macOS menu bar app that transcribes speech to text when you press Right 
 
 ## Development Phases
 
-### Phase 1: Core App ✓ CURRENT
+### Phase 1: Core App ✅ COMPLETE
 - [x] Menu bar app structure
 - [x] HotKey library integration  
-- [ ] Right Option key binding
-- [ ] Basic UI (start/stop)
+- [x] Right Option key binding (tap-to-toggle)
+- [x] Basic UI (start/stop)
 
-### Phase 2: Audio Pipeline
-- [ ] Audio recording with AVAudioEngine
-- [ ] Silence detection (2 second threshold)
-- [ ] Audio buffer management
-- [ ] Save temporary WAV files
+### Phase 2: Audio Pipeline ✅ COMPLETE
+- [x] Audio recording with AVAudioEngine
+- [x] Silence detection (2.5 second threshold)
+- [x] Audio buffer management
+- [x] Save temporary WAV files
 
-### Phase 3: Whisper Integration
-- [ ] Link whisper.cpp library
-- [ ] Load base.en model
-- [ ] Transcribe audio files
-- [ ] Handle results asynchronously
+### Phase 3: Whisper Integration ✅ COMPLETE
+- [x] Link whisper.cpp library
+- [x] Load base.en, small.en, medium.en models
+- [x] Transcribe audio files
+- [x] Handle results asynchronously
 
-### Phase 4: Text Insertion
-- [ ] Get current text field with AXUIElement
-- [ ] Insert transcribed text at cursor
-- [ ] Handle special cases (secure fields)
+### Phase 4: Text Insertion ✅ COMPLETE
+- [x] Get current text field with AXUIElement
+- [x] Insert transcribed text at cursor
+- [x] Handle special cases (secure fields)
+- [x] Readonly field detection
 
-### Phase 5: Polish
-- [ ] Settings window (hotkey, model selection)
-- [ ] Audio level indicator
-- [ ] Error notifications
-- [ ] Launch at login
+### Phase 5: Polish ✅ COMPLETE
+- [x] Settings window (4 tabs, organized sections)
+- [x] Audio level indicator with duration timer
+- [x] Error notifications (30+ error types)
+- [x] Launch at login
+- [x] Audio feedback sounds
+- [x] Animated onboarding
+- [x] Model download manager
 
 ## Technical Stack
 - **Language**: Swift 5.9
@@ -61,7 +65,15 @@ Build a macOS menu bar app that transcribes speech to text when you press Right 
 - ❌ Fighting macOS
 
 ## Current Status
-Ready to implement Right Option hotkey and test basic functionality.
+App is feature-complete at version 1.0.0-rc2. All core functionality working perfectly.
 
-## Next Step
-Update MenuBarApp.swift to properly handle Right Option key.
+## Next Steps
+1. Test across 8 different applications
+2. Handle readonly fields gracefully
+3. Prepare for release
+
+## Recent Improvements (2025-07-09)
+- Added recording duration timer
+- Implemented audio feedback sounds
+- Enhanced visual design with animations
+- Fixed the "Great Right Option Bug" (user had F13 selected!)

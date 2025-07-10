@@ -9,20 +9,22 @@ WhisperKey brings the power of OpenAI's Whisper AI to your Mac for fast, accurat
 - 🎙️ **Works Everywhere** - Dictate into any text field in any app
 - 🔒 **100% Private** - All processing happens locally on your Mac
 - ⚡ **Fast & Accurate** - Powered by Whisper AI with Metal acceleration
-- 🎯 **Simple to Use** - Just hold your hotkey and speak
+- 🎯 **Simple to Use** - Just tap your hotkey and speak
 - 🎨 **Native Mac App** - Clean menu bar interface that feels right at home
+- ⏱️ **Recording Timer** - See how long you've been recording
+- 🔊 **Audio Feedback** - Optional sounds for start/stop/success
 
 ## Quick Start
 
 1. **Launch WhisperKey** - Look for the microphone icon in your menu bar
 2. **Grant Permissions** - Allow microphone and accessibility access when prompted
-3. **Start Dictating** - Hold Right Option (⌥) and speak, release to transcribe
+3. **Start Dictating** - Tap Right Option (⌥) to start/stop recording
 
 ## Default Hotkey
 
-**Right Option (⌥)** - Hold to record, release to stop
+**Right Option (⌥)** - Tap once to start recording, tap again to stop
 
-You can change this in Preferences to Caps Lock, F13-F15, or ⌘⇧Space.
+You can change this in Settings to F13 if preferred.
 
 ## Requirements
 
@@ -33,9 +35,12 @@ You can change this in Preferences to Caps Lock, F13-F15, or ⌘⇧Space.
 ## Tips
 
 - Speak clearly and at a normal pace
-- WhisperKey automatically stops after 2 seconds of silence
+- WhisperKey automatically stops after 2.5 seconds of silence
 - The menu bar icon turns red while recording
+- A floating window shows recording time and audio levels
+- Press ESC to cancel recording
 - Cannot dictate into password fields for security
+- Success message shows word count inserted
 
 ## Models
 

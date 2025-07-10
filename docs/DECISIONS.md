@@ -374,4 +374,142 @@ Test phrase accuracy comparison showed streaming mode produces garbled text whil
 - No permissions - App won't work
 
 ---
-*Last Updated: 2025-07-02 16:45 PST*
+
+## ADR-016: Always Check User Configuration First
+
+**Date**: 2025-07-09  
+**Status**: Accepted  
+**Context**:
+- Spent 2+ hours debugging "broken" Right Option key
+- Added extensive logging, removed checks, tried old code
+- Turns out user had F13 selected in preferences
+- The logs clearly showed this but we missed it
+**Decision**:
+- Always check user settings before complex debugging
+- Add debug output for current preferences
+- Trust the simplest explanation first
+- Read logs more carefully
+**Consequences**:
+- ✅ Avoid wasted debugging time
+- ✅ Better troubleshooting process
+- ✅ Improved user support
+- ❌ Feels obvious in hindsight
+**Alternatives Considered**:
+- Continue complex debugging - Wasteful
+- Assume code is broken - Often wrong
+- Skip user config checks - Source of bugs
+
+---
+
+## ADR-017: Simplified Hotkey Options
+
+**Date**: 2025-07-09  
+**Status**: Accepted  
+**Context**:
+- Had 6 hotkey options (caps lock, right option, F13-F19)
+- Too many choices confused users
+- Most options rarely used
+**Decision**:
+- Reduce to just Right Option and F13
+- Remove caps lock and F14-F19
+- Implement tap-to-toggle (not press-and-hold)
+**Consequences**:
+- ✅ Simpler user experience
+- ✅ Less code to maintain
+- ✅ Clearer documentation
+- ❌ Some power users might want more options
+**Alternatives Considered**:
+- Keep all options - Too complex
+- Only Right Option - Some users need F13
+- Custom key combos - Too complex
+
+---
+
+## ADR-018: Audio Feedback for User Actions
+
+**Date**: 2025-07-09  
+**Status**: Accepted  
+**Context**:
+- Users wanted more feedback during recording
+- Silent operation felt unresponsive
+- Common request in dictation apps
+**Decision**:
+- Add optional system sounds:
+  - "Tink" on recording start
+  - "Pop" on recording stop
+  - "Glass" on successful insertion
+- Control via preferences toggle
+**Consequences**:
+- ✅ App feels more responsive
+- ✅ Clear action confirmation
+- ✅ Follows macOS patterns
+- ❌ Some users prefer silence
+**Alternatives Considered**:
+- Custom sounds - More work, less native
+- Visual only - Not enough feedback
+- Always on - Some users hate sounds
+
+---
+
+## ADR-019: Multi-Language Support Strategy
+
+**Date**: 2025-07-10  
+**Status**: Proposed  
+**Context**:
+- Currently using English-only models (base.en, small.en, medium.en)
+- Users may need to dictate in multiple languages
+- Research shows Apple's auto-detection is broken since iOS 13
+- Whisper supports 99 languages with built-in auto-detection
+- Code-switching (mixed languages) is challenging for all systems
+**Decision**:
+- Phase 1: Continue with English-only for initial release
+- Phase 2: Add multilingual models with manual language selection
+- Phase 3: Implement Whisper's auto-detection with manual override
+- Phase 4: Explore handling code-switching scenarios
+- Always provide user control over language selection
+**Consequences**:
+- ✅ Gradual rollout reduces complexity
+- ✅ Leverages Whisper's proven capabilities
+- ✅ Better than Apple's broken implementation
+- ✅ User control prevents frustration
+- ❌ Larger model downloads (multilingual models)
+- ❌ More UI complexity
+**Alternatives Considered**:
+- Auto-only like Apple - Too unreliable
+- Manual-only - Poor UX for multilingual users
+- Per-app language settings - Too complex
+**Implementation Notes**:
+- Use `whisper.cpp --language auto` flag
+- Add language indicator to recording window
+- Quick switcher in menu bar (hold Option?)
+- Save last used language per session
+
+---
+
+## ADR-020: Future Model Flexibility
+
+**Date**: 2025-07-10  
+**Status**: Proposed  
+**Context**:
+- Currently tied to Whisper/whisper.cpp
+- Other models emerging (MMS, USM, proprietary options)
+- Name "WhisperKey" may be limiting
+- Users may want choice of transcription engines
+**Decision**:
+- Abstract transcription interface to support multiple backends
+- Keep WhisperCppTranscriber as one implementation
+- Design plugin-style architecture for future models
+- Consider rebranding to model-agnostic name
+**Consequences**:
+- ✅ Future-proof architecture
+- ✅ User choice of models
+- ✅ Can add cloud options later (opt-in)
+- ❌ More complex codebase
+- ❌ Need to maintain multiple integrations
+**Alternatives Considered**:
+- Stay Whisper-only - Too limiting
+- Fork for each model - Maintenance nightmare
+- Cloud-only future models - Privacy concern
+
+---
+*Last Updated: 2025-07-10 08:30 PST*

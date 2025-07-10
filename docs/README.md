@@ -5,9 +5,9 @@
 ## Current Status
 
 **Phase**: Testing & Polish  
-**Status**: Feature Complete - Ready for Testing  
-**Version**: 1.0.0-rc1  
-**Updated**: 2025-07-02 16:50 PST
+**Status**: Feature Complete with Enhanced UX  
+**Version**: 1.0.0-rc2  
+**Updated**: 2025-07-10 08:07 PST
 
 ## 🎯 Project Summary
 
@@ -24,12 +24,12 @@ WhisperKey is a privacy-focused local dictation app for macOS that uses OpenAI's
 
 ### Core Features
 - **Menu bar app** with professional dropdown UI
-- **Right Option hotkey** for hands-free recording
+- **Tap-to-toggle hotkeys** - Right Option ⌥ or F13
 - **Automatic silence detection** (2.5s configurable)
 - **Whisper transcription** via whisper.cpp with Metal
 - **Smart text insertion** at cursor position
-- **Visual recording indicator** with live audio levels
-- **4-tab preferences window** with all settings
+- **Enhanced recording indicator** with duration timer
+- **Settings window** with 4 organized tabs
 
 ### Advanced Features
 - **Model download manager** - In-app HuggingFace downloads
@@ -40,13 +40,26 @@ WhisperKey is a privacy-focused local dictation app for macOS that uses OpenAI's
 - **Permission handling** - Clean system integration
 - **Multiple model support** - Base, Small, Medium
 
-### User Experience
-- Professional recording indicator (320x60px)
+### User Experience (Updated 2025-07-09)
+- **Enhanced recording indicator** (380x70px) with:
+  - Real-time duration timer (0:XX format)
+  - Warning when approaching max time
+  - "ESC to cancel" hint
+- **Audio feedback sounds** (optional):
+  - Start: "Tink" sound
+  - Stop: "Pop" sound  
+  - Success: "Glass" sound
+- **Improved status messages**:
+  - "✅ Inserted X words" with word count
+  - Auto-clears after 3 seconds
+- **Visual design improvements**:
+  - Animated onboarding with feature cards
+  - Sectioned settings with icons
+  - Spring animations on progress indicators
 - Live audio level visualization (30x sensitivity)
-- Clear status messages with emoji indicators
 - Launch at login option
 - Configurable audio thresholds
-- Model selection with size indicators
+- Model selection with visual indicators
 
 ## 📋 What Needs Testing
 
@@ -107,6 +120,9 @@ WhisperKey is a privacy-focused local dictation app for macOS that uses OpenAI's
 - [TIMELINE](TIMELINE.md) - Detailed phase tracking
 - [ISSUES_AND_SOLUTIONS](ISSUES_AND_SOLUTIONS.md) - Problem archive
 - [TESTING_GUIDE](TESTING_GUIDE.md) - Test scenarios
+
+### Future Planning
+- [LANGUAGE_SUPPORT_PLAN](LANGUAGE_SUPPORT_PLAN.md) - Multi-language roadmap
 
 ## Quick Start for Developers
 
