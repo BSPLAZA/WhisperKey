@@ -47,34 +47,59 @@ struct PreferencesView: View {
                 }
                 .tag(3)
         }
-        .frame(width: 520, height: 420)
+        .frame(minWidth: 580, minHeight: 480)
     }
 }
 
 // MARK: - General Tab
+
+// MARK: - Visual Components
+
+struct SettingsSection<Content: View>: View {
+    let title: String
+    let icon: String
+    let content: Content
+    
+    init(title: String, icon: String, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.icon = icon
+        self.content = content()
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.title3)
+                    .foregroundColor(.accentColor)
+                Text(title)
+                    .font(.headline)
+            }
+            
+            content
+        }
+        .padding(16)
+        .background(Color(NSColor.controlBackgroundColor))
+        .cornerRadius(10)
+    }
+}
 
 struct GeneralTab: View {
     @AppStorage("selectedHotkey") private var selectedHotkey = "right_option"
     @AppStorage("launchAtLogin") private var launchAtLogin = false
     @AppStorage("showRecordingIndicator") private var showRecordingIndicator = true
     @AppStorage("playFeedbackSounds") private var playFeedbackSounds = true
+    @State private var isTestingHotkey = false
     
     var body: some View {
-        Form {
-            Section {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
                 // Hotkey selection
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Activation Hotkey")
-                        .font(.headline)
-                    
+                SettingsSection(title: "Activation Method", icon: "keyboard") {
                     VStack(alignment: .leading, spacing: 6) {
                         ForEach([
-                            ("right_option", "Right Option ⌥", "Hold the right Option key"),
-                            ("caps_lock", "Caps Lock", "Hold the Caps Lock key"),
-                            ("f13", "F13", "Press F13 (if available)"),
-                            ("f14", "F14", "Press F14 (if available)"),
-                            ("f15", "F15", "Press F15 (if available)"),
-                            ("cmd_shift_space", "⌘⇧Space", "Press Command+Shift+Space")
+                            ("right_option", "Right Option ⌥", "Tap to start/stop recording"),
+                            ("f13", "F13", "Tap F13 to start/stop (if available)")
                         ], id: \.0) { value, label, description in
                             HStack(alignment: .top, spacing: 8) {
                                 RadioButton(isSelected: selectedHotkey == value) {
@@ -105,29 +130,50 @@ struct GeneralTab: View {
                         }
                     }
                     
-                    Text("Press and hold to start recording, release to stop")
+                    Text("Tap once to start recording, tap again to stop")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                }
-                .padding(.vertical, 8)
-                
-                Divider()
-                
-                // Launch at login
-                Toggle("Launch WhisperKey at login", isOn: $launchAtLogin)
-                    .onChange(of: launchAtLogin) { newValue in
-                        updateLaunchAtLogin(newValue)
+                    
+                    // Test hotkey area
+                    HStack {
+                        Image(systemName: isTestingHotkey ? "mic.fill" : "mic")
+                            .foregroundColor(isTestingHotkey ? .red : .secondary)
+                        Text(isTestingHotkey ? "Recording..." : "Press \(hotkeyDisplayName) to test")
+                            .font(.caption)
                     }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(Color.secondary.opacity(0.1))
+                    .cornerRadius(6)
+                }
                 
-                // Visual feedback
-                Toggle("Show recording indicator", isOn: $showRecordingIndicator)
-                    .help("Shows a floating indicator when recording")
+                SettingsSection(title: "Startup", icon: "power") {
+                    Toggle("Launch WhisperKey at login", isOn: $launchAtLogin)
+                        .onChange(of: launchAtLogin) { newValue in
+                            updateLaunchAtLogin(newValue)
+                        }
+                }
                 
-                // Audio feedback
-                Toggle("Play feedback sounds", isOn: $playFeedbackSounds)
-                    .help("Play sounds when starting/stopping recording")
+                SettingsSection(title: "Visual & Audio Feedback", icon: "eye") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Toggle("Show recording indicator", isOn: $showRecordingIndicator)
+                            .help("Shows a floating indicator when recording")
+                        
+                        Toggle("Play feedback sounds", isOn: $playFeedbackSounds)
+                            .help("Play sounds when starting/stopping recording")
+                    }
+                }
             }
-            .padding()
+            .padding(24)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+    
+    private var hotkeyDisplayName: String {
+        switch selectedHotkey {
+        case "right_option": return "Right ⌥"
+        case "f13": return "F13"
+        default: return "Right ⌥"
         }
     }
     
@@ -225,6 +271,16 @@ struct ModelsTab: View {
     @AppStorage("autoSelectModel") private var autoSelectModel = false
     @StateObject private var modelManager = ModelManager.shared
     
+    private var modelDisplayName: String {
+        switch whisperModel {
+        case "base.en": return "Base (39 MB)"
+        case "small.en": return "Small (141 MB)"
+        case "medium.en": return "Medium (466 MB)"
+        case "large-v3-turbo": return "Large Turbo (1.5 GB)"
+        default: return whisperModel
+        }
+    }
+    
     var body: some View {
         Form {
             Section {
@@ -235,7 +291,16 @@ struct ModelsTab: View {
                     Text("Download and select AI models for transcription")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                        .padding(.bottom, 8)
+                    
+                    HStack {
+                        Text("Current Model:")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                        Text(modelDisplayName)
+                            .font(.caption)
+                            .foregroundColor(.blue)
+                    }
+                    .padding(.bottom, 8)
                     
                     // Model selection with download support
                     ForEach(modelManager.availableModels, id: \.filename) { model in

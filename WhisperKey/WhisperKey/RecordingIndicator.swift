@@ -15,7 +15,7 @@ import Cocoa
 class RecordingIndicatorWindow: NSWindow {
     init() {
         super.init(
-            contentRect: NSRect(x: 0, y: 0, width: 320, height: 60),
+            contentRect: NSRect(x: 0, y: 0, width: 400, height: 60),
             styleMask: [.borderless],
             backing: .buffered,
             defer: false
@@ -71,8 +71,32 @@ class RecordingIndicatorWindow: NSWindow {
 
 struct RecordingIndicatorView: View {
     @State private var isAnimating = false
+    @State private var elapsedTime: TimeInterval = 0
+    @State private var timer: Timer?
     @ObservedObject var audioLevelMonitor: AudioLevelMonitor
+    @AppStorage("maxRecordingDuration") private var maxRecordingDuration = 60.0
     let onStop: () -> Void
+    
+    private var timeRemaining: TimeInterval {
+        max(0, maxRecordingDuration - elapsedTime)
+    }
+    
+    private var isNearLimit: Bool {
+        timeRemaining <= 10 && timeRemaining > 0
+    }
+    
+    private var formattedTime: String {
+        let minutes = Int(elapsedTime) / 60
+        let seconds = Int(elapsedTime) % 60
+        return String(format: "%d:%02d", minutes, seconds)
+    }
+    
+    private var warningText: String? {
+        if timeRemaining <= 10 && timeRemaining > 0 {
+            return "Stopping in \(Int(timeRemaining))s"
+        }
+        return nil
+    }
     
     var body: some View {
         HStack(spacing: 12) {
@@ -94,26 +118,30 @@ struct RecordingIndicatorView: View {
                     .frame(width: 12, height: 12)
             }
             
-            // Status text
-            Text("Recording")
-                .font(.system(size: 14, weight: .medium))
+            // Status text with timer
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 8) {
+                    Text("Recording")
+                        .font(.system(size: 14, weight: .medium))
+                        .fixedSize()  // Prevent truncation
+                    Text(formattedTime)
+                        .font(.system(size: 14, weight: .regular, design: .monospaced))
+                        .fixedSize()  // Prevent truncation
+                }
                 .foregroundColor(.white)
+                
+                if let warning = warningText {
+                    Text(warning)
+                        .font(.system(size: 11))
+                        .foregroundColor(isNearLimit ? .yellow : .white)
+                }
+            }
             
             Spacer()
             
             // Audio level indicator
             AudioLevelView(level: audioLevelMonitor.currentLevel)
-                .frame(width: 100, height: 16)
-            
-            // Stop button (for future use)
-            /*
-            Button(action: onStop) {
-                Image(systemName: "stop.fill")
-                    .foregroundColor(.white)
-                    .frame(width: 20, height: 20)
-            }
-            .buttonStyle(.plain)
-            */
+                .frame(width: 120, height: 16)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -127,7 +155,35 @@ struct RecordingIndicatorView: View {
         )
         .onAppear {
             isAnimating = true
+            startTimer()
         }
+        .onDisappear {
+            stopTimer()
+        }
+    }
+    
+    private func startTimer() {
+        // Ensure any existing timer is stopped first
+        stopTimer()
+        
+        // Reset elapsed time
+        elapsedTime = 0
+        
+        // Create new timer
+        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            elapsedTime += 0.1
+            
+            // Auto-stop at max duration
+            if elapsedTime >= maxRecordingDuration {
+                stopTimer()
+                onStop()
+            }
+        }
+    }
+    
+    private func stopTimer() {
+        timer?.invalidate()
+        timer = nil
     }
 }
 

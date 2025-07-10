@@ -23,55 +23,60 @@ struct OnboardingView: View {
     private let steps = 4
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            HStack {
-                Image(systemName: "mic.fill")
-                    .font(.system(size: 24))
-                    .foregroundColor(.accentColor)
-                Text("Welcome to WhisperKey")
-                    .font(.title2)
-                    .fontWeight(.semibold)
+        VStack(spacing: 20) {
+            // Header with progress indicator
+            VStack(spacing: 16) {
+                HStack {
+                    Image(systemName: "mic.fill")
+                        .font(.system(size: 24))
+                        .foregroundColor(.accentColor)
+                    Text("Welcome to WhisperKey")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                }
+                
+                // Progress indicator
+                HStack(spacing: 12) {
+                    ForEach(0..<steps, id: \.self) { step in
+                        Circle()
+                            .fill(step <= currentStep ? Color.accentColor : Color.gray.opacity(0.3))
+                            .frame(width: 10, height: 10)
+                            .scaleEffect(step == currentStep ? 1.3 : 1.0)
+                            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentStep)
+                    }
+                }
             }
-            .padding(.top, 20)
+            .padding(.top, 30)
             
-            // Progress indicator
-            ProgressView(value: Double(currentStep + 1), total: Double(steps))
-                .padding(.horizontal, 40)
-                .padding(.vertical, 20)
-            
-            // Content
-            TabView(selection: $currentStep) {
-                // Step 1: Welcome
-                WelcomeStep()
-                    .tag(0)
-                
-                // Step 2: Permissions
-                PermissionsStep(
-                    hasAccessibilityPermission: $hasAccessibilityPermission,
-                    hasMicrophonePermission: $hasMicrophonePermission
-                )
-                .tag(1)
-                
-                // Step 3: Model Selection
-                ModelSelectionStep(
-                    selectedModel: $selectedModel,
-                    isDownloading: $isDownloading
-                )
-                .tag(2)
-                
-                // Step 4: Ready to Go
-                ReadyStep()
-                    .tag(3)
+            // Content area with fixed height
+            Group {
+                switch currentStep {
+                case 0:
+                    WelcomeStep()
+                case 1:
+                    PermissionsStep(
+                        hasAccessibilityPermission: $hasAccessibilityPermission,
+                        hasMicrophonePermission: $hasMicrophonePermission
+                    )
+                case 2:
+                    ModelSelectionStep(
+                        selectedModel: $selectedModel,
+                        isDownloading: $isDownloading
+                    )
+                case 3:
+                    ReadyStep()
+                default:
+                    EmptyView()
+                }
             }
-            .tabViewStyle(.automatic)
-            .frame(height: 320)
+            .frame(maxHeight: .infinity)
+            .padding(.horizontal, 40)
             
             // Navigation buttons
             HStack {
                 if currentStep > 0 {
                     Button("Previous") {
-                        withAnimation {
+                        withAnimation(.easeInOut(duration: 0.3)) {
                             currentStep -= 1
                         }
                     }
@@ -83,7 +88,7 @@ struct OnboardingView: View {
                 
                 if currentStep < steps - 1 {
                     Button("Next") {
-                        withAnimation {
+                        withAnimation(.easeInOut(duration: 0.3)) {
                             currentStep += 1
                         }
                     }
@@ -97,9 +102,9 @@ struct OnboardingView: View {
                 }
             }
             .padding(.horizontal, 40)
-            .padding(.bottom, 20)
+            .padding(.bottom, 30)
         }
-        .frame(width: 500, height: 500)
+        .frame(width: 600, height: 600)
         .background(Color(NSColor.windowBackgroundColor))
         .onAppear {
             checkPermissions()
@@ -143,30 +148,92 @@ struct OnboardingView: View {
 // MARK: - Step Views
 
 struct WelcomeStep: View {
+    @State private var isAnimating = false
+    
     var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "waveform.circle.fill")
-                .font(.system(size: 80))
-                .foregroundColor(.accentColor)
-                .padding(.top, 20)
-            
-            Text("Privacy-First Dictation")
-                .font(.title)
-                .fontWeight(.semibold)
-            
-            Text("WhisperKey uses OpenAI's Whisper AI to transcribe your speech locally on your Mac. Your voice never leaves your device.")
-                .multilineTextAlignment(.center)
-                .foregroundColor(.secondary)
-                .padding(.horizontal, 40)
-            
-            VStack(alignment: .leading, spacing: 12) {
-                Label("100% local processing", systemImage: "lock.shield.fill")
-                Label("No internet required", systemImage: "wifi.slash")
-                Label("Works in any app", systemImage: "app.badge")
+        ScrollView {
+            VStack(spacing: 20) {
+                // Animated icon
+                ZStack {
+                    Circle()
+                        .fill(Color.accentColor.opacity(0.1))
+                        .frame(width: 100, height: 100)
+                        .scaleEffect(isAnimating ? 1.1 : 1.0)
+                        .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: isAnimating)
+                    
+                    Image(systemName: "waveform.circle.fill")
+                        .font(.system(size: 60))
+                        .foregroundColor(.accentColor)
+                }
+                .onAppear { isAnimating = true }
+                
+                VStack(spacing: 8) {
+                    Text("Transform Your Voice")
+                        .font(.title)
+                        .fontWeight(.bold)
+                    
+                    Text("Privacy-first transcription on your Mac")
+                        .font(.callout)
+                        .foregroundColor(.secondary)
+                }
+                
+                // How to use
+                VStack(alignment: .leading, spacing: 12) {
+                    Label("Tap Right Option key to start/stop recording", systemImage: "keyboard")
+                    Label("Or tap the activation key again to stop", systemImage: "arrow.triangle.2.circlepath")
+                    Label("Press ESC to cancel recording", systemImage: "escape")
+                }
+                .font(.callout)
+                .padding(16)
+                .background(Color(NSColor.controlBackgroundColor))
+                .cornerRadius(8)
+                
+                // Feature cards
+                VStack(spacing: 10) {
+                    FeatureCard(icon: "lock.shield.fill", 
+                               title: "100% Private",
+                               description: "All processing happens locally")
+                    
+                    FeatureCard(icon: "bolt.fill",
+                               title: "Lightning Fast", 
+                               description: "Metal-accelerated transcription")
+                    
+                    FeatureCard(icon: "app.badge",
+                               title: "Works Everywhere",
+                               description: "Any text field, any app")
+                }
             }
-            .font(.callout)
-            .padding(.top, 10)
+            .padding(.vertical, 20)
         }
+    }
+}
+
+struct FeatureCard: View {
+    let icon: String
+    let title: String
+    let description: String
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundColor(.accentColor)
+                .frame(width: 30)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.callout)
+                    .fontWeight(.medium)
+                Text(description)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+        }
+        .padding(12)
+        .background(Color(NSColor.controlBackgroundColor))
+        .cornerRadius(8)
     }
 }
 

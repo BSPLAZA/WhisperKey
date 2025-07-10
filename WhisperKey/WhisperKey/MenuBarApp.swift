@@ -56,9 +56,9 @@ class WindowManager: ObservableObject {
         let hostingController = NSHostingController(rootView: preferencesView)
         
         let window = NSWindow(contentViewController: hostingController)
-        window.title = "WhisperKey Preferences"
-        window.styleMask = [.titled, .closable, .miniaturizable]
-        window.setContentSize(NSSize(width: 500, height: 400))
+        window.title = "WhisperKey Settings"
+        window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
+        window.setContentSize(NSSize(width: 600, height: 500))
         window.center()
         window.isReleasedWhenClosed = false
         
@@ -75,7 +75,7 @@ class WindowManager: ObservableObject {
             return
         }
         
-        UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
+        // Don't reset the completion flag - this was causing onboarding to show repeatedly!
         
         let onboardingView = OnboardingView(showOnboarding: .init(
             get: { self.onboardingWindow != nil },
@@ -90,8 +90,8 @@ class WindowManager: ObservableObject {
         
         let window = NSWindow(contentViewController: hostingController)
         window.title = "Welcome to WhisperKey"
-        window.styleMask = [.titled, .closable]
-        window.setContentSize(NSSize(width: 500, height: 500))
+        window.styleMask = [.titled, .closable, .resizable]
+        window.setContentSize(NSSize(width: 600, height: 600))
         window.center()
         window.isReleasedWhenClosed = false
         
@@ -153,10 +153,20 @@ struct MenuBarContentView: View {
             
             Divider()
             
-            Button("Preferences...") {
+            Button("Settings...") {
                 windowManager.showPreferences()
             }
             .keyboardShortcut(",", modifiers: .command)
+            
+            Button("Show Onboarding") {
+                windowManager.showOnboarding()
+            }
+            
+            Divider()
+            
+            Button("About WhisperKey") {
+                showAboutWindow()
+            }
             
             Divider()
             
@@ -171,11 +181,7 @@ struct MenuBarContentView: View {
     var hotkeyDisplayName: String {
         switch selectedHotkey {
         case "right_option": return "Right ⌥"
-        case "caps_lock": return "Caps Lock"
-        case "cmd_shift_space": return "⌘⇧Space"
         case "f13": return "F13"
-        case "f14": return "F14"
-        case "f15": return "F15"
         default: return "Right ⌥"
         }
     }
@@ -197,6 +203,25 @@ struct MenuBarContentView: View {
         default: return "Small"
         }
     }
+    
+    func showAboutWindow() {
+        let alert = NSAlert()
+        alert.messageText = "WhisperKey"
+        alert.informativeText = """
+        Version 1.0.0
+        
+        Privacy-focused local dictation for macOS
+        
+        • All processing happens locally
+        • No data leaves your device
+        • Powered by OpenAI's Whisper
+        
+        © 2025 WhisperKey
+        """
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -204,7 +229,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var dictationService: DictationService?
     private var lastCommandPressTime: TimeInterval = 0
     private var commandPressTimer: Timer?
-    private var eventMonitor: Any?
+    var eventMonitor: Any?
     private var isRightOptionPressed = false
     
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -214,20 +239,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Connect dictation service
         dictationService = DictationService.shared
         
-        // Check if onboarding is needed
-        let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
-        if !hasCompletedOnboarding {
-            showOnboarding()
-        }
-        
         // Set default to right_option if no preference exists
         if UserDefaults.standard.string(forKey: "selectedHotkey") == nil {
             UserDefaults.standard.set("right_option", forKey: "selectedHotkey")
+            NSLog("=== WHISPERKEY: Setting default hotkey to right_option ===")
         }
         
-        // Set up hotkey with a small delay to ensure everything is initialized
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.updateHotkey()
+        let currentHotkey = UserDefaults.standard.string(forKey: "selectedHotkey") ?? "right_option"
+        NSLog("=== WHISPERKEY: Current hotkey preference: \(currentHotkey) ===")
+        DictationService.shared.debugLog("Current hotkey preference: \(currentHotkey)")
+        
+        // Set up hotkey IMMEDIATELY, not after delay
+        NSLog("=== WHISPERKEY: Setting up hotkey immediately ===")
+        updateHotkey()
+        
+        // Check if onboarding is needed AFTER hotkey setup
+        let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
+        if !hasCompletedOnboarding {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                self?.showOnboarding()
+            }
         }
         
         // Clean up any leftover temp files from previous sessions
@@ -253,29 +284,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         let selectedHotkey = UserDefaults.standard.string(forKey: "selectedHotkey") ?? "right_option"
+        NSLog("=== WHISPERKEY: updateHotkey() called, selectedHotkey: \(selectedHotkey) ===")
         
         switch selectedHotkey {
         case "right_option":
             // Use NSEvent monitoring for Right Option since HotKey doesn't support it
+            NSLog("=== WHISPERKEY: Setting up Right Option monitoring ===")
             setupRightOptionMonitoring()
-            
-        case "caps_lock":
-            hotKey = HotKey(key: .capsLock, modifiers: [])
-            
-        case "cmd_shift_space":
-            hotKey = HotKey(key: .space, modifiers: [.command, .shift])
             
         case "f13":
             hotKey = HotKey(key: .f13, modifiers: [])
             
-        case "f14":
-            hotKey = HotKey(key: .f14, modifiers: [])
-            
-        case "f15":
-            hotKey = HotKey(key: .f15, modifiers: [])
-            
         default:
-            hotKey = HotKey(key: .space, modifiers: [.command, .shift])
+            // Default to right option
+            NSLog("=== WHISPERKEY: Unknown hotkey, defaulting to Right Option ===")
+            setupRightOptionMonitoring()
         }
         
         if hotKey != nil {
@@ -286,42 +309,39 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     private func setupRightOptionMonitoring() {
-        // Check if we have accessibility permission
-        if !AXIsProcessTrusted() {
-            // Request permission
-            let alert = NSAlert()
-            alert.messageText = "Accessibility Permission Required"
-            alert.informativeText = "WhisperKey needs accessibility permission to detect the Right Option key. Please grant permission in System Settings."
-            alert.addButton(withTitle: "Open System Settings")
-            alert.addButton(withTitle: "Cancel")
+        NSLog("AppDelegate: Setting up Right Option monitoring via NSEvent")
+        
+        // Monitor for flags changed events - EXACTLY like the working version
+        eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
+            guard let self = self else { return }
             
-            if alert.runModal() == .alertFirstButtonReturn {
-                Task { @MainActor in
-                    dictationService?.requestAccessibilityPermission()
+            // Log the event for debugging
+            if event.keyCode == 61 {
+                NSLog("AppDelegate: Right Option event - keyCode: 61, modifiers: \(event.modifierFlags.rawValue)")
+            }
+            
+            // Check if option key is pressed and it's the right one (keyCode 61)
+            if event.keyCode == 61 { // Right Option key code
+                if event.modifierFlags.contains(.option) && !self.isRightOptionPressed {
+                    // Right Option pressed down - TOGGLE recording
+                    self.isRightOptionPressed = true
+                    NSLog("AppDelegate: Right Option pressed - toggling recording")
+                    self.handleHotkeyPress()
+                } else if !event.modifierFlags.contains(.option) && self.isRightOptionPressed {
+                    // Right Option released - just reset state
+                    self.isRightOptionPressed = false
+                    NSLog("AppDelegate: Right Option released")
                 }
             }
-            return
         }
         
-        // Monitor for flags changed events globally
-        eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
-            self?.handleFlagsChanged(event)
+        if eventMonitor != nil {
+            NSLog("AppDelegate: Right Option monitoring active")
+        } else {
+            NSLog("AppDelegate: Failed to set up Right Option monitoring - check Accessibility permission")
         }
     }
     
-    private func handleFlagsChanged(_ event: NSEvent) {
-        // Check if option key is pressed and it's the right one (keyCode 61)
-        if event.keyCode == 61 { // Right Option key code
-            if event.modifierFlags.contains(.option) && !self.isRightOptionPressed {
-                // Right Option pressed down
-                self.isRightOptionPressed = true
-                self.handleHotkeyPress()
-            } else if !event.modifierFlags.contains(.option) && self.isRightOptionPressed {
-                // Right Option released
-                self.isRightOptionPressed = false
-            }
-        }
-    }
     
     
     func handleHotkeyPress() {
