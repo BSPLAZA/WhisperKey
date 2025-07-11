@@ -430,4 +430,61 @@ class WindowManager {
 **Time Lost**: 30 minutes
 
 ---
-*Last Updated: 2025-07-11 03:35 PST*
+
+## Issue #014: Settings Changes Not Auto-Saving
+
+**Discovered**: 2025-07-11 08:25 AM PST - Beta Testing  
+**Severity**: High  
+**Symptoms**: 
+- Settings changes (like silence duration) not automatically saved when closing dialog
+- User has to manually trigger save somehow
+- Changes may be lost if app quits
+
+**Root Cause**: 
+DictationService was using hardcoded constants instead of reading from UserDefaults. The settings were saving correctly but weren't being used.
+
+**Solution**: 
+Changed DictationService audio settings from constants to computed properties that read from UserDefaults:
+```swift
+// Before: private let silenceDuration: TimeInterval = 2.5
+// After:
+private var silenceDuration: TimeInterval {
+    let stored = UserDefaults.standard.double(forKey: "silenceDuration")
+    return stored != 0 ? stored : 2.5
+}
+```
+
+**Prevention**: 
+- Test all settings persistence
+- Ensure @AppStorage changes are immediate
+
+**Time Lost**: TBD
+
+---
+
+## Issue #015: No Clipboard Fallback for Non-Text Fields
+
+**Discovered**: 2025-07-11 08:25 AM PST - Beta Testing  
+**Severity**: Medium  
+**Symptoms**: 
+- When cursor not in text field, transcription is lost
+- User clicks button or other control, transcription fails silently
+- No way to recover transcribed text
+
+**Root Cause**: 
+Text insertion only works in editable text fields
+
+**Solution**: 
+Detect if current focus is text field, if not:
+- Copy transcription to clipboard
+- Show message "Saved to clipboard - press ⌘V to paste"
+- Play different sound to indicate clipboard mode
+
+**Prevention**: 
+- Always provide fallback for user actions
+- Never lose user data silently
+
+**Time Lost**: TBD
+
+---
+*Last Updated: 2025-07-11 08:25 AM PST*

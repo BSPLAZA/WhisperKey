@@ -45,9 +45,18 @@ class DictationService: NSObject, ObservableObject {
     
     // Audio settings
     private let sampleRate: Double = 16000 // 16kHz for Whisper
-    private let silenceThreshold: Float = 0.015  // Increased threshold to prevent premature cutoff
-    private let silenceDuration: TimeInterval = 2.5  // Stop after 2.5 seconds of silence
-    private let maxRecordingDuration: TimeInterval = 60.0  // Maximum 60 seconds recording
+    private var silenceThreshold: Float {
+        Float(UserDefaults.standard.double(forKey: "silenceThreshold") != 0 ? 
+              UserDefaults.standard.double(forKey: "silenceThreshold") : 0.015)
+    }
+    private var silenceDuration: TimeInterval {
+        let stored = UserDefaults.standard.double(forKey: "silenceDuration")
+        return stored != 0 ? stored : 2.5
+    }
+    private var maxRecordingDuration: TimeInterval {
+        let stored = UserDefaults.standard.double(forKey: "maxRecordingDuration") 
+        return stored != 0 ? stored : 60.0
+    }
     private let minimumRecordingDuration: TimeInterval = 1.0  // Record at least 1 second
     private var lastSoundTime: Date = Date()
     private var recordingStartTime: Date = Date()
