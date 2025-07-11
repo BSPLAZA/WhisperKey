@@ -3,8 +3,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![macOS](https://img.shields.io/badge/macOS-12.0%2B-blue.svg)](https://www.apple.com/macos)
 [![Swift](https://img.shields.io/badge/Swift-5.9-orange.svg)](https://swift.org)
+[![Beta](https://img.shields.io/badge/Status-Beta-orange.svg)](https://github.com/BSPLAZA/WhisperKey/releases)
 
 **Privacy-focused local dictation for macOS**
+
+> ⚠️ **BETA SOFTWARE**: This is our first public release! While core functionality is solid, you may encounter some rough edges. Please report any issues you find.
 
 WhisperKey brings the power of OpenAI's Whisper AI to your Mac for fast, accurate speech-to-text that works in any app. Your voice never leaves your device.
 
@@ -20,9 +23,11 @@ WhisperKey brings the power of OpenAI's Whisper AI to your Mac for fast, accurat
 
 ## Quick Start
 
-1. **Launch WhisperKey** - Look for the microphone icon in your menu bar
-2. **Grant Permissions** - Allow microphone and accessibility access when prompted
-3. **Start Dictating** - Tap Right Option (⌥) to start/stop recording
+1. **Download & Launch** - Get the latest release and run WhisperKey
+2. **Complete Setup** - Follow the onboarding wizard
+3. **Grant Permissions** - Allow microphone and accessibility access
+4. **Install whisper.cpp** - If not found, WhisperKey will guide you
+5. **Start Dictating** - Tap Right Option (⌥) to start/stop recording
 
 ## Default Hotkey
 
@@ -32,13 +37,20 @@ You can change this in Settings to F13 if preferred.
 
 ## Installation
 
-### Option 1: Download Release
-1. Download the latest release from the [Releases page](https://github.com/BSPLAZA/WhisperKey/releases)
-2. Move WhisperKey.app to your Applications folder
-3. Launch WhisperKey from Applications
+### Option 1: Download Beta Release (Recommended)
+1. Download the latest beta from the [Releases page](https://github.com/BSPLAZA/WhisperKey/releases)
+2. Open the DMG and drag WhisperKey to Applications
+3. Launch WhisperKey - it will help you set up whisper.cpp
+4. Follow the setup wizard for permissions and model selection
 
 ### Option 2: Build from Source
 ```bash
+# First, install whisper.cpp
+git clone https://github.com/ggerganov/whisper.cpp
+cd whisper.cpp
+WHISPER_METAL=1 make -j
+
+# Then build WhisperKey
 git clone https://github.com/BSPLAZA/WhisperKey.git
 cd WhisperKey
 swift build
@@ -49,6 +61,7 @@ swift build
 - macOS 12.0 or later
 - Apple Silicon or Intel Mac
 - ~500MB disk space for AI models
+- **whisper.cpp** installed separately (see Beta Limitations)
 
 ## Tips
 
@@ -59,6 +72,20 @@ swift build
 - Press ESC to cancel recording
 - Cannot dictate into password fields for security
 - Success message shows word count inserted
+
+## Beta Limitations
+
+**Current beta requires manual setup:**
+- You need to install [whisper.cpp](https://github.com/ggerganov/whisper.cpp) separately
+- WhisperKey will guide you if it's not found
+- Models need to be downloaded on first use
+- Some apps may require additional accessibility permissions
+
+**Coming in v1.0:**
+- Bundled whisper.cpp (no separate installation)
+- Automatic model downloads
+- One-click installer
+- More language support in UI
 
 ## Models
 
@@ -94,6 +121,13 @@ open WhisperKey/WhisperKey.xcodeproj
 ## Contributing
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+## Known Issues
+
+- Terminal apps may require special handling
+- Some Electron apps need extra permissions
+- Recording indicator may appear behind full-screen apps
+- First launch after granting permissions may require restart
 
 ## Support
 
