@@ -134,30 +134,22 @@ class WhisperService: ObservableObject {
     }
     
     func showSetupError() {
-        let alert = NSAlert()
-        alert.messageText = "WhisperKey Setup Required"
-        alert.informativeText = setupError ?? "Please install whisper.cpp to use WhisperKey."
-        alert.alertStyle = .warning
-        alert.addButton(withTitle: "Open Setup Guide")
-        alert.addButton(withTitle: "Set Custom Path")
-        alert.addButton(withTitle: "Cancel")
+        // Show the interactive setup assistant
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 600, height: 500),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "WhisperKey Setup"
+        window.center()
+        window.isReleasedWhenClosed = false
         
-        let response = alert.runModal()
+        let setupView = WhisperSetupAssistant()
+        window.contentView = NSHostingView(rootView: setupView)
         
-        switch response {
-        case .alertFirstButtonReturn:
-            // Open setup guide
-            if let url = URL(string: "https://github.com/BSPLAZA/WhisperKey/blob/main/docs/WHISPER_SETUP.md") {
-                NSWorkspace.shared.open(url)
-            }
-        case .alertSecondButtonReturn:
-            // Open preferences to set custom path
-            if let appDelegate = NSApp.delegate as? AppDelegate {
-                appDelegate.showPreferences()
-            }
-        default:
-            break
-        }
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
     
     func setCustomPaths(whisper: String?, models: String?) {

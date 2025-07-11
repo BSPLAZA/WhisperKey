@@ -63,8 +63,15 @@ class WhisperCppTranscriber {
         
         // Check if model is available
         guard let modelPath = modelPath else {
+            let modelName = UserDefaults.standard.string(forKey: "whisperModel") ?? "small.en"
+            
+            // Show the model missing dialog on the main thread
+            await MainActor.run {
+                ModelManager.shared.showModelMissingDialog(for: modelName)
+            }
+            
             throw WhisperKeyError.modelNotFound(
-                "The selected Whisper model could not be found. Please download it or select a different model."
+                "The selected Whisper model '\(modelName)' is not installed."
             )
         }
         

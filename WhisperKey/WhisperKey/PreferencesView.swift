@@ -19,7 +19,7 @@ struct PreferencesView: View {
     @AppStorage("showRecordingIndicator") private var showRecordingIndicator = true
     @AppStorage("playFeedbackSounds") private var playFeedbackSounds = true
     
-    @State private var selectedTab = 0
+    @State private var selectedTab = UserDefaults.standard.integer(forKey: "preferencesRequestedTab")
     
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -47,7 +47,8 @@ struct PreferencesView: View {
                 }
                 .tag(3)
         }
-        .frame(minWidth: 580, minHeight: 480)
+        .padding(.top, 8) // Add space between title bar and tabs
+        .frame(minWidth: 600, minHeight: 500)
     }
 }
 
@@ -147,21 +148,26 @@ struct GeneralTab: View {
                     .cornerRadius(6)
                 }
                 
-                SettingsSection(title: "Startup", icon: "power") {
-                    Toggle("Launch WhisperKey at login", isOn: $launchAtLogin)
-                        .onChange(of: launchAtLogin) { newValue in
-                            updateLaunchAtLogin(newValue)
-                        }
-                }
-                
-                SettingsSection(title: "Visual & Audio Feedback", icon: "eye") {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Toggle("Show recording indicator", isOn: $showRecordingIndicator)
-                            .help("Shows a floating indicator when recording")
-                        
-                        Toggle("Play feedback sounds", isOn: $playFeedbackSounds)
-                            .help("Play sounds when starting/stopping recording")
+                // Startup and Feedback in two columns
+                HStack(alignment: .top, spacing: 16) {
+                    SettingsSection(title: "Startup", icon: "power") {
+                        Toggle("Launch WhisperKey at login", isOn: $launchAtLogin)
+                            .onChange(of: launchAtLogin) { newValue in
+                                updateLaunchAtLogin(newValue)
+                            }
                     }
+                    .frame(maxWidth: .infinity)
+                    
+                    SettingsSection(title: "Visual & Audio Feedback", icon: "eye") {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Toggle("Show recording indicator", isOn: $showRecordingIndicator)
+                                .help("Shows a floating indicator when recording")
+                            
+                            Toggle("Play feedback sounds", isOn: $playFeedbackSounds)
+                                .help("Play sounds when starting/stopping recording")
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
                 }
             }
             .padding(24)
@@ -343,8 +349,8 @@ struct AdvancedTab: View {
     @State private var showingModelsPicker = false
     
     var body: some View {
-        Form {
-            Section {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
                 // Debug mode
                 Toggle("Enable debug logging", isOn: $debugMode)
                     .help("Shows detailed logs in Console.app")
@@ -454,7 +460,8 @@ struct AdvancedTab: View {
                         .foregroundColor(.secondary)
                 }
             }
-            .padding()
+            .padding(24)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .alert("Reset All Settings?", isPresented: $showingResetAlert) {
             Button("Cancel", role: .cancel) { }

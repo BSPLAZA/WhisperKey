@@ -45,7 +45,10 @@ class WindowManager: ObservableObject {
     private var preferencesWindow: NSWindow?
     private var onboardingWindow: NSWindow?
     
-    func showPreferences() {
+    func showPreferences(tab: Int = 0) {
+        // Store the requested tab
+        UserDefaults.standard.set(tab, forKey: "preferencesRequestedTab")
+        
         if let window = preferencesWindow, window.isVisible {
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
@@ -167,8 +170,16 @@ struct MenuBarContentView: View {
             
             Divider()
             
-            Button("About WhisperKey") {
-                showAboutWindow()
+            Menu("Help") {
+                Button("Fix Permissions...") {
+                    showPermissionGuide()
+                }
+                
+                Divider()
+                
+                Button("About WhisperKey") {
+                    showAboutWindow()
+                }
             }
             
             Divider()
@@ -208,6 +219,23 @@ struct MenuBarContentView: View {
         }
     }
     
+    func showPermissionGuide() {
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 500, height: 550),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Fix WhisperKey Permissions"
+        window.center()
+        
+        let view = PermissionGuideView()
+        window.contentView = NSHostingView(rootView: view)
+        
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+    
     func showAboutWindow() {
         let alert = NSAlert()
         alert.messageText = "WhisperKey"
@@ -235,6 +263,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var commandPressTimer: Timer?
     var eventMonitor: Any?
     private var isRightOptionPressed = false
+    private var permissionWindow: NSWindow?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Remove from dock
@@ -363,6 +392,34 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     func showPreferences() {
         WindowManager.shared.showPreferences()
+    }
+    
+    func showPermissionGuide() {
+        DebugLogger.log("showPermissionGuide called")
+        
+        if let window = permissionWindow, window.isVisible {
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+        
+        permissionWindow = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 500, height: 550),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        permissionWindow?.title = "WhisperKey Permissions"
+        permissionWindow?.center()
+        permissionWindow?.isReleasedWhenClosed = false
+        
+        let view = PermissionGuideView()
+        permissionWindow?.contentView = NSHostingView(rootView: view)
+        
+        permissionWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        
+        DebugLogger.log("Permission window created and shown")
     }
     
     func showOnboarding() {

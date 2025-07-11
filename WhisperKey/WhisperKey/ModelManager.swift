@@ -214,7 +214,7 @@ struct ModelDownloadRow: View {
         HStack {
             // Radio button
             RadioButton(
-                isSelected: selectedModel == model.filename && isInstalled,
+                isSelected: selectedModel == model.filename,
                 action: { 
                     if isInstalled {
                         selectedModel = model.filename
@@ -283,6 +283,12 @@ struct ModelDownloadRow: View {
                 .foregroundColor(.secondary)
         }
         .padding(.vertical, 4)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if isInstalled {
+                selectedModel = model.filename
+            }
+        }
     }
     
     private func formatBytes(_ bytes: Int64) -> String {

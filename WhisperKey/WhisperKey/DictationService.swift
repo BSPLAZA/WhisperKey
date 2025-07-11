@@ -9,6 +9,7 @@
 
 import AVFoundation
 import Cocoa
+import SwiftUI
 
 @MainActor
 class DictationService: NSObject, ObservableObject {
@@ -143,6 +144,23 @@ class DictationService: NSObject, ObservableObject {
         }
     }
     
+    private func showPermissionGuide() {
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 500, height: 550),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Fix WhisperKey Permissions"
+        window.center()
+        
+        let view = PermissionGuideView()
+        window.contentView = NSHostingView(rootView: view)
+        
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+    
     private func setupAudioEngine() {
         audioEngine = AVAudioEngine()
     }
@@ -164,7 +182,7 @@ class DictationService: NSObject, ObservableObject {
             DebugLogger.log("=== WHISPERKEY: No accessibility permission ===")
             NSLog("=== WHISPERKEY: No accessibility permission ===")
             debugLog("No accessibility permission")
-            requestAccessibilityPermission()
+            showPermissionGuide()
             return
         }
         
@@ -174,7 +192,7 @@ class DictationService: NSObject, ObservableObject {
             DebugLogger.log("=== WHISPERKEY: No microphone permission ===")
             NSLog("=== WHISPERKEY: No microphone permission ===")
             debugLog("No microphone permission")
-            transcriptionStatus = "🎤 Grant microphone access in System Settings"
+            showPermissionGuide()
             return
         }
         
