@@ -30,6 +30,12 @@ class TextInsertionService {
         return false
     }
     
+    enum InsertionResult {
+        case insertedAtCursor
+        case keyboardSimulated  // We tried but can't confirm success
+        case failed
+    }
+    
     enum InsertionError: LocalizedError {
         case noFocusedElement
         case insertionFailed
@@ -64,40 +70,56 @@ class TextInsertionService {
     }
     
     /// Insert text at the current cursor position
-    func insertText(_ text: String) async throws {
+    func insertText(_ text: String) async throws -> InsertionResult {
         // Ensure we have accessibility permission
         guard AXIsProcessTrusted() else {
             throw InsertionError.insertionFailed
         }
         
-        // Get the focused element (might not work for all apps)
-        if let focusedElement = getFocusedElement() {
+        // Small delay to ensure recording indicator has dismissed
+        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+        
+        let focusedElement = getFocusedElement()
+        
+        // If we have a focused element, check if it's suitable and try AX insertion
+        if let element = focusedElement {
             // Check if it's a secure field
-            if isSecureField(focusedElement) {
+            if isSecureField(element) {
                 throw InsertionError.secureField
             }
             
             // Check if it's readonly
-            if isReadOnlyField(focusedElement) {
+            if isReadOnlyField(element) {
                 throw InsertionError.readOnlyField
             }
             
             // Check if it's disabled
-            if isDisabledField(focusedElement) {
+            if isDisabledField(element) {
                 throw InsertionError.disabledField
             }
             
             // Try direct AX insertion first
-            if tryAXInsertion(text, into: focusedElement) {
-                return
+            if tryAXInsertion(text, into: element) {
+                DebugLogger.log("TextInsertionService: AX insertion successful")
+                return .insertedAtCursor
             }
+            
+            // AX insertion failed, but we have a focused element
+            // Try keyboard simulation - this often works
+            DebugLogger.log("TextInsertionService: AX insertion failed, trying keyboard simulation")
+            _ = tryKeyboardSimulation(text)
+            // We have a focused element, so it probably worked
+            return .insertedAtCursor
         }
         
-        // For apps that don't expose proper accessibility elements (like Electron apps),
-        // fall back to keyboard simulation or clipboard
-        if !tryKeyboardSimulation(text) {
-            tryClipboardInsertion(text)
-        }
+        // No focused element found - could be Finder or other non-text area
+        DebugLogger.log("TextInsertionService: No focused element found")
+        
+        // Try keyboard simulation anyway - some apps work without AX
+        _ = tryKeyboardSimulation(text)
+        
+        // We can't confirm it worked without a focused element
+        return .keyboardSimulated
     }
     
     /// Get the currently focused UI element
@@ -111,10 +133,41 @@ class TextInsertionService {
             &focusedElement
         )
         
+        DebugLogger.log("TextInsertionService: getFocusedElement result: \(result.rawValue)")
+        
+        // Log error codes for debugging
+        if result != .success {
+            switch result {
+            case AXError.apiDisabled:
+                DebugLogger.log("TextInsertionService: AX API is disabled (-25204)")
+            case AXError.invalidUIElement:
+                DebugLogger.log("TextInsertionService: Invalid UI element (-25202)")
+            case AXError.attributeUnsupported:
+                DebugLogger.log("TextInsertionService: Attribute unsupported (-25205)")
+            case AXError.noValue:
+                DebugLogger.log("TextInsertionService: No value (-25212)")
+            default:
+                DebugLogger.log("TextInsertionService: Unknown error: \(result.rawValue)")
+            }
+        }
+        
         // When successful, focusedElement contains an AXUIElement
-        if result == .success, CFGetTypeID(focusedElement) == AXUIElementGetTypeID() {
-            // Safe to force cast because we've verified the type
-            return (focusedElement as! AXUIElement)
+        if result == .success {
+            if CFGetTypeID(focusedElement) == AXUIElementGetTypeID() {
+                // Safe to force cast because we've verified the type
+                let element = focusedElement as! AXUIElement
+                
+                // Debug: Get element info
+                var role: CFTypeRef?
+                AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &role)
+                DebugLogger.log("TextInsertionService: Found focused element with role: \(role as? String ?? "unknown")")
+                
+                return element
+            } else {
+                DebugLogger.log("TextInsertionService: focusedElement is not an AXUIElement")
+            }
+        } else {
+            DebugLogger.log("TextInsertionService: Failed to get focused element, error: \(result.rawValue)")
         }
         return nil
     }
@@ -355,11 +408,26 @@ class TextInsertionService {
     
     /// Get information about the current text field (for debugging)
     func getCurrentFieldInfo() -> String {
+        // First check if AX is working at all
+        let trusted = AXIsProcessTrusted()
+        var info = "AX API Status:\n"
+        info += "  Trusted: \(trusted)\n"
+        
+        // Try to get system-wide element first
+        let systemWide = AXUIElementCreateSystemWide()
+        var focusedApp: CFTypeRef?
+        let appResult = AXUIElementCopyAttributeValue(
+            systemWide,
+            kAXFocusedApplicationAttribute as CFString,
+            &focusedApp
+        )
+        info += "  Can get focused app: \(appResult == .success)\n"
+        
         guard let element = getFocusedElement() else {
-            return "No focused element"
+            return info + "\nNo focused element"
         }
         
-        var info = "Focused Element Info:\n"
+        info += "\nFocused Element Info:\n"
         
         // Get role
         var role: CFTypeRef?

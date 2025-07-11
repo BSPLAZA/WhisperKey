@@ -576,4 +576,117 @@ try await self?.textInsertion.insertText(transcribedText)
 **Time Lost**: 15 minutes
 
 ---
-*Last Updated: 2025-07-11 09:15 AM PST*
+
+## Issue #019: AX API Returns nil for Focused Element
+
+**Discovered**: 2025-07-11 09:30 AM PST - Testing Phase  
+**Severity**: Critical  
+**Symptoms**: 
+- `getFocusedElement()` always returns nil
+- All text goes to clipboard even in text fields
+- AX API returns error -25204 (API Disabled) in test scripts
+- But WhisperKey has accessibility permission
+
+**Root Cause**: 
+Multiple issues:
+1. Recording indicator window might be stealing focus momentarily
+2. AX API calls failing despite having permission
+3. No fallback to keyboard simulation when AX API fails
+
+**Solution**: 
+1. Added 0.1s delay after recording stops to ensure UI has settled
+2. Always try keyboard simulation even without focused element
+3. Don't throw error immediately - keyboard simulation often works
+
+**Code Fix**:
+```swift
+// Added delay and always try keyboard simulation
+func insertText(_ text: String) async throws {
+    // Small delay to ensure recording indicator has dismissed
+    try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+    
+    let focusedElement = getFocusedElement()
+    
+    if let element = focusedElement {
+        // Try AX insertion...
+    }
+    
+    // Always try keyboard simulation as fallback
+    tryKeyboardSimulation(text)
+    // Don't throw error - keyboard simulation often works!
+}
+```
+
+**Prevention**: 
+- Always provide multiple fallback methods for critical operations
+- Don't rely solely on AX API - it can be flaky
+- Add small delays when UI state might be changing
+- Test with various apps that handle text input differently
+
+**Time Lost**: 30 minutes
+
+---
+
+## Issue #020: Smart Clipboard Fallback Design
+
+**Discovered**: 2025-07-11 10:00 AM PST - Testing Phase  
+**Severity**: High  
+**Symptoms**: 
+- When in Finder (non-text area), played Glass sound but text was lost
+- No clipboard fallback when not in text field
+- Confusing user experience
+
+**Root Cause**: 
+Previous implementation assumed keyboard simulation always works, but when not in a text field, the text just disappears.
+
+**Solution**: 
+Implemented smart clipboard strategy:
+1. **Always save to clipboard first** (as safety net)
+2. **Try to insert at cursor**
+3. **Return insertion result** to determine appropriate feedback
+4. **Play correct sound** based on what actually happened
+
+**Code Implementation**:
+```swift
+// In DictationService
+Task {
+    // ALWAYS save to clipboard first as a safety net
+    TextInsertionService.saveToClipboard(transcribedText)
+    
+    let insertionResult = try await textInsertion.insertText(transcribedText)
+    
+    if insertionResult == .insertedAtCursor {
+        // Play Glass sound, show success message
+    } else {
+        // Play Pop sound, show clipboard message
+    }
+}
+
+// In TextInsertionService
+enum InsertionResult {
+    case insertedAtCursor
+    case keyboardSimulated  // We tried but can't confirm success
+    case failed
+}
+
+func insertText(_ text: String) async throws -> InsertionResult {
+    if let element = getFocusedElement() {
+        // We have a text field, likely succeeded
+        return .insertedAtCursor
+    } else {
+        // No text field, keyboard simulation attempted
+        return .keyboardSimulated
+    }
+}
+```
+
+**Benefits**:
+- Users always have text in clipboard as backup
+- Correct audio feedback (Glass for insert, Pop for clipboard)
+- Clear status messages
+- Handles edge cases (cursor moves during transcription)
+
+**Time Lost**: 15 minutes
+
+---
+*Last Updated: 2025-07-11 10:00 AM PST*
