@@ -475,16 +475,19 @@ private var silenceDuration: TimeInterval {
 Text insertion only works in editable text fields
 
 **Solution**: 
-Detect if current focus is text field, if not:
-- Copy transcription to clipboard
-- Show message "Saved to clipboard - press ⌘V to paste"
-- Play different sound to indicate clipboard mode
+Implemented clipboard fallback:
+1. Added isTextFieldFocused() method to check if cursor is in text field
+2. If not in text field, save to clipboard automatically
+3. Show message "📋 Saved to clipboard (X words) - press ⌘V to paste"
+4. Play different sound (Pop vs Glass) to indicate clipboard mode
+5. Also handle noFocusedElement error with clipboard fallback
 
 **Prevention**: 
 - Always provide fallback for user actions
 - Never lose user data silently
+- Give clear feedback about what happened
 
-**Time Lost**: TBD
+**Time Lost**: 15 minutes
 
 ---
 *Last Updated: 2025-07-11 08:25 AM PST*

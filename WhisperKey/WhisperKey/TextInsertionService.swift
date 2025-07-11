@@ -36,6 +36,7 @@ class TextInsertionService {
         case secureField
         case readOnlyField
         case disabledField
+        case savedToClipboard
         
         var errorDescription: String? {
             switch self {
@@ -49,8 +50,17 @@ class TextInsertionService {
                 return "Cannot dictate into read-only fields"
             case .disabledField:
                 return "Cannot dictate into disabled fields"
+            case .savedToClipboard:
+                return "Text saved to clipboard"
             }
         }
+    }
+    
+    /// Save text to clipboard without simulating paste
+    static func saveToClipboard(_ text: String) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
     }
     
     /// Insert text at the current cursor position
@@ -107,6 +117,22 @@ class TextInsertionService {
             return (focusedElement as! AXUIElement)
         }
         return nil
+    }
+    
+    /// Check if the focused element is a text field
+    func isTextFieldFocused() -> Bool {
+        guard let element = getFocusedElement() else { return false }
+        
+        var role: CFTypeRef?
+        AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &role)
+        
+        if let roleString = role as? String {
+            // Check for text input roles
+            let textRoles = ["AXTextField", "AXTextArea", "AXComboBox", "AXStaticText"]
+            return textRoles.contains(roleString)
+        }
+        
+        return false
     }
     
     /// Check if the element is a secure/password field
