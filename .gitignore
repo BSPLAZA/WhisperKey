@@ -1,5 +1,7 @@
 # macOS
 .DS_Store
+.AppleDouble
+.LSOverride
 *.xcuserdatad/
 *.xcworkspace/xcuserdata/
 
@@ -16,13 +18,16 @@ DerivedData/
 !default.perspectivev3
 xcuserdata/
 *.xccheckout
+*.xcscmblueprint
 *.moved-aside
 *.xcuserstate
 
 # Swift Package Manager
 .build/
 .swiftpm/
+Packages/
 Package.resolved
+*.xcodeproj/**/xcuserdata/
 
 # WhisperKey specific
 *.ipa
@@ -40,6 +45,8 @@ CLAUDE.local.md
 # Temporary files
 *.tmp
 *.log
+*.swp
+*~.nib
 /tmp/
 
 # Security - never commit these
@@ -48,3 +55,5 @@ CLAUDE.local.md
 *.key
 *.mobileprovision
 Secrets.swift
+.env
+.env.local

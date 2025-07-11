@@ -18,8 +18,12 @@ class ModelManager: ObservableObject {
     @Published var isDownloading: [String: Bool] = [:]
     @Published var downloadError: [String: String] = [:]
     
-    private let modelPath = NSString(string: "~/Developer/whisper.cpp/models").expandingTildeInPath
-    private let whisperCppPath = NSString(string: "~/Developer/whisper.cpp").expandingTildeInPath
+    private let whisperService = WhisperService.shared
+    
+    private var modelPath: String {
+        // Use WhisperService's models path, or fall back to a default
+        return whisperService.modelsPath ?? NSString(string: "~/.whisperkey/models").expandingTildeInPath
+    }
     
     private var downloadTasks: [String: URLSessionDownloadTask] = [:]
     
@@ -49,16 +53,16 @@ class ModelManager: ObservableObject {
         ModelInfo(
             filename: "medium.en",
             downloadURL: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.en.bin",
-            size: 1_528_884_219, // ~1.4 GB
+            size: 1_528_884_219, // ~1.5 GB (actually 1.4 GB)
             displayName: "Medium (English)",
             description: "Higher accuracy, slower"
         ),
         ModelInfo(
             filename: "large-v3",
             downloadURL: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin",
-            size: 3_094_623_691, // ~2.9 GB
-            displayName: "Large v3",
-            description: "Best accuracy, multilingual"
+            size: 3_094_623_691, // ~3.1 GB
+            displayName: "Large V3",
+            description: "State-of-the-art, multilingual"
         )
     ]
     
@@ -108,8 +112,23 @@ class ModelManager: ObservableObject {
         let destinationURL = URL(fileURLWithPath: destinationPath)
         
         do {
+            // Ensure the models directory exists
+            try FileManager.default.createDirectory(atPath: modelPath, withIntermediateDirectories: true, attributes: nil)
+            
+            // Check if we can write to the directory
+            if !FileManager.default.isWritableFile(atPath: modelPath) {
+                throw NSError(domain: "ModelManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "No write permission to models directory"])
+            }
+            
             // Remove existing file if present
-            try? FileManager.default.removeItem(at: destinationURL)
+            if FileManager.default.fileExists(atPath: destinationPath) {
+                try FileManager.default.removeItem(at: destinationURL)
+            }
+            
+            // Log file sizes for debugging
+            let sourceAttributes = try FileManager.default.attributesOfItem(atPath: location.path)
+            let sourceSize = sourceAttributes[.size] as? Int64 ?? 0
+            DebugLogger.log("ModelManager: Moving file from \(location.path) (size: \(sourceSize)) to \(destinationPath)")
             
             // Move downloaded file
             try FileManager.default.moveItem(at: location, to: destinationURL)
@@ -127,6 +146,7 @@ class ModelManager: ObservableObject {
                 alert.runModal()
             }
         } catch {
+            DebugLogger.log("ModelManager: Error moving file: \(error)")
             DispatchQueue.main.async {
                 self.isDownloading[filename] = false
                 self.downloadError[filename] = "Failed to install model: \(error.localizedDescription)"

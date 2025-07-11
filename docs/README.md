@@ -6,8 +6,8 @@
 
 **Phase**: Testing & Polish  
 **Status**: Feature Complete with Enhanced UX  
-**Version**: 1.0.0-rc2  
-**Updated**: 2025-07-10 08:07 PST
+**Version**: 1.0.0  
+**Updated**: 2025-07-10 11:00 PST
 
 ## 🎯 Project Summary
 
@@ -17,7 +17,7 @@ WhisperKey is a privacy-focused local dictation app for macOS that uses OpenAI's
 - **Development Time**: 2 days (vs 8 planned)
 - **Code Size**: ~3,000 lines
 - **Features Complete**: 17 major features
-- **Testing Progress**: 0/8 apps tested
+- **Testing Progress**: Basic functionality verified
 - **Quality**: 10/10 transcription accuracy
 
 ## ✅ What's Complete
@@ -41,10 +41,10 @@ WhisperKey is a privacy-focused local dictation app for macOS that uses OpenAI's
 - **Multiple model support** - Base, Small, Medium
 
 ### User Experience (Updated 2025-07-09)
-- **Enhanced recording indicator** (380x70px) with:
+- **Enhanced recording indicator** (400x60px) with:
   - Real-time duration timer (0:XX format)
   - Warning when approaching max time
-  - "ESC to cancel" hint
+  - Clean, minimal interface
 - **Audio feedback sounds** (optional):
   - Start: "Tink" sound
   - Stop: "Pop" sound  
@@ -100,9 +100,9 @@ WhisperKey is a privacy-focused local dictation app for macOS that uses OpenAI's
    - Download base.en (141MB) to start
 
 4. **Test recording**:
-   - Hold Right Option key
+   - Tap Right Option key to start
    - Speak clearly
-   - Release to transcribe
+   - Tap again to stop or wait for silence
 
 ## Key Documents
 

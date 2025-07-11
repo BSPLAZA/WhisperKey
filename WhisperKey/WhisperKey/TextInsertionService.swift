@@ -4,7 +4,7 @@
 //
 //  Purpose: Insert transcribed text at current cursor position
 //  
-//  Created by Orion on 2025-07-01.
+//  Created by Author on 2025-07-01.
 //
 
 import Cocoa
@@ -101,7 +101,12 @@ class TextInsertionService {
             &focusedElement
         )
         
-        return result == .success ? (focusedElement as! AXUIElement) : nil
+        // When successful, focusedElement contains an AXUIElement
+        if result == .success, CFGetTypeID(focusedElement) == AXUIElementGetTypeID() {
+            // Safe to force cast because we've verified the type
+            return (focusedElement as! AXUIElement)
+        }
+        return nil
     }
     
     /// Check if the element is a secure/password field

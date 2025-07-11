@@ -4,7 +4,7 @@
 //
 //  Purpose: Menu bar app with configurable global hotkeys using HotKey library
 //  
-//  Created by Orion on 2025-07-01.
+//  Created by Author on 2025-07-01.
 //
 
 import SwiftUI
@@ -91,7 +91,7 @@ class WindowManager: ObservableObject {
         let window = NSWindow(contentViewController: hostingController)
         window.title = "Welcome to WhisperKey"
         window.styleMask = [.titled, .closable, .resizable]
-        window.setContentSize(NSSize(width: 600, height: 600))
+        window.setContentSize(NSSize(width: 700, height: 700))
         window.center()
         window.isReleasedWhenClosed = false
         
@@ -144,11 +144,14 @@ struct MenuBarContentView: View {
             Divider()
             
             if !dictationService.hasAccessibilityPermission {
-                Label("Grant Accessibility Permission", systemImage: "exclamationmark.triangle")
-                    .foregroundColor(.orange)
-                    .onTapGesture {
-                        dictationService.requestAccessibilityPermission()
-                    }
+                Button(action: {
+                    let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
+                    _ = AXIsProcessTrustedWithOptions(options)
+                }) {
+                    Label("Grant Accessibility Permission", systemImage: "exclamationmark.triangle")
+                        .foregroundColor(.orange)
+                }
+                .help("Click to open System Settings")
             }
             
             Divider()
@@ -177,6 +180,7 @@ struct MenuBarContentView: View {
         }
         .padding(.vertical, 5)
     }
+    
     
     var hotkeyDisplayName: String {
         switch selectedHotkey {
@@ -216,7 +220,7 @@ struct MenuBarContentView: View {
         • No data leaves your device
         • Powered by OpenAI's Whisper
         
-        © 2025 WhisperKey
+        Open Source • MIT License
         """
         alert.alertStyle = .informational
         alert.addButton(withTitle: "OK")

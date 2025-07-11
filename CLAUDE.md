@@ -80,7 +80,7 @@ cd scripts
 //
 //  Purpose: What this component does
 //  
-//  Created by [Your name] on 2025-07-XX.
+//  Created by Author on 2025-07-XX.
 //
 
 // Use actors for concurrent components

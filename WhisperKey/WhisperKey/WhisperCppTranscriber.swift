@@ -9,47 +9,63 @@
 
 import Foundation
 
+@MainActor
 class WhisperCppTranscriber {
-    private let whisperPath = "/Users/orion/Developer/whisper.cpp/build/bin/whisper-cli"
-    private var modelPath: String {
+    private let whisperService = WhisperService.shared
+    
+    private var whisperPath: String? {
+        whisperService.whisperPath
+    }
+    
+    private var modelPath: String? {
         let modelName = UserDefaults.standard.string(forKey: "whisperModel") ?? "small.en"
-        let basePath = NSString(string: "~/Developer/whisper.cpp/models/").expandingTildeInPath
-        
-        switch modelName {
-        case "base.en":
-            return basePath + "/ggml-base.en.bin"
-        case "small.en":
-            return basePath + "/ggml-small.en.bin"
-        case "medium.en":
-            return basePath + "/ggml-medium.en.bin"
-        case "large-v3-turbo":
-            return basePath + "/ggml-large-v3-turbo.bin"
-        default:
-            return basePath + "/ggml-small.en.bin"
-        }
+        return whisperService.getModelPath(for: modelName)
     }
     
     init() {
         // Verify paths exist
-        if !FileManager.default.fileExists(atPath: whisperPath) {
-            print("WhisperCppTranscriber: Warning - whisper binary not found at: \(whisperPath)")
+        if let whisperPath = whisperPath {
+            if !FileManager.default.fileExists(atPath: whisperPath) {
+                DebugLogger.log("WhisperCppTranscriber: Warning - whisper binary not found at: \(whisperPath)")
+            }
+        } else {
+            DebugLogger.log("WhisperCppTranscriber: Error - No whisper path available")
         }
-        if !FileManager.default.fileExists(atPath: modelPath) {
-            print("WhisperCppTranscriber: Warning - model not found at: \(modelPath)")
+        
+        if let modelPath = modelPath {
+            if !FileManager.default.fileExists(atPath: modelPath) {
+                DebugLogger.log("WhisperCppTranscriber: Warning - model not found at: \(modelPath)")
+            }
+        } else {
+            DebugLogger.log("WhisperCppTranscriber: Error - No model path available")
         }
     }
     
     func transcribe(audioFileURL: URL) async throws -> String {
-        print("WhisperCppTranscriber: Starting transcription of: \(audioFileURL.path)")
+        DebugLogger.log("WhisperCppTranscriber: Starting transcription of: \(audioFileURL.path)")
         
         // Verify audio file exists and has content
         let attributes = try FileManager.default.attributesOfItem(atPath: audioFileURL.path)
         let fileSize = attributes[.size] as? Int64 ?? 0
-        print("WhisperCppTranscriber: Audio file size: \(fileSize) bytes")
+        DebugLogger.log("WhisperCppTranscriber: Audio file size: \(fileSize) bytes")
         
         if fileSize < 1000 {
-            print("WhisperCppTranscriber: File too small, likely no audio")
+            DebugLogger.log("WhisperCppTranscriber: File too small, likely no audio")
             return ""
+        }
+        
+        // Check if whisper is available
+        guard let whisperPath = whisperPath else {
+            throw WhisperKeyError.dependencyMissing(
+                "WhisperKey couldn't find whisper.cpp. Please install it or set a custom path in Settings."
+            )
+        }
+        
+        // Check if model is available
+        guard let modelPath = modelPath else {
+            throw WhisperKeyError.modelNotFound(
+                "The selected Whisper model could not be found. Please download it or select a different model."
+            )
         }
         
         // Run whisper.cpp
@@ -71,7 +87,7 @@ class WhisperCppTranscriber {
         process.standardOutput = outputPipe
         process.standardError = errorPipe
         
-        print("WhisperCppTranscriber: Running whisper with arguments: \(process.arguments!)")
+        DebugLogger.log("WhisperCppTranscriber: Running whisper with arguments: \(process.arguments ?? [])")
         
         try process.run()
         
@@ -83,7 +99,7 @@ class WhisperCppTranscriber {
         
         if process.terminationStatus != 0 {
             let errorString = String(data: errorData, encoding: .utf8) ?? "Unknown error"
-            print("WhisperCppTranscriber: Error running whisper: \(errorString)")
+            DebugLogger.log("WhisperCppTranscriber: Error running whisper: \(errorString)")
             throw NSError(domain: "WhisperKey", code: 10, userInfo: [
                 NSLocalizedDescriptionKey: "Whisper transcription failed: \(errorString)"
             ])
@@ -91,7 +107,7 @@ class WhisperCppTranscriber {
         
         // Parse output
         let output = String(data: outputData, encoding: .utf8) ?? ""
-        print("WhisperCppTranscriber: Raw output:\n\(output)")
+        DebugLogger.log("WhisperCppTranscriber: Raw output:\n\(output)")
         
         // Extract transcribed text
         // Whisper outputs the transcription after any system messages
@@ -111,7 +127,7 @@ class WhisperCppTranscriber {
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .joined(separator: " ")
         
-        print("WhisperCppTranscriber: Transcribed text: \"\(transcribedText)\"")
+        DebugLogger.log("WhisperCppTranscriber: Transcribed text: \"\(transcribedText)\"")
         
         return transcribedText
     }

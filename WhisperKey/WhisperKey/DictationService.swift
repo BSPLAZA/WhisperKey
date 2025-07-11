@@ -4,7 +4,7 @@
 //
 //  Purpose: Handles audio recording and transcription
 //  
-//  Created by Orion on 2025-07-01.
+//  Created by Author on 2025-07-01.
 //
 
 import AVFoundation
@@ -121,9 +121,26 @@ class DictationService: NSObject, ObservableObject {
     }
     
     func requestAccessibilityPermission() {
+        // First check if we already have permission
+        if AXIsProcessTrusted() {
+            hasAccessibilityPermission = true
+            debugLog("Accessibility permission already granted")
+            return
+        }
+        
+        debugLog("Requesting accessibility permission...")
+        
+        // This will show the system dialog the first time only
         let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
         let trusted = AXIsProcessTrustedWithOptions(options)
-        // Don't show additional dialogs - the system dialog is enough
+        
+        hasAccessibilityPermission = trusted
+        
+        if trusted {
+            debugLog("Accessibility permission granted immediately")
+        } else {
+            debugLog("Accessibility permission not granted - user needs to manually enable in System Settings")
+        }
     }
     
     private func setupAudioEngine() {
@@ -131,12 +148,20 @@ class DictationService: NSObject, ObservableObject {
     }
     
     func startRecording() {
-        print("=== WHISPERKEY: startRecording() called ===")
+        DebugLogger.log("=== WHISPERKEY: startRecording() called ===")
         NSLog("=== WHISPERKEY: startRecording() called ===")
         debugLog("startRecording() called")
         
+        // Check if whisper.cpp is available
+        guard WhisperService.shared.isAvailable else {
+            DebugLogger.log("=== WHISPERKEY: Whisper.cpp not available ===")
+            transcriptionStatus = "⚠️ Whisper.cpp not found"
+            WhisperService.shared.showSetupError()
+            return
+        }
+        
         guard hasAccessibilityPermission else {
-            print("=== WHISPERKEY: No accessibility permission ===")
+            DebugLogger.log("=== WHISPERKEY: No accessibility permission ===")
             NSLog("=== WHISPERKEY: No accessibility permission ===")
             debugLog("No accessibility permission")
             requestAccessibilityPermission()
@@ -146,7 +171,7 @@ class DictationService: NSObject, ObservableObject {
         debugLog("Accessibility permission OK")
         
         guard hasMicrophonePermission else {
-            print("=== WHISPERKEY: No microphone permission ===")
+            DebugLogger.log("=== WHISPERKEY: No microphone permission ===")
             NSLog("=== WHISPERKEY: No microphone permission ===")
             debugLog("No microphone permission")
             transcriptionStatus = "🎤 Grant microphone access in System Settings"
@@ -188,7 +213,7 @@ class DictationService: NSObject, ObservableObject {
             return
         }
         
-        print("=== WHISPERKEY: All checks passed, starting audio recording ===")
+        DebugLogger.log("=== WHISPERKEY: All checks passed, starting audio recording ===")
         NSLog("=== WHISPERKEY: All checks passed, starting audio recording ===")
         debugLog("All checks passed, starting audio recording")
         
@@ -196,7 +221,7 @@ class DictationService: NSObject, ObservableObject {
             try startAudioRecording()
             isRecording = true
             transcriptionStatus = "🔴 Recording... Speak clearly"
-            print("=== WHISPERKEY: Recording started successfully ===")
+            DebugLogger.log("=== WHISPERKEY: Recording started successfully ===")
             NSLog("=== WHISPERKEY: Recording started successfully ===")
             debugLog("Recording started successfully")
             
@@ -210,7 +235,7 @@ class DictationService: NSObject, ObservableObject {
                 RecordingIndicatorManager.shared.showRecordingIndicator()
             }
         } catch {
-            print("=== WHISPERKEY: Failed to start recording: \(error) ===")
+            DebugLogger.log("=== WHISPERKEY: Failed to start recording: \(error) ===")
             NSLog("=== WHISPERKEY: Failed to start recording: %@", error.localizedDescription)
             debugLog("Failed to start recording: \(error)")
             transcriptionStatus = "❌ Recording failed: \(error.localizedDescription)"
@@ -220,7 +245,7 @@ class DictationService: NSObject, ObservableObject {
     func stopRecording() {
         guard isRecording else { return }
         
-        print("DictationService: Stopping recording...")
+        DebugLogger.log("DictationService: Stopping recording...")
         debugLog("stopRecording() called")
         isRecording = false
         audioEngine?.stop()
@@ -243,25 +268,25 @@ class DictationService: NSObject, ObservableObject {
         
         // Process the audio file
         if let fileURL = audioFileURL {
-            print("DictationService: Processing audio file at: \(fileURL.path)")
-            print("DictationService: File exists after closing: \(FileManager.default.fileExists(atPath: fileURL.path))")
+            DebugLogger.log("DictationService: Processing audio file at: \(fileURL.path)")
+            DebugLogger.log("DictationService: File exists after closing: \(FileManager.default.fileExists(atPath: fileURL.path))")
             
             // Check file size
             if let attributes = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
                let fileSize = attributes[.size] as? Int64 {
-                print("DictationService: Audio file size: \(fileSize) bytes")
+                DebugLogger.log("DictationService: Audio file size: \(fileSize) bytes")
                 
                 // Read first few bytes to verify it's a valid WAV file
                 if let data = try? Data(contentsOf: fileURL, options: .mappedIfSafe) {
                     let header = data.prefix(4).map { String(format: "%c", $0) }.joined()
-                    print("DictationService: File header: '\(header)' (should be 'RIFF' for WAV)")
+                    DebugLogger.log("DictationService: File header: '\(header)' (should be 'RIFF' for WAV)")
                 }
             } else {
-                print("DictationService: ERROR - Could not get file attributes!")
+                DebugLogger.log("DictationService: ERROR - Could not get file attributes!")
             }
             processAudioFile(at: fileURL)
         } else {
-            print("DictationService: No audio file to process!")
+            DebugLogger.log("DictationService: No audio file to process!")
             transcriptionStatus = "❌ No audio recorded"
         }
     }
@@ -272,8 +297,8 @@ class DictationService: NSObject, ObservableObject {
         let fileName = "whisperkey_\(Date().timeIntervalSince1970).wav"
         audioFileURL = tempDir.appendingPathComponent(fileName)
         
-        print("DictationService: Temp directory: \(tempDir.path)")
-        print("DictationService: Will create audio file: \(fileName)")
+        DebugLogger.log("DictationService: Temp directory: \(tempDir.path)")
+        DebugLogger.log("DictationService: Will create audio file: \(fileName)")
         
         guard let audioEngine = audioEngine,
               let fileURL = audioFileURL else {
@@ -282,22 +307,22 @@ class DictationService: NSObject, ObservableObject {
         
         // Check if we have microphone access
         let micStatus = AVCaptureDevice.authorizationStatus(for: .audio)
-        print("DictationService: Microphone authorization status: \(micStatus.rawValue)")
+        DebugLogger.log("DictationService: Microphone authorization status: \(micStatus.rawValue)")
         
         // Get input node and its native format
         let inputNode = audioEngine.inputNode
         
         // Check if input is available
         guard inputNode.numberOfInputs > 0 else {
-            print("DictationService: ERROR - No audio inputs available!")
+            DebugLogger.log("DictationService: ERROR - No audio inputs available!")
             throw NSError(domain: "WhisperKey", code: 3, userInfo: [NSLocalizedDescriptionKey: "No audio input available"])
         }
         
         let inputFormat = inputNode.inputFormat(forBus: 0)
         
-        print("DictationService: Input hardware format: \(inputFormat)")
-        print("DictationService: Sample rate: \(inputFormat.sampleRate), channels: \(inputFormat.channelCount)")
-        print("DictationService: Number of inputs: \(inputNode.numberOfInputs)")
+        DebugLogger.log("DictationService: Input hardware format: \(inputFormat)")
+        DebugLogger.log("DictationService: Sample rate: \(inputFormat.sampleRate), channels: \(inputFormat.channelCount)")
+        DebugLogger.log("DictationService: Number of inputs: \(inputNode.numberOfInputs)")
         
         // Create recording format explicitly
         guard let recordingFormat = AVAudioFormat(
@@ -312,28 +337,28 @@ class DictationService: NSObject, ObservableObject {
         // Create audio file with explicit settings
         audioFile = try AVAudioFile(forWriting: fileURL, settings: recordingFormat.settings)
         
-        print("DictationService: Created audio file at: \(fileURL.path)")
-        print("DictationService: File exists: \(FileManager.default.fileExists(atPath: fileURL.path))")
+        DebugLogger.log("DictationService: Created audio file at: \(fileURL.path)")
+        DebugLogger.log("DictationService: File exists: \(FileManager.default.fileExists(atPath: fileURL.path))")
         
         // Track samples recorded
         var samplesRecorded = 0
         
         // Install tap on input with native format
         var tapCount = 0
-        print("=== WHISPERKEY: Installing audio tap ===")
+        DebugLogger.log("=== WHISPERKEY: Installing audio tap ===")
         NSLog("=== WHISPERKEY: Installing audio tap with format: %@", recordingFormat.description)
         
         // Try using nil format to let AVAudioEngine use the native format
         inputNode.installTap(onBus: 0, bufferSize: 4096, format: nil) { [weak self] buffer, _ in
             guard let self = self, let audioFile = self.audioFile else { 
-                print("=== WHISPERKEY: Tap called but self or audioFile is nil ===")
+                DebugLogger.log("=== WHISPERKEY: Tap called but self or audioFile is nil ===")
                 return 
             }
             
             // Debug: Log first few taps
             tapCount += 1
             if tapCount <= 3 {
-                print("=== WHISPERKEY: Tap #\(tapCount) - Buffer format: \(buffer.format), frameLength: \(buffer.frameLength) ===")
+                DebugLogger.log("=== WHISPERKEY: Tap #\(tapCount) - Buffer format: \(buffer.format), frameLength: \(buffer.frameLength) ===")
                 self.debugLog("Audio tap #\(tapCount) - frameLength: \(buffer.frameLength)")
             }
             
@@ -344,10 +369,10 @@ class DictationService: NSObject, ObservableObject {
                 
                 
                 if tapCount % 50 == 0 {
-                    print("DictationService: Recorded \(samplesRecorded) samples (\(Double(samplesRecorded) / recordingFormat.sampleRate) seconds)")
+                    DebugLogger.log("DictationService: Recorded \(samplesRecorded) samples (\(Double(samplesRecorded) / recordingFormat.sampleRate) seconds)")
                 }
             } catch {
-                print("DictationService: Error writing audio: \(error)")
+                DebugLogger.log("DictationService: Error writing audio: \(error)")
             }
             
             // Check for silence
@@ -363,11 +388,11 @@ class DictationService: NSObject, ObservableObject {
             if level > self.silenceThreshold {
                 self.lastSoundTime = Date()
                 if tapCount <= 10 || tapCount % 10 == 0 {
-                    print("DictationService: Sound detected, level: \(level)")
+                    DebugLogger.log("DictationService: Sound detected, level: \(level)")
                 }
             } else if Date().timeIntervalSince(self.lastSoundTime) > self.silenceDuration && tapCount > 50 {
                 // Auto-stop after silence (wait for more taps to ensure we have some audio)
-                print("DictationService: Silence detected for 2 seconds, stopping... (samples recorded: \(samplesRecorded))")
+                DebugLogger.log("DictationService: Silence detected for 2 seconds, stopping... (samples recorded: \(samplesRecorded))")
                 DispatchQueue.main.async {
                     self.stopRecording()
                 }
@@ -376,7 +401,7 @@ class DictationService: NSObject, ObservableObject {
             // Check for maximum recording duration
             let recordingDuration = Date().timeIntervalSince(self.recordingStartTime)
             if recordingDuration > self.maxRecordingDuration {
-                print("DictationService: Maximum recording duration reached (60 seconds), stopping...")
+                DebugLogger.log("DictationService: Maximum recording duration reached (60 seconds), stopping...")
                 DispatchQueue.main.async {
                     self.transcriptionStatus = "⏱️ Recording stopped (60s limit)"
                     self.stopRecording()
@@ -393,7 +418,7 @@ class DictationService: NSObject, ObservableObject {
         self.lastSoundTime = Date()
         self.recordingStartTime = Date()
         
-        print("DictationService: Audio engine started, recording... (speak now!)")
+        DebugLogger.log("DictationService: Audio engine started, recording... (speak now!)")
         NSLog("=== WHISPERKEY: Audio engine started, recording... (speak now!) ===")
     }
     
@@ -408,13 +433,13 @@ class DictationService: NSObject, ObservableObject {
     }
     
     private func processAudioFile(at url: URL) {
-        print("DictationService: Processing audio file...")
+        DebugLogger.log("DictationService: Processing audio file...")
         debugLog("Processing audio file at: \(url.path)")
         
         // Check file size
         if let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
            let fileSize = attributes[.size] as? Int64 {
-            print("DictationService: Audio file size: \(fileSize) bytes")
+            DebugLogger.log("DictationService: Audio file size: \(fileSize) bytes")
             debugLog("Audio file size: \(fileSize) bytes")
         }
         
@@ -423,18 +448,18 @@ class DictationService: NSObject, ObservableObject {
             do {
                 // Process entire file at once
                 let convertedURL = try await convertAudioToWhisperFormat(url: url)
-                print("DictationService: Starting whisper transcription...")
+                DebugLogger.log("DictationService: Starting whisper transcription...")
                 let transcribedText = try await self.transcriber.transcribe(audioFileURL: convertedURL)
                 
                 DispatchQueue.main.async { [weak self] in
                     self?.transcriptionStatus = "✅ Ready to dictate"
                     
                     if transcribedText.isEmpty {
-                        print("DictationService: No speech detected")
+                        DebugLogger.log("DictationService: No speech detected")
                         self?.debugLog("No speech detected in audio")
                         self?.transcriptionStatus = "🔇 No speech detected - try again"
                     } else {
-                        print("DictationService: Final transcription: \(transcribedText)")
+                        DebugLogger.log("DictationService: Final transcription: \(transcribedText)")
                         self?.debugLog("Transcription result: \"\(transcribedText)\"")
                         
                         // Insert at cursor
@@ -446,7 +471,7 @@ class DictationService: NSObject, ObservableObject {
                                 // Calculate words inserted
                                 let wordCount = transcribedText.split(separator: " ").count
                                 self?.transcriptionStatus = "✅ Inserted \(wordCount) word\(wordCount == 1 ? "" : "s")"
-                                print("DictationService: Text inserted successfully")
+                                DebugLogger.log("DictationService: Text inserted successfully")
                                 self?.debugLog("Text inserted successfully!")
                                 
                                 // Play success sound if enabled
@@ -480,11 +505,11 @@ class DictationService: NSObject, ObservableObject {
                                     ErrorHandler.shared.handle(.noActiveTextField)
                                 case .insertionFailed:
                                     self?.transcriptionStatus = "❌ Insert failed"
-                                    print("DictationService: Generic insertion failure")
+                                    DebugLogger.log("DictationService: Generic insertion failure")
                                 }
                             } catch {
                                 self?.transcriptionStatus = "❌ Insert failed: \(error.localizedDescription)"
-                                print("DictationService: Failed to insert text: \(error)")
+                                DebugLogger.log("DictationService: Failed to insert text: \(error)")
                             }
                         }
                     }
@@ -493,7 +518,7 @@ class DictationService: NSObject, ObservableObject {
                 // Clean up audio files
                 self.cleanupTempFiles(primaryFile: url, convertedFile: convertedURL != url ? convertedURL : nil)
             } catch {
-                print("DictationService: Error processing audio: \(error)")
+                DebugLogger.log("DictationService: Error processing audio: \(error)")
                 self.transcriptionStatus = "❌ Processing failed - please try again"
             }
         }
@@ -501,15 +526,15 @@ class DictationService: NSObject, ObservableObject {
     
     private func convertAudioToWhisperFormat(url: URL) async throws -> URL {
         // Whisper.cpp can handle resampling internally, so we'll use the original file
-        print("DictationService: Using original audio file at \(url.path)")
+        DebugLogger.log("DictationService: Using original audio file at \(url.path)")
         
         // Verify the file has content
         if let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
            let fileSize = attributes[.size] as? Int64 {
-            print("DictationService: Audio file size for transcription: \(fileSize) bytes")
+            DebugLogger.log("DictationService: Audio file size for transcription: \(fileSize) bytes")
             
             if fileSize < 1000 {
-                print("DictationService: Warning - Audio file seems too small")
+                DebugLogger.log("DictationService: Warning - Audio file seems too small")
             }
         }
         
@@ -519,7 +544,7 @@ class DictationService: NSObject, ObservableObject {
     func updateModel() {
         // Model will be read from UserDefaults by transcriber
         let modelName = UserDefaults.standard.string(forKey: "whisperModel") ?? "small.en"
-        print("DictationService: Updated to model: \(modelName)")
+        DebugLogger.log("DictationService: Updated to model: \(modelName)")
     }
     
     // MARK: - Cleanup
@@ -529,9 +554,9 @@ class DictationService: NSObject, ObservableObject {
         if let primaryFile = primaryFile {
             do {
                 try FileManager.default.removeItem(at: primaryFile)
-                print("DictationService: Cleaned up primary audio file")
+                DebugLogger.log("DictationService: Cleaned up primary audio file")
             } catch {
-                print("DictationService: Failed to clean up primary file: \(error)")
+                DebugLogger.log("DictationService: Failed to clean up primary file: \(error)")
             }
         }
         
@@ -539,9 +564,9 @@ class DictationService: NSObject, ObservableObject {
         if let convertedFile = convertedFile {
             do {
                 try FileManager.default.removeItem(at: convertedFile)
-                print("DictationService: Cleaned up converted audio file")
+                DebugLogger.log("DictationService: Cleaned up converted audio file")
             } catch {
-                print("DictationService: Failed to clean up converted file: \(error)")
+                DebugLogger.log("DictationService: Failed to clean up converted file: \(error)")
             }
         }
         
@@ -561,10 +586,10 @@ class DictationService: NSObject, ObservableObject {
             }
             
             if !whisperKeyFiles.isEmpty {
-                print("DictationService: Cleaned up \(whisperKeyFiles.count) temp files on termination")
+                DebugLogger.log("DictationService: Cleaned up \(whisperKeyFiles.count) temp files on termination")
             }
         } catch {
-            print("DictationService: Failed to enumerate temp files: \(error)")
+            DebugLogger.log("DictationService: Failed to enumerate temp files: \(error)")
         }
     }
     
@@ -594,11 +619,11 @@ extension DictationService {
     }
     
     @objc private func handleAudioDeviceChange(_ notification: Notification) {
-        print("DictationService: Audio device configuration changed")
+        DebugLogger.log("DictationService: Audio device configuration changed")
         
         if isRecording {
             // Stop recording gracefully
-            print("DictationService: Stopping recording due to audio device change")
+            DebugLogger.log("DictationService: Stopping recording due to audio device change")
             transcriptionStatus = "⚠️ Audio device changed - recording stopped"
             stopRecording()
             

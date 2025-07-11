@@ -1,5 +1,9 @@
 # WhisperKey
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![macOS](https://img.shields.io/badge/macOS-12.0%2B-blue.svg)](https://www.apple.com/macos)
+[![Swift](https://img.shields.io/badge/Swift-5.9-orange.svg)](https://swift.org)
+
 **Privacy-focused local dictation for macOS**
 
 WhisperKey brings the power of OpenAI's Whisper AI to your Mac for fast, accurate speech-to-text that works in any app. Your voice never leaves your device.
@@ -25,6 +29,20 @@ WhisperKey brings the power of OpenAI's Whisper AI to your Mac for fast, accurat
 **Right Option (⌥)** - Tap once to start recording, tap again to stop
 
 You can change this in Settings to F13 if preferred.
+
+## Installation
+
+### Option 1: Download Release
+1. Download the latest release from the [Releases page](https://github.com/BSPLAZA/WhisperKey/releases)
+2. Move WhisperKey.app to your Applications folder
+3. Launch WhisperKey from Applications
+
+### Option 2: Build from Source
+```bash
+git clone https://github.com/BSPLAZA/WhisperKey.git
+cd WhisperKey
+swift build
+```
 
 ## Requirements
 
@@ -57,10 +75,34 @@ WhisperKey is designed with privacy first:
 - No analytics or tracking
 - Open source
 
+## Building from Source
+
+Prerequisites:
+- Xcode 14.0 or later (or Xcode Command Line Tools)
+- [whisper.cpp](https://github.com/ggerganov/whisper.cpp) built with Metal support
+
+```bash
+# Clone and build
+git clone https://github.com/BSPLAZA/WhisperKey.git
+cd WhisperKey
+swift build
+
+# Or open in Xcode
+open WhisperKey/WhisperKey.xcodeproj
+```
+
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
 ## Support
 
 Having issues? Check the [troubleshooting guide](docs/troubleshooting) or [open an issue](https://github.com/BSPLAZA/WhisperKey/issues).
 
+## License
+
+WhisperKey is open source software licensed under the [MIT License](LICENSE).
+
 ---
 
-Made with ❤️ for the Mac community
+Made with 🎤 for the Mac community

@@ -185,7 +185,7 @@ struct GeneralTab: View {
                 try SMAppService.mainApp.unregister()
             }
         } catch {
-            print("Failed to update launch at login: \(error)")
+            DebugLogger.log("Failed to update launch at login: \(error)")
         }
     }
 }
@@ -273,10 +273,10 @@ struct ModelsTab: View {
     
     private var modelDisplayName: String {
         switch whisperModel {
-        case "base.en": return "Base (39 MB)"
-        case "small.en": return "Small (141 MB)"
-        case "medium.en": return "Medium (466 MB)"
-        case "large-v3-turbo": return "Large Turbo (1.5 GB)"
+        case "base.en": return "Base (141 MB)"
+        case "small.en": return "Small (465 MB)"
+        case "medium.en": return "Medium (1.4 GB)"
+        case "large-v3": return "Large V3 (3.1 GB)"
         default: return whisperModel
         }
     }
@@ -336,7 +336,11 @@ struct ModelsTab: View {
 
 struct AdvancedTab: View {
     @AppStorage("debugMode") private var debugMode = false
+    @AppStorage("customWhisperPath") private var customWhisperPath = ""
+    @AppStorage("customModelsPath") private var customModelsPath = ""
     @State private var showingResetAlert = false
+    @State private var showingWhisperPicker = false
+    @State private var showingModelsPicker = false
     
     var body: some View {
         Form {
@@ -344,6 +348,72 @@ struct AdvancedTab: View {
                 // Debug mode
                 Toggle("Enable debug logging", isOn: $debugMode)
                     .help("Shows detailed logs in Console.app")
+                
+                Divider()
+                
+                // Custom paths
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Custom Paths")
+                        .font(.headline)
+                    
+                    // Whisper path
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Whisper.cpp location:")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        HStack {
+                            TextField("Leave empty for auto-detection", text: $customWhisperPath)
+                                .textFieldStyle(.roundedBorder)
+                                .disabled(true)
+                            Button("Browse...") {
+                                selectWhisperPath()
+                            }
+                            .controlSize(.small)
+                            if !customWhisperPath.isEmpty {
+                                Button("Clear") {
+                                    customWhisperPath = ""
+                                    WhisperService.shared.checkAvailability()
+                                }
+                                .controlSize(.small)
+                            }
+                        }
+                    }
+                    
+                    // Models path
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Models directory:")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        HStack {
+                            TextField("Leave empty for auto-detection", text: $customModelsPath)
+                                .textFieldStyle(.roundedBorder)
+                                .disabled(true)
+                            Button("Browse...") {
+                                selectModelsPath()
+                            }
+                            .controlSize(.small)
+                            if !customModelsPath.isEmpty {
+                                Button("Clear") {
+                                    customModelsPath = ""
+                                    WhisperService.shared.checkAvailability()
+                                }
+                                .controlSize(.small)
+                            }
+                        }
+                    }
+                    
+                    // Status
+                    if WhisperService.shared.isAvailable {
+                        Label("Whisper.cpp found", systemImage: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundColor(.green)
+                    } else {
+                        Label("Whisper.cpp not found", systemImage: "exclamationmark.triangle.fill")
+                            .font(.caption)
+                            .foregroundColor(.orange)
+                    }
+                }
+                .padding(.vertical, 4)
                 
                 Divider()
                 
@@ -379,7 +449,7 @@ struct AdvancedTab: View {
                 VStack(spacing: 4) {
                     Text("WhisperKey \(appVersion)")
                         .font(.caption)
-                    Text("© 2025")
+                    Text("Open Source • MIT License")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -418,6 +488,40 @@ struct AdvancedTab: View {
             // Update hotkey
             if let appDelegate = NSApp.delegate as? AppDelegate {
                 appDelegate.updateHotkey()
+            }
+        }
+    }
+    
+    private func selectWhisperPath() {
+        let openPanel = NSOpenPanel()
+        openPanel.prompt = "Select"
+        openPanel.message = "Select the whisper-cli executable"
+        openPanel.canChooseDirectories = false
+        openPanel.canChooseFiles = true
+        openPanel.allowsMultipleSelection = false
+        openPanel.directoryURL = URL(fileURLWithPath: NSString(string: "~/Developer/whisper.cpp").expandingTildeInPath)
+        
+        openPanel.begin { response in
+            if response == .OK, let url = openPanel.url {
+                customWhisperPath = url.path
+                WhisperService.shared.setCustomPaths(whisper: customWhisperPath, models: nil)
+            }
+        }
+    }
+    
+    private func selectModelsPath() {
+        let openPanel = NSOpenPanel()
+        openPanel.prompt = "Select"
+        openPanel.message = "Select the directory containing Whisper models"
+        openPanel.canChooseDirectories = true
+        openPanel.canChooseFiles = false
+        openPanel.allowsMultipleSelection = false
+        openPanel.directoryURL = URL(fileURLWithPath: NSString(string: "~/Developer/whisper.cpp/models").expandingTildeInPath)
+        
+        openPanel.begin { response in
+            if response == .OK, let url = openPanel.url {
+                customModelsPath = url.path
+                WhisperService.shared.setCustomPaths(whisper: nil, models: customModelsPath)
             }
         }
     }
@@ -466,14 +570,14 @@ class PreferencesWindowController: NSWindowController, NSWindowDelegate {
     }
     
     override func showWindow(_ sender: Any?) {
-        print("PreferencesWindowController: showWindow called")
+        DebugLogger.log("PreferencesWindowController: showWindow called")
         super.showWindow(sender)
         window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
-        print("PreferencesWindowController: window shown")
+        DebugLogger.log("PreferencesWindowController: window shown")
     }
     
     func windowWillClose(_ notification: Notification) {
-        print("PreferencesWindowController: window will close")
+        DebugLogger.log("PreferencesWindowController: window will close")
     }
 }

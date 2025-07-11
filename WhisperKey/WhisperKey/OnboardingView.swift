@@ -9,6 +9,7 @@
 
 import SwiftUI
 import AVFoundation
+import AppKit
 
 struct OnboardingView: View {
     @State private var currentStep = 0
@@ -87,7 +88,7 @@ struct OnboardingView: View {
                 Spacer()
                 
                 if currentStep < steps - 1 {
-                    Button("Next") {
+                    Button(nextButtonText) {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             currentStep += 1
                         }
@@ -104,7 +105,7 @@ struct OnboardingView: View {
             .padding(.horizontal, 40)
             .padding(.bottom, 30)
         }
-        .frame(width: 600, height: 600)
+        .frame(width: 700, height: 700)
         .background(Color(NSColor.windowBackgroundColor))
         .onAppear {
             checkPermissions()
@@ -116,10 +117,18 @@ struct OnboardingView: View {
         case 1: // Permissions step
             return hasAccessibilityPermission && hasMicrophonePermission
         case 2: // Model step
-            return !isDownloading && modelManager.isModelInstalled(selectedModel)
+            // Allow proceeding if the selected model is installed, regardless of other downloads
+            return modelManager.isModelInstalled(selectedModel)
         default:
             return true
         }
+    }
+    
+    private var nextButtonText: String {
+        if currentStep == 2 && isDownloading {
+            return "Continue (downloads in background)"
+        }
+        return "Next"
     }
     
     private func checkPermissions() {
@@ -151,8 +160,7 @@ struct WelcomeStep: View {
     @State private var isAnimating = false
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
+        VStack(spacing: 16) {
                 // Animated icon
                 ZStack {
                     Circle()
@@ -179,9 +187,7 @@ struct WelcomeStep: View {
                 
                 // How to use
                 VStack(alignment: .leading, spacing: 12) {
-                    Label("Tap Right Option key to start/stop recording", systemImage: "keyboard")
-                    Label("Or tap the activation key again to stop", systemImage: "arrow.triangle.2.circlepath")
-                    Label("Press ESC to cancel recording", systemImage: "escape")
+                    Label("Tap Right Option key (activation key) to start/stop recording", systemImage: "keyboard")
                 }
                 .font(.callout)
                 .padding(16)
@@ -203,9 +209,7 @@ struct WelcomeStep: View {
                                description: "Any text field, any app")
                 }
             }
-            .padding(.vertical, 20)
         }
-    }
 }
 
 struct FeatureCard: View {
@@ -240,6 +244,7 @@ struct FeatureCard: View {
 struct PermissionsStep: View {
     @Binding var hasAccessibilityPermission: Bool
     @Binding var hasMicrophonePermission: Bool
+    @State private var permissionCheckTimer: Timer?
     
     var body: some View {
         VStack(spacing: 20) {
@@ -277,12 +282,56 @@ struct PermissionsStep: View {
             .padding(.horizontal, 40)
             
             if !hasAccessibilityPermission {
-                Text("Note: You may need to restart WhisperKey after granting accessibility permission")
+                VStack(spacing: 8) {
+                    Text("Note: You may need to restart WhisperKey after granting accessibility permission")
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                        .multilineTextAlignment(.center)
+                    
+                    Button("Open System Settings") {
+                        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    }
+                    .buttonStyle(.link)
                     .font(.caption)
-                    .foregroundColor(.orange)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 40)
+                }
+                .padding(.horizontal, 40)
             }
+        }
+        .onAppear {
+            startPermissionChecking()
+        }
+        .onDisappear {
+            stopPermissionChecking()
+        }
+    }
+    
+    private func startPermissionChecking() {
+        // Check immediately
+        checkPermissions()
+        
+        // Then check every 2 seconds
+        permissionCheckTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
+            checkPermissions()
+        }
+    }
+    
+    private func stopPermissionChecking() {
+        permissionCheckTimer?.invalidate()
+        permissionCheckTimer = nil
+    }
+    
+    private func checkPermissions() {
+        // Check accessibility
+        hasAccessibilityPermission = AXIsProcessTrusted()
+        
+        // Check microphone
+        switch AVCaptureDevice.authorizationStatus(for: .audio) {
+        case .authorized:
+            hasMicrophonePermission = true
+        default:
+            hasMicrophonePermission = false
         }
     }
     
@@ -296,7 +345,7 @@ struct PermissionsStep: View {
     
     private func requestAccessibilityPermission() {
         let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
-        hasAccessibilityPermission = AXIsProcessTrustedWithOptions(options)
+        _ = AXIsProcessTrustedWithOptions(options)
     }
 }
 
@@ -348,9 +397,10 @@ struct ModelSelectionStep: View {
     @StateObject private var modelManager = ModelManager.shared
     
     let models = [
-        ("base.en", "Base (141 MB)", "Fast, good for quick notes"),
-        ("small.en", "Small (465 MB)", "Balanced speed and accuracy"),
-        ("medium.en", "Medium (1.4 GB)", "Best accuracy, slower")
+        ("base.en", "Base English (141 MB)", "Fast, good for quick notes"),
+        ("small.en", "Small English (465 MB)", "Balanced speed and accuracy"),
+        ("medium.en", "Medium English (1.4 GB)", "Best accuracy for English"),
+        ("large-v3", "Large V3 (3.1 GB)", "State-of-the-art, multilingual")
     ]
     
     var body: some View {
@@ -363,8 +413,9 @@ struct ModelSelectionStep: View {
             Text("Select a Whisper model based on your needs")
                 .foregroundColor(.secondary)
             
-            VStack(spacing: 12) {
-                ForEach(models, id: \.0) { model, name, description in
+            ScrollView {
+                VStack(spacing: 12) {
+                    ForEach(models, id: \.0) { model, name, description in
                     ModelRow(
                         model: model,
                         name: name,
@@ -381,13 +432,28 @@ struct ModelSelectionStep: View {
                             modelManager.downloadModel(model)
                         }
                     )
+                    }
                 }
+                .padding(.horizontal, 40)
             }
-            .padding(.horizontal, 40)
+            .frame(maxHeight: 350)
             
-            Text("You can change models later in Preferences")
-                .font(.caption)
-                .foregroundColor(.secondary)
+            VStack(spacing: 4) {
+                if isDownloading {
+                    HStack(spacing: 6) {
+                        ProgressView()
+                            .scaleEffect(0.7)
+                            .frame(width: 12, height: 12)
+                        Text("Downloads will continue in the background")
+                            .font(.caption)
+                            .foregroundColor(.orange)
+                    }
+                }
+                
+                Text("You can change or download models later in Preferences")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
         }
         .onReceive(modelManager.$isDownloading) { newValue in
             // Update downloading state
@@ -475,7 +541,7 @@ struct ReadyStep: View {
             VStack(alignment: .leading, spacing: 16) {
                 HowToRow(
                     number: "1",
-                    text: "Hold Right Option (⌥) to start recording"
+                    text: "Tap Right Option (⌥) to start recording"
                 )
                 HowToRow(
                     number: "2",
@@ -483,7 +549,7 @@ struct ReadyStep: View {
                 )
                 HowToRow(
                     number: "3",
-                    text: "Release to stop or wait for silence"
+                    text: "Tap again to stop or wait for silence"
                 )
                 HowToRow(
                     number: "4",

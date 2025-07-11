@@ -97,6 +97,8 @@ WhisperKey has evolved from MVP to a polished release candidate in just 3 days. 
 - Model auto-selection based on language
 - Per-app language preferences
 - Cloud model support (opt-in only)
+- **Custom model path preference** - Let users specify where models are stored
+- **Model path auto-detection** - Scan common locations for existing models
 
 ## Key Metrics
 

@@ -252,18 +252,18 @@ class RecordingIndicatorManager: ObservableObject {
         // Create window if needed
         if indicatorWindow == nil {
             indicatorWindow = RecordingIndicatorWindow()
-            
-            // Create and set content view
-            let view = RecordingIndicatorView(
-                audioLevelMonitor: audioLevelMonitor,
-                onStop: { [weak self] in
-                    self?.hideRecordingIndicator()
-                }
-            )
-            let hostingView = NSHostingView(rootView: view)
-            indicatorWindow?.contentView = hostingView
-            indicatorView = hostingView
         }
+        
+        // Always create a fresh view to reset timer state
+        let view = RecordingIndicatorView(
+            audioLevelMonitor: audioLevelMonitor,
+            onStop: { [weak self] in
+                self?.hideRecordingIndicator()
+            }
+        )
+        let hostingView = NSHostingView(rootView: view)
+        indicatorWindow?.contentView = hostingView
+        indicatorView = hostingView
         
         // Show the indicator
         indicatorWindow?.showIndicator()

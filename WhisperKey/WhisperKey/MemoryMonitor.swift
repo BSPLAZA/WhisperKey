@@ -64,7 +64,7 @@ class MemoryMonitor: ObservableObject {
         isUnderMemoryPressure = memoryPressurePercentage > memoryPressureThreshold
         
         if isUnderMemoryPressure {
-            print("MemoryMonitor: High memory pressure detected (\(Int(memoryPressurePercentage))% used)")
+            DebugLogger.log("MemoryMonitor: High memory pressure detected (\(Int(memoryPressurePercentage))% used)")
         }
     }
     
@@ -155,7 +155,7 @@ extension MemoryMonitor {
         if !canRunModel(currentModel) {
             // Suggest a smaller model
             let recommended = recommendedModel()
-            print("MemoryMonitor: Not enough memory for \(currentModel), recommending \(recommended)")
+            DebugLogger.log("MemoryMonitor: Not enough memory for \(currentModel), recommending \(recommended)")
             
             // Could auto-switch to recommended model here if desired
             return false

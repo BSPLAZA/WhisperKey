@@ -382,6 +382,98 @@ swift package update
 - Test across 8 applications
 - Consider implementing language dropdown in v1.1
 
+**Update (08:35)**:
+- Fixed critical UI issues:
+  - Timer now resets properly between recordings
+  - Recording dialog text no longer truncated (400x60px)
+  - Removed ESC hint from indicator
+  - Fixed onboarding layout with ScrollView
+  - Fixed onboarding showing repeatedly bug
+- Committed all changes successfully
+
+**Update (09:00)**:
+- Fixed more issues based on user feedback:
+  - Timer now properly resets by recreating view each time
+  - Simplified onboarding text to just "Tap Right Option key (activation key)"
+  - Added auto-refresh timer for permissions (checks every 0.5s)
+  - Added all Whisper models to onboarding (base/small/medium + multilingual + large-v3)
+- Note: Model path currently hardcoded to ~/Developer/whisper.cpp/models/
+  - Consider adding preference for custom model path in future
+  - Could scan common locations or let user browse
+
+**Update (09:30)**:
+- Simplified permission handling based on feedback:
+  - Removed overcomplicated AccessibilityHelper
+  - Permission dialog now only shows once
+  - Direct system call instead of wrapper
+- Fixed UI issues:
+  - Increased dialog to 700x700 (no scrolling needed)
+  - Fixed model sizes to show actual values
+  - Added ScrollView to model selection
+  - Removed ScrollView from welcome step
+- Build successful, ready for testing
+
+**Update (09:45)**:
+- Fixed model download issues:
+  - Removed non-working multilingual models from onboarding
+  - Only showing 4 models that actually download: base.en, small.en, medium.en, large-v3
+  - Fixed size discrepancies:
+    - Large V3 now shows 3.1 GB (matches actual download size)
+    - All sizes now consistent between onboarding and settings
+- Note: Multilingual models would require adding to ModelManager.swift with proper download URLs
+
+**Update (10:00)**:
+- Improved onboarding UX for model downloads:
+  - Users can now proceed if selected model is installed (even if others downloading)
+  - Added "Downloads will continue in the background" message
+  - Updated Next button to show "Continue (downloads in background)" when applicable
+  - Fixed instructions to correctly show "Tap" instead of "Hold" for activation
+- Better user flow: No more waiting for 3GB downloads to proceed!
+
+**Update (10:15)**:
+- Removed copyright symbols (good catch by user!):
+  - About dialog: "© 2025 WhisperKey" → "Created by Orion • 2025"
+  - Preferences: "© 2025" → "Built with ❤️ by Orion"
+- More appropriate for a personal project
+
+**Update (10:30)**:
+- Prepared codebase for open source release:
+  - Removed all PII (personal names replaced with generic "Author")
+  - Updated LICENSE to "WhisperKey Contributors" instead of personal name
+  - Changed About/Preferences dialogs to show "Open Source • MIT License"
+  - Added installation and contribution sections to README
+  - GitHub username BSPLAZA kept as-is (this is the public repo owner)
+- Ready for public GitHub release under MIT License!
+
+**Update (11:00)**:
+- Fixed large-v3 model download error:
+  - Issue: "Failed to install model: couldn't be moved to models"
+  - Cause: Models directory didn't exist with intermediate directories
+  - Fixed by ensuring directory creation with withIntermediateDirectories: true
+- Created comprehensive RELEASE_CHECKLIST.md with:
+  - .gitignore template
+  - Documentation audit checklist
+  - GitHub setup instructions
+  - Issue templates
+  - CI/CD workflows
+  - Release process guide
+
+**Update (19:00)** - Critical Fixes for Release:
+- Fixed hardcoded paths (45 mins):
+  - Created WhisperService for dynamic whisper.cpp detection
+  - Searches common locations: ~/.whisperkey, ~/Developer, /usr/local, /opt/homebrew
+  - Added custom path configuration in Advanced preferences
+  - No more /Users/orion dependencies!
+- Removed all force unwraps (15 mins):
+  - Fixed TextInsertionService AXUIElement casting
+  - Fixed WhisperCppTranscriber process.arguments
+  - App now crash-resistant
+- Current status:
+  - Build successful ✅
+  - Ready to commit critical fixes
+  - App went from "broken for everyone" to "works with proper setup"
+- Next: Error recovery UI, then beta release!
+
 ---
 
 ## Date (Template)

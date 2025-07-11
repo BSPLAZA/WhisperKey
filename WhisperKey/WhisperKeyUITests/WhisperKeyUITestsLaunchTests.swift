@@ -2,7 +2,7 @@
 //  WhisperKeyUITestsLaunchTests.swift
 //  WhisperKeyUITests
 //
-//  Created by Orion on 7/1/25.
+//  Created by Author on 7/1/25.
 //
 
 import XCTest

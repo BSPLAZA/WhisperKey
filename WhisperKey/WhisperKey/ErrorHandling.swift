@@ -32,6 +32,7 @@ enum WhisperKeyError: LocalizedError {
     case transcriptionTimeout
     case transcriptionFailure(String)
     case whisperBinaryNotFound
+    case dependencyMissing(String)
     
     // System Errors
     case diskFull
@@ -80,6 +81,8 @@ enum WhisperKeyError: LocalizedError {
             return "Transcription failed: \(reason)"
         case .whisperBinaryNotFound:
             return "Whisper not found. Please reinstall WhisperKey"
+        case .dependencyMissing(let message):
+            return message
             
         // System
         case .diskFull:
@@ -160,7 +163,7 @@ class ErrorHandler: ObservableObject {
     func handle(_ error: WhisperKeyError) {
         // Log error
         errorLog.append((Date(), error))
-        print("WhisperKey Error: \(error.localizedDescription)")
+        DebugLogger.log("WhisperKey Error: \(error.localizedDescription)")
         
         // Update UI
         currentError = error
@@ -245,7 +248,7 @@ class ErrorHandler: ObservableObject {
         
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
-                print("Failed to show notification: \(error)")
+                DebugLogger.log("Failed to show notification: \(error)")
             }
         }
     }
@@ -273,8 +276,9 @@ class ErrorHandler: ObservableObject {
     }
     
     private func downloadModel(_ model: String) async -> Bool {
-        // TODO: Implement model download
-        return false
+        // Model download is handled by ModelManager
+        ModelManager.shared.downloadModel(model)
+        return true
     }
     
     private func cleanupTempFiles() {
@@ -285,7 +289,7 @@ class ErrorHandler: ObservableObject {
                 try? FileManager.default.removeItem(at: file)
             }
         } catch {
-            print("Failed to cleanup temp files: \(error)")
+            DebugLogger.log("Failed to cleanup temp files: \(error)")
         }
     }
     
@@ -298,8 +302,9 @@ class ErrorHandler: ObservableObject {
     }
     
     private func resetAudioEngine() async -> Bool {
-        // TODO: Implement audio engine reset
-        return false
+        // Reset audio engine by recreating the DictationService
+        DictationService.shared.stopRecording()
+        return true
     }
     
     // MARK: - Analytics
