@@ -376,4 +376,58 @@ Swift 6 stricter concurrency and deprecated APIs
 **Time Lost**: 20 minutes
 
 ---
-*Last Updated: 2025-07-10 08:07 PST*
+
+## Issue #013: PermissionGuideView EXC_BAD_ACCESS Crash
+
+**Discovered**: 2025-07-11 03:30 PST - Beta Testing  
+**Severity**: Critical  
+**Symptoms**: 
+- App crashed with EXC_BAD_ACCESS when clicking Continue/Skip buttons
+- Navigation buttons cut off at bottom of window
+- Thread 1: EXC_BAD_ACCESS (code=1, address=0x20)
+- App completely frozen after crash
+
+**Root Cause**: 
+Window lifecycle mismanagement. Created NSWindow without proper retention, causing it to be deallocated while SwiftUI was still trying to use it through @Environment(\.dismiss).
+
+**Solution**: 
+1. Created centralized WindowManager to properly retain windows
+2. Changed from @Environment(\.dismiss) to explicit dismiss closure
+3. Increased window height from 550 to 600 to fix button cutoff
+4. Proper window lifecycle: store reference, handle close, clean up
+
+**Code Fix**:
+```swift
+// WRONG: Window gets deallocated
+func showPermissionGuide() {
+    let window = NSWindow(...) // No retention!
+    let view = PermissionGuideView() // Uses @Environment(\.dismiss)
+    window.contentView = NSHostingView(rootView: view)
+    window.makeKeyAndOrderFront(nil)
+}
+
+// CORRECT: Proper lifecycle management
+class WindowManager {
+    private var permissionWindow: NSWindow?
+    
+    func showPermissionGuide() {
+        let view = PermissionGuideView(dismiss: {
+            self.permissionWindow?.close()
+            self.permissionWindow = nil
+        })
+        // Window retained by permissionWindow property
+    }
+}
+```
+
+**Prevention**: 
+- Always retain NSWindow references in properties
+- Don't use @Environment(\.dismiss) in standalone windows
+- Use explicit dismiss closures for manual window management
+- Test all UI dismiss/close actions
+- Increase window sizes when content might be cut off
+
+**Time Lost**: 30 minutes
+
+---
+*Last Updated: 2025-07-11 03:35 PST*

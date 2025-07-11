@@ -37,8 +37,15 @@ WhisperKey is a privacy-focused local dictation app for macOS that intercepts th
 1. **DAILY_LOG.md** - End of each session (max 10 min)
 2. **TIMELINE.md** - When completing tasks or hitting blockers
 3. **DECISIONS.md** - For any architectural choices
-4. **ISSUES_AND_SOLUTIONS.md** - When solving problems
+4. **ISSUES_AND_SOLUTIONS.md** - When solving problems (CRITICAL: Document ALL crashes/bugs!)
 5. **TESTING_GUIDE.md** - After testing in new apps
+
+### 🚨 CRITICAL: Bug Documentation Rule
+**Whenever we encounter a crash, bug, or unexpected behavior:**
+1. IMMEDIATELY document in ISSUES_AND_SOLUTIONS.md
+2. Include: symptoms, root cause, solution, prevention
+3. Add code examples showing wrong vs correct approach
+4. This prevents repeating the same mistakes!
 
 ### Use Helper Scripts:
 ```bash

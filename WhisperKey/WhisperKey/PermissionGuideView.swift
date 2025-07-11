@@ -15,7 +15,11 @@ struct PermissionGuideView: View {
     @State private var microphonePermission = false
     @State private var accessibilityPermission = false
     @State private var isCheckingPermissions = false
-    @Environment(\.dismiss) private var dismiss
+    let dismiss: (() -> Void)?
+    
+    init(dismiss: (() -> Void)? = nil) {
+        self.dismiss = dismiss
+    }
     
     var allPermissionsGranted: Bool {
         microphonePermission && accessibilityPermission
@@ -114,19 +118,19 @@ struct PermissionGuideView: View {
                 
                 if allPermissionsGranted {
                     Button("Continue") {
-                        dismiss()
+                        dismiss?()
                     }
                     .buttonStyle(.borderedProminent)
                     .keyboardShortcut(.defaultAction)
                 } else {
                     Button("Skip for Now") {
-                        dismiss()
+                        dismiss?()
                     }
                 }
             }
             .padding()
         }
-        .frame(width: 500, height: 550)
+        .frame(width: 500, height: 600)
         .onAppear {
             checkPermissions()
         }
