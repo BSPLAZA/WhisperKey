@@ -482,7 +482,7 @@ class DictationService: NSObject, ObservableObject {
                                 self?.debugLog("Attempting to insert text...")
                                 
                                 // Check if we're in a text field
-                                if !self?.textInsertion.isTextFieldFocused() ?? false {
+                                if !(self?.textInsertion.isTextFieldFocused() ?? true) {
                                     // Not in a text field, save to clipboard
                                     TextInsertionService.saveToClipboard(transcribedText)
                                     
@@ -545,6 +545,10 @@ class DictationService: NSObject, ObservableObject {
                                 case .insertionFailed:
                                     self?.transcriptionStatus = "❌ Insert failed"
                                     DebugLogger.log("DictationService: Generic insertion failure")
+                                case .savedToClipboard:
+                                    // This case should not normally occur here
+                                    let wordCount = transcribedText.split(separator: " ").count
+                                    self?.transcriptionStatus = "📋 Saved to clipboard (\(wordCount) word\(wordCount == 1 ? "" : "s")) - press ⌘V to paste"
                                 }
                             } catch {
                                 self?.transcriptionStatus = "❌ Insert failed: \(error.localizedDescription)"

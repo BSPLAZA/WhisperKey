@@ -490,4 +490,27 @@ Implemented clipboard fallback:
 **Time Lost**: 15 minutes
 
 ---
-*Last Updated: 2025-07-11 08:25 AM PST*
+
+## Issue #016: Build Failed - Optional Chaining Error
+
+**Discovered**: 2025-07-11 08:50 AM PST - Testing Phase  
+**Severity**: High  
+**Symptoms**: 
+- Build failed with error: "value of optional type 'Bool?' must be unwrapped"
+- Did not test before committing changes
+
+**Root Cause**: 
+Incorrect optional chaining with negation operator. The expression `!self?.textInsertion.isTextFieldFocused() ?? false` was ambiguous.
+
+**Solution**: 
+Fixed by properly grouping the expression: `!(self?.textInsertion.isTextFieldFocused() ?? true)`
+
+**Prevention**: 
+- ALWAYS build and test before committing
+- Be careful with optional chaining and boolean operators
+- Use parentheses to clarify precedence
+
+**Time Lost**: 5 minutes
+
+---
+*Last Updated: 2025-07-11 08:50 AM PST*
