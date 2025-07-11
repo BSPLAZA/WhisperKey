@@ -532,4 +532,48 @@ Fixed by properly grouping the expression: `!(self?.textInsertion.isTextFieldFoc
 - 31/65 test scenarios verified working
 
 ---
-*Last Updated: 2025-07-11 09:00 AM PST*
+## Issue #018: Clipboard Fallback Breaking Normal Text Insertion
+
+**Discovered**: 2025-07-11 09:15 AM PST - Testing Phase  
+**Severity**: Critical  
+**Symptoms**: 
+- Text always copied to clipboard even in text fields
+- Normal text insertion completely broken
+- No Glass sound when text should be inserted
+- Only Pop sound playing (clipboard mode)
+
+**Root Cause**: 
+Initial clipboard fallback implementation was checking `isTextFieldFocused()` upfront and inverting the logic incorrectly. This caused all transcriptions to be treated as "not in text field".
+
+**Solution**: 
+Restructured the logic to:
+1. Always try normal text insertion first
+2. Only use clipboard on actual insertion errors
+3. Handle all error cases with clipboard fallback
+
+**Code Fix**:
+```swift
+// WRONG: Checking text field status upfront
+if !(self?.textInsertion.isTextFieldFocused() ?? true) {
+    // clipboard
+} else {
+    // insert
+}
+
+// CORRECT: Try insertion first, fallback on error
+try await self?.textInsertion.insertText(transcribedText)
+// Success handling
+} catch {
+    // Clipboard fallback for ALL errors
+}
+```
+
+**Prevention**: 
+- Test both success and fallback paths
+- Don't pre-check conditions that the main operation will check
+- Let operations fail naturally and handle errors
+
+**Time Lost**: 15 minutes
+
+---
+*Last Updated: 2025-07-11 09:15 AM PST*
