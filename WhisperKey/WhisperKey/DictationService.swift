@@ -476,39 +476,23 @@ class DictationService: NSObject, ObservableObject {
                         DebugLogger.log("DictationService: Final transcription: \(transcribedText)")
                         self?.debugLog("Transcription result: \"\(transcribedText)\"")
                         
-                        // Insert at cursor or save to clipboard
+                        // Insert at cursor - try normal insertion first
                         Task {
                             do {
                                 self?.debugLog("Attempting to insert text...")
                                 
-                                // Check if we're in a text field
-                                if !(self?.textInsertion.isTextFieldFocused() ?? true) {
-                                    // Not in a text field, save to clipboard
-                                    TextInsertionService.saveToClipboard(transcribedText)
-                                    
-                                    let wordCount = transcribedText.split(separator: " ").count
-                                    self?.transcriptionStatus = "📋 Saved to clipboard (\(wordCount) word\(wordCount == 1 ? "" : "s")) - press ⌘V to paste"
-                                    DebugLogger.log("DictationService: Text saved to clipboard")
-                                    self?.debugLog("Text saved to clipboard - not in text field")
-                                    
-                                    // Play different sound for clipboard
-                                    if UserDefaults.standard.bool(forKey: "playFeedbackSounds") {
-                                        self?.playSound(named: "Pop")
-                                    }
-                                } else {
-                                    // In text field, try normal insertion
-                                    try await self?.textInsertion.insertText(transcribedText)
-                                    
-                                    // Calculate words inserted
-                                    let wordCount = transcribedText.split(separator: " ").count
-                                    self?.transcriptionStatus = "✅ Inserted \(wordCount) word\(wordCount == 1 ? "" : "s")"
-                                    DebugLogger.log("DictationService: Text inserted successfully")
-                                    self?.debugLog("Text inserted successfully!")
-                                    
-                                    // Play success sound if enabled
-                                    if UserDefaults.standard.bool(forKey: "playFeedbackSounds") {
-                                        self?.playSound(named: "Glass")
-                                    }
+                                // Always try normal insertion first
+                                try await self?.textInsertion.insertText(transcribedText)
+                                
+                                // If we get here, insertion was successful
+                                let wordCount = transcribedText.split(separator: " ").count
+                                self?.transcriptionStatus = "✅ Inserted \(wordCount) word\(wordCount == 1 ? "" : "s")"
+                                DebugLogger.log("DictationService: Text inserted successfully")
+                                self?.debugLog("Text inserted successfully!")
+                                
+                                // Play success sound if enabled
+                                if UserDefaults.standard.bool(forKey: "playFeedbackSounds") {
+                                    self?.playSound(named: "Glass")
                                 }
                                 
                                 // Clear status after delay
@@ -521,38 +505,47 @@ class DictationService: NSObject, ObservableObject {
                                     }
                                 }
                             } catch let error as TextInsertionService.InsertionError {
-                                // Handle specific insertion errors
+                                // Handle specific insertion errors - use clipboard as fallback for all
+                                TextInsertionService.saveToClipboard(transcribedText)
+                                let wordCount = transcribedText.split(separator: " ").count
+                                
                                 switch error {
                                 case .secureField:
-                                    self?.transcriptionStatus = "🔒 Cannot insert into password field"
+                                    self?.transcriptionStatus = "🔒 Cannot insert into password field - saved to clipboard"
                                     ErrorHandler.shared.handle(.secureFieldDetected)
                                 case .readOnlyField:
-                                    self?.transcriptionStatus = "📝 Cannot insert into read-only field"
+                                    self?.transcriptionStatus = "📝 Cannot insert into read-only field - saved to clipboard"
                                     ErrorHandler.shared.handle(.readOnlyField)
                                 case .disabledField:
-                                    self?.transcriptionStatus = "🚫 Cannot insert into disabled field"
+                                    self?.transcriptionStatus = "🚫 Cannot insert into disabled field - saved to clipboard"
                                     ErrorHandler.shared.handle(.disabledField)
                                 case .noFocusedElement:
-                                    // Save to clipboard as fallback
-                                    TextInsertionService.saveToClipboard(transcribedText)
-                                    let wordCount = transcribedText.split(separator: " ").count
                                     self?.transcriptionStatus = "📋 Saved to clipboard (\(wordCount) word\(wordCount == 1 ? "" : "s")) - press ⌘V to paste"
-                                    
-                                    // Play sound for clipboard
-                                    if UserDefaults.standard.bool(forKey: "playFeedbackSounds") {
-                                        self?.playSound(named: "Pop")
-                                    }
+                                    DebugLogger.log("DictationService: No focused element, saved to clipboard")
                                 case .insertionFailed:
-                                    self?.transcriptionStatus = "❌ Insert failed"
-                                    DebugLogger.log("DictationService: Generic insertion failure")
+                                    self?.transcriptionStatus = "📋 Insert failed - saved to clipboard (\(wordCount) word\(wordCount == 1 ? "" : "s"))"
+                                    DebugLogger.log("DictationService: Insertion failed, saved to clipboard")
                                 case .savedToClipboard:
-                                    // This case should not normally occur here
-                                    let wordCount = transcribedText.split(separator: " ").count
                                     self?.transcriptionStatus = "📋 Saved to clipboard (\(wordCount) word\(wordCount == 1 ? "" : "s")) - press ⌘V to paste"
                                 }
+                                
+                                // Play sound for clipboard fallback
+                                if UserDefaults.standard.bool(forKey: "playFeedbackSounds") {
+                                    self?.playSound(named: "Pop")
+                                }
+                                
+                                self?.debugLog("Text saved to clipboard as fallback")
                             } catch {
-                                self?.transcriptionStatus = "❌ Insert failed: \(error.localizedDescription)"
-                                DebugLogger.log("DictationService: Failed to insert text: \(error)")
+                                // Generic error - also save to clipboard as fallback
+                                TextInsertionService.saveToClipboard(transcribedText)
+                                let wordCount = transcribedText.split(separator: " ").count
+                                self?.transcriptionStatus = "📋 Insert failed - saved to clipboard (\(wordCount) word\(wordCount == 1 ? "" : "s"))"
+                                DebugLogger.log("DictationService: Failed to insert text, saved to clipboard: \(error)")
+                                
+                                // Play sound for clipboard fallback
+                                if UserDefaults.standard.bool(forKey: "playFeedbackSounds") {
+                                    self?.playSound(named: "Pop")
+                                }
                             }
                         }
                     }
