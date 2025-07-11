@@ -4,6 +4,40 @@
 
 ---
 
+## 2025-07-11 (Friday) - Beta Testing & Release Prep
+
+**Time**: 8:15 AM PST  
+**Goal**: Thorough testing and DMG creation for beta release
+
+**Plan**:
+1. Execute comprehensive testing using BETA_TESTING_PLAN.md
+2. Document all issues found
+3. Fix any critical issues
+4. Create DMG release package
+5. Final verification
+
+**Progress**:
+- ✅ Fixed critical PermissionGuideView crash (EXC_BAD_ACCESS)
+- ✅ Documented crash prevention in ISSUES_AND_SOLUTIONS.md
+- ✅ Updated CLAUDE.md files to emphasize bug documentation
+- ✅ Added comprehensive beta warnings to README
+- ✅ Created detailed BETA_TESTING_PLAN.md
+- 🔄 Starting thorough testing...
+
+**Discovered**:
+- Window lifecycle management is critical for SwiftUI dialogs
+- @Environment(\.dismiss) doesn't work in standalone NSWindow
+- Must use explicit dismiss closures for manual windows
+- Documentation discipline prevents repeated mistakes
+
+**Next Steps**:
+1. Complete all test scenarios in testing plan
+2. Fix any issues found
+3. Create DMG package
+4. Test on clean system if possible
+
+---
+
 ## 2025-07-04 (Friday) - Continued Session
 
 **Goal**: Fix window management and hotkey issues from previous session
