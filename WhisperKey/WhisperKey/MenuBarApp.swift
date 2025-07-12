@@ -290,6 +290,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             NSLog("=== WHISPERKEY: Setting default hotkey to right_option ===")
         }
         
+        // Set default for clipboard backup (true for safety)
+        if UserDefaults.standard.object(forKey: "alwaysSaveToClipboard") == nil {
+            UserDefaults.standard.set(true, forKey: "alwaysSaveToClipboard")
+        }
+        
         let currentHotkey = UserDefaults.standard.string(forKey: "selectedHotkey") ?? "right_option"
         NSLog("=== WHISPERKEY: Current hotkey preference: \(currentHotkey) ===")
         DictationService.shared.debugLog("Current hotkey preference: \(currentHotkey)")

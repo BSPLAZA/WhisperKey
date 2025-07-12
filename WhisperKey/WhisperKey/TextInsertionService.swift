@@ -83,6 +83,22 @@ class TextInsertionService {
         
         // If we have a focused element, check if it's suitable and try AX insertion
         if let element = focusedElement {
+            // First check if this is actually a text-editable element
+            var role: CFTypeRef?
+            AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &role)
+            
+            if let roleString = role as? String {
+                // Only these roles can accept text input
+                let textEditableRoles = ["AXTextField", "AXTextArea", "AXComboBox", "AXSearchField"]
+                
+                if !textEditableRoles.contains(roleString) {
+                    DebugLogger.log("TextInsertionService: Element role '\(roleString)' is not text-editable")
+                    // Not a text field - try keyboard simulation anyway
+                    _ = tryKeyboardSimulation(text)
+                    return .keyboardSimulated
+                }
+            }
+            
             // Check if it's a secure field
             if isSecureField(element) {
                 throw InsertionError.secureField
@@ -108,7 +124,7 @@ class TextInsertionService {
             // Try keyboard simulation - this often works
             DebugLogger.log("TextInsertionService: AX insertion failed, trying keyboard simulation")
             _ = tryKeyboardSimulation(text)
-            // We have a focused element, so it probably worked
+            // We have a text-editable element, so it probably worked
             return .insertedAtCursor
         }
         

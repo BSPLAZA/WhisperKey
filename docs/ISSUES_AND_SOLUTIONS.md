@@ -689,4 +689,47 @@ func insertText(_ text: String) async throws -> InsertionResult {
 **Time Lost**: 15 minutes
 
 ---
-*Last Updated: 2025-07-11 10:00 AM PST*
+
+## Issue #021: Made Clipboard Backup Optional
+
+**Discovered**: 2025-07-11 10:15 AM PST - User Feedback  
+**Severity**: Medium  
+**Symptoms**: 
+- Always saving to clipboard could clutter user's clipboard
+- Some users may not want automatic clipboard backup
+- No way to disable this behavior
+
+**Root Cause**: 
+Initial implementation always saved to clipboard as safety net, but this might not be desired by all users.
+
+**Solution**: 
+Made clipboard backup optional with preference setting:
+1. Added "Always save to clipboard" toggle in Settings
+2. Default is ON for safety (existing users get safe behavior)
+3. When OFF, clipboard is only used for:
+   - Non-text field situations (Finder, etc)
+   - Errors (secure field, read-only, etc)
+   - Failed insertions
+
+**Implementation**:
+```swift
+// Check preference before saving
+if UserDefaults.standard.bool(forKey: "alwaysSaveToClipboard") {
+    TextInsertionService.saveToClipboard(transcribedText)
+}
+
+// Always save on errors regardless of preference
+if !UserDefaults.standard.bool(forKey: "alwaysSaveToClipboard") {
+    TextInsertionService.saveToClipboard(transcribedText)
+}
+```
+
+**Benefits**:
+- Users have control over clipboard behavior
+- Default is safe (always backup)
+- Still saves to clipboard when needed (errors, non-text fields)
+
+**Time Lost**: 10 minutes
+
+---
+*Last Updated: 2025-07-11 10:25 AM PST*

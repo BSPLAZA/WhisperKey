@@ -18,6 +18,7 @@ struct PreferencesView: View {
     @AppStorage("launchAtLogin") private var launchAtLogin = false
     @AppStorage("showRecordingIndicator") private var showRecordingIndicator = true
     @AppStorage("playFeedbackSounds") private var playFeedbackSounds = true
+    @AppStorage("alwaysSaveToClipboard") private var alwaysSaveToClipboard = true
     
     @State private var selectedTab = UserDefaults.standard.integer(forKey: "preferencesRequestedTab")
     
@@ -90,6 +91,7 @@ struct GeneralTab: View {
     @AppStorage("launchAtLogin") private var launchAtLogin = false
     @AppStorage("showRecordingIndicator") private var showRecordingIndicator = true
     @AppStorage("playFeedbackSounds") private var playFeedbackSounds = true
+    @AppStorage("alwaysSaveToClipboard") private var alwaysSaveToClipboard = true
     @State private var isTestingHotkey = false
     
     var body: some View {
@@ -165,6 +167,9 @@ struct GeneralTab: View {
                             
                             Toggle("Play feedback sounds", isOn: $playFeedbackSounds)
                                 .help("Play sounds when starting/stopping recording")
+                            
+                            Toggle("Always save to clipboard", isOn: $alwaysSaveToClipboard)
+                                .help("Save transcriptions to clipboard as backup even when inserting at cursor")
                         }
                     }
                     .frame(maxWidth: .infinity)

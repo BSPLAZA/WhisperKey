@@ -478,9 +478,11 @@ class DictationService: NSObject, ObservableObject {
                         
                         // Insert at cursor - try normal insertion first
                         Task {
-                            // ALWAYS save to clipboard first as a safety net
-                            TextInsertionService.saveToClipboard(transcribedText)
-                            self?.debugLog("Text saved to clipboard as backup")
+                            // Save to clipboard if user prefers
+                            if UserDefaults.standard.bool(forKey: "alwaysSaveToClipboard") {
+                                TextInsertionService.saveToClipboard(transcribedText)
+                                self?.debugLog("Text saved to clipboard as backup")
+                            }
                             
                             do {
                                 self?.debugLog("Attempting to insert text at cursor...")
@@ -502,7 +504,12 @@ class DictationService: NSObject, ObservableObject {
                                     }
                                 } else {
                                     // Keyboard simulation was attempted but we're not sure it worked
-                                    // Since we already saved to clipboard, just notify
+                                    // Always save to clipboard when not in text field
+                                    if !UserDefaults.standard.bool(forKey: "alwaysSaveToClipboard") {
+                                        TextInsertionService.saveToClipboard(transcribedText)
+                                        self?.debugLog("Text saved to clipboard (not in text field)")
+                                    }
+                                    
                                     let wordCount = transcribedText.split(separator: " ").count
                                     self?.transcriptionStatus = "📋 Saved to clipboard (\(wordCount) word\(wordCount == 1 ? "" : "s")) - press ⌘V to paste"
                                     DebugLogger.log("DictationService: No text field detected, clipboard backup used")
@@ -523,6 +530,12 @@ class DictationService: NSObject, ObservableObject {
                                     }
                                 }
                             } catch let error as TextInsertionService.InsertionError {
+                                // Always save to clipboard on error
+                                if !UserDefaults.standard.bool(forKey: "alwaysSaveToClipboard") {
+                                    TextInsertionService.saveToClipboard(transcribedText)
+                                    self?.debugLog("Text saved to clipboard due to error")
+                                }
+                                
                                 // Handle specific insertion errors
                                 let wordCount = transcribedText.split(separator: " ").count
                                 
@@ -548,7 +561,12 @@ class DictationService: NSObject, ObservableObject {
                                 
                                 self?.debugLog("Using clipboard due to: \(error)")
                             } catch {
-                                // Generic error - clipboard already has the text
+                                // Always save to clipboard on generic error
+                                if !UserDefaults.standard.bool(forKey: "alwaysSaveToClipboard") {
+                                    TextInsertionService.saveToClipboard(transcribedText)
+                                }
+                                
+                                // Generic error
                                 let wordCount = transcribedText.split(separator: " ").count
                                 self?.transcriptionStatus = "📋 Saved to clipboard (\(wordCount) word\(wordCount == 1 ? "" : "s")) - press ⌘V to paste"
                                 DebugLogger.log("DictationService: Failed to insert text: \(error)")
