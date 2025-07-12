@@ -6,7 +6,7 @@
 
 ## 2025-07-12 (Saturday) - Beta Testing & Release Prep
 
-**Time**: 8:15 AM PST  
+**Time**: 8:15 AM - 12:51 PM PST  
 **Goal**: Thorough testing and DMG creation for beta release
 
 **Plan**:
@@ -28,7 +28,13 @@
 - ✅ Made clipboard backup optional via settings
 - ✅ Added clipboard settings to onboarding (new step)
 - ✅ Fixed Finder/non-text field detection (AXList)
-- 🔄 Testing phase in progress...
+- ✅ **Fixed Recording tab terminology** (12:30 PM):
+  - Changed "Silence sensitivity" to "Microphone sensitivity"
+  - Converted technical values to user-friendly 1-5 scale
+  - Added descriptive levels: Very Sensitive → Least Sensitive
+  - Organized into logical sections with help text
+  - Much more intuitive for non-technical users
+- 🔄 Working on General tab UI improvements...
 
 **Discovered**:
 - Window lifecycle management is critical for SwiftUI dialogs
@@ -37,15 +43,14 @@
 - Documentation discipline prevents repeated mistakes
 - AX API returns different roles (AXList, AXTextField, etc) for focus detection
 - Clipboard backup as optional feature improves user control
+- Recording tab was confusing because it mixed technical terms with user concepts
 
-**Time Spent**: ~7 hours (3:30 AM - 10:30 AM)
+**Time Spent**: ~9.5 hours (3:30 AM - 12:51 PM with breaks)
 
-**Next Session Focus**:
-1. **Rethink Recording Tab Concepts**:
-   - Change "silence sensitivity" to "microphone sensitivity" 
-   - Reframe what the sliders actually control
-   - Make the controls more intuitive
-   - Current terminology is confusing users
+**Remaining Tasks**:
+1. **Polish General Tab UI** (in progress):
+   - Improve visual design and layout
+   - Make it feel more cohesive
    
 2. **Polish Onboarding UI/UX**:
    - Improve visual design and spacing

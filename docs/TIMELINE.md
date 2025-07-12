@@ -303,7 +303,7 @@
 - ✅ Updated README with beta warnings
 - ✅ Created BETA_TESTING_PLAN.md
 
-### Current Status (as of 10:30 AM PST):
+### Current Status (as of 12:51 PM PST):
 - ✅ Fixed settings auto-save issue
 - ✅ Added clipboard fallback feature  
 - ✅ Fixed all text insertion issues
@@ -311,9 +311,13 @@
 - ✅ Added clipboard settings to onboarding
 - ✅ Fixed AX API detection for non-text fields
 - ✅ Documented 21 issues and solutions
-- 🔄 Ready for comprehensive testing
-- [ ] Rethink Recording tab terminology
+- ✅ Fixed Recording tab terminology (12:30 PM)
+  - Clear "Microphone sensitivity" naming
+  - User-friendly 1-5 scale
+  - Descriptive sensitivity levels
+- 🔄 Improving General tab UI design
 - [ ] Polish onboarding UI
+- [ ] Complete comprehensive testing
 - [ ] Create DMG release package
 - [ ] Final verification on clean system
 

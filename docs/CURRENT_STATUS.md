@@ -1,6 +1,6 @@
 # WhisperKey Current Status
 
-*Last Updated: 2025-07-12 10:30 AM PST*
+*Last Updated: 2025-07-12 12:51 PM PST*
 
 ## 🎯 Project Status: Beta Ready (with minor polish needed)
 
@@ -27,19 +27,27 @@
 
 ### 🔧 What Needs Improvement
 
-#### 1. Recording Tab Terminology (Priority: HIGH)
+#### 1. ~~Recording Tab Terminology~~ ✅ FIXED (12:30 PM)
+**What Was Fixed**:
+- Changed "Silence sensitivity" to "Microphone sensitivity"
+- Converted to user-friendly 1-5 scale with descriptive levels
+- Added clear help text for each sensitivity level
+- Organized into logical sections with better visual hierarchy
+- Now intuitive for non-technical users
+
+#### 2. General Tab UI Design (Priority: HIGH)
 **Current Issues**:
-- "Silence sensitivity" is confusing
-- Users don't understand what the sliders control
-- Labels don't match mental model
+- Layout feels less polished than other tabs
+- Could use better visual organization
+- Test hotkey area needs refinement
 
-**Proposed Changes**:
-- Rename to "Microphone Sensitivity" or "Recording Threshold"
-- Better descriptions explaining the effect
-- Visual feedback showing current levels
-- Presets for common scenarios
+**Proposed Improvements**:
+- Better visual hierarchy
+- More consistent spacing
+- Polish the hotkey test area
+- Match the quality of Recording tab
 
-#### 2. Onboarding UI Polish (Priority: MEDIUM)
+#### 3. Onboarding UI Polish (Priority: MEDIUM)
 **Current Issues**:
 - Functional but not visually stunning
 - Some spacing issues
@@ -67,11 +75,10 @@
 
 ### 🎯 Immediate Priorities
 
-1. **Fix Recording Tab** (2-3 hours)
-   - Redesign the controls with better terminology
-   - Add visual feedback
-   - Make it intuitive
-
+1. **Polish General Tab** (1 hour) - IN PROGRESS
+   - Improve visual design and layout
+   - Make it feel as polished as Recording tab
+   
 2. **Polish Onboarding** (1-2 hours)
    - Visual improvements
    - Smoother transitions
@@ -105,6 +112,8 @@
 - Added clipboard education to onboarding
 - Fixed AX API detection issues
 - Documented 21 issues and solutions
+- Fixed Recording tab terminology and UX (12:30 PM)
+- Working on General tab UI improvements
 
 **This Week**:
 - Complete error recovery UI system
