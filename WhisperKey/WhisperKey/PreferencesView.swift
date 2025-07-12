@@ -209,69 +209,132 @@ struct RecordingTab: View {
     @AppStorage("maxRecordingDuration") private var maxRecordingDuration = 60.0
     
     var body: some View {
-        Form {
-            Section {
-                // Silence duration
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("Stop after silence")
-                        Spacer()
-                        Text("\(silenceDuration, specifier: "%.1f") seconds")
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                SettingsSection(title: "Recording Behavior", icon: "mic") {
+                    VStack(alignment: .leading, spacing: 16) {
+                        // Auto-stop timing
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Text("Auto-stop after silence")
+                                Spacer()
+                                Text("\(silenceDuration, specifier: "%.1f") seconds")
+                                    .foregroundColor(.secondary)
+                                    .monospacedDigit()
+                            }
+                            Slider(value: $silenceDuration, in: 1.0...5.0, step: 0.5)
+                            Text("How long WhisperKey waits after you stop speaking before ending the recording")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        Divider()
+                        
+                        // Microphone sensitivity
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Text("Microphone sensitivity")
+                                Spacer()
+                                Text(sensitivityDescription)
+                                    .foregroundColor(.secondary)
+                            }
+                            Slider(value: Binding(
+                                get: { sensitivityToUserValue(silenceThreshold) },
+                                set: { silenceThreshold = userValueToSensitivity($0) }
+                            ), in: 1...5, step: 1)
+                            HStack(spacing: 0) {
+                                Image(systemName: "speaker.wave.1")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                Spacer()
+                                Image(systemName: "speaker.wave.3")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                    .frame(maxWidth: .infinity, alignment: .trailing)
+                            }
+                            .padding(.top, 4)
+                            Text(sensitivityHelp)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+                
+                SettingsSection(title: "Safety Limits", icon: "timer") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Maximum recording duration")
+                            Spacer()
+                            Text("\(Int(maxRecordingDuration)) seconds")
+                                .foregroundColor(.secondary)
+                                .monospacedDigit()
+                        }
+                        Slider(value: $maxRecordingDuration, in: 30...120, step: 10)
+                        Text("Automatically stops recording after this time to prevent accidental recordings")
+                            .font(.caption)
                             .foregroundColor(.secondary)
                     }
-                    Slider(value: $silenceDuration, in: 1.0...5.0, step: 0.5)
-                    Text("How long to wait after you stop speaking")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
                 }
-                .padding(.vertical, 4)
                 
-                Divider()
-                
-                // Silence threshold
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("Silence sensitivity")
-                        Spacer()
-                        Text(sensitivityDescription)
-                            .foregroundColor(.secondary)
+                // Tips section
+                SettingsSection(title: "Recording Tips", icon: "lightbulb") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Label("Speak at a normal pace and volume", systemImage: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundColor(.green)
+                        Label("WhisperKey adapts to your speaking patterns", systemImage: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundColor(.green)
+                        Label("Adjust sensitivity if recording cuts off early", systemImage: "info.circle.fill")
+                            .font(.caption)
+                            .foregroundColor(.blue)
+                        Label("Press ESC anytime to cancel recording", systemImage: "info.circle.fill")
+                            .font(.caption)
+                            .foregroundColor(.blue)
                     }
-                    Slider(value: $silenceThreshold, in: 0.005...0.03, step: 0.005)
-                    Text("Adjust if recording stops too early or late")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
                 }
-                .padding(.vertical, 4)
-                
-                Divider()
-                
-                // Max recording duration
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("Maximum recording time")
-                        Spacer()
-                        Text("\(Int(maxRecordingDuration)) seconds")
-                            .foregroundColor(.secondary)
-                    }
-                    Slider(value: $maxRecordingDuration, in: 30...120, step: 10)
-                    Text("Prevents accidental long recordings")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                .padding(.vertical, 4)
             }
-            .padding()
+            .padding(24)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
     
     private var sensitivityDescription: String {
-        if silenceThreshold < 0.01 {
-            return "Very Sensitive"
-        } else if silenceThreshold < 0.02 {
-            return "Normal"
-        } else {
-            return "Less Sensitive"
+        let value = sensitivityToUserValue(silenceThreshold)
+        switch value {
+        case 1: return "Very Sensitive"
+        case 2: return "Sensitive"
+        case 3: return "Normal"
+        case 4: return "Less Sensitive"
+        case 5: return "Least Sensitive"
+        default: return "Normal"
         }
+    }
+    
+    private var sensitivityHelp: String {
+        let value = sensitivityToUserValue(silenceThreshold)
+        switch value {
+        case 1: return "Best for very quiet rooms with minimal background noise"
+        case 2: return "Good for typical home offices with some ambient noise"
+        case 3: return "Balanced for most environments (recommended)"
+        case 4: return "Better for offices or spaces with background conversations"
+        case 5: return "Use in cafes, open offices, or other noisy environments"
+        default: return "Balanced for most environments"
+        }
+    }
+    
+    // Convert technical threshold (0.005-0.03) to user-friendly scale (1-5)
+    private func sensitivityToUserValue(_ threshold: Double) -> Double {
+        // Inverted: lower threshold = more sensitive = lower number on scale
+        let normalized = (threshold - 0.005) / (0.03 - 0.005)
+        return round(1 + normalized * 4)
+    }
+    
+    // Convert user-friendly scale (1-5) to technical threshold
+    private func userValueToSensitivity(_ userValue: Double) -> Double {
+        let normalized = (userValue - 1) / 4
+        return 0.005 + normalized * (0.03 - 0.005)
     }
 }
 
