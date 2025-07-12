@@ -22,7 +22,11 @@
 - ✅ Updated CLAUDE.md files to emphasize bug documentation
 - ✅ Added comprehensive beta warnings to README
 - ✅ Created detailed BETA_TESTING_PLAN.md
-- 🔄 Starting thorough testing...
+- ✅ Fixed settings not auto-saving (reading from UserDefaults)
+- ✅ Implemented smart clipboard fallback
+- ✅ Fixed AX API issues with focused element detection
+- ✅ Made clipboard backup optional via settings
+- 🔄 Testing phase in progress...
 
 **Discovered**:
 - Window lifecycle management is critical for SwiftUI dialogs

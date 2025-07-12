@@ -21,7 +21,7 @@ struct OnboardingView: View {
     
     @StateObject private var modelManager = ModelManager.shared
     
-    private let steps = 4
+    private let steps = 5
     
     var body: some View {
         VStack(spacing: 20) {
@@ -65,6 +65,8 @@ struct OnboardingView: View {
                         isDownloading: $isDownloading
                     )
                 case 3:
+                    ClipboardSettingsStep()
+                case 4:
                     ReadyStep()
                 default:
                     EmptyView()
@@ -517,6 +519,106 @@ struct ModelRow: View {
             if isInstalled {
                 onSelect()
             }
+        }
+    }
+}
+
+struct ClipboardSettingsStep: View {
+    @AppStorage("alwaysSaveToClipboard") private var alwaysSaveToClipboard = true
+    @State private var showExample = false
+    
+    var body: some View {
+        VStack(spacing: 24) {
+            Text("Clipboard Backup")
+                .font(.title2)
+                .fontWeight(.semibold)
+                .padding(.top, 20)
+            
+            Text("Choose how WhisperKey handles your transcriptions")
+                .foregroundColor(.secondary)
+            
+            // Main toggle
+            VStack(alignment: .leading, spacing: 16) {
+                Toggle(isOn: $alwaysSaveToClipboard) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Always save to clipboard")
+                            .fontWeight(.medium)
+                        Text("Your transcriptions are saved to clipboard as a safety net")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .toggleStyle(.switch)
+                .padding(16)
+                .background(Color.accentColor.opacity(0.1))
+                .cornerRadius(10)
+                
+                // Explanation
+                VStack(alignment: .leading, spacing: 12) {
+                    Label("When ON:", systemImage: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                    Text("• Text is always in clipboard (⌘V) as backup\n• Perfect if you often switch between apps")
+                        .font(.caption)
+                        .padding(.leading, 28)
+                    
+                    Label("When OFF:", systemImage: "xmark.circle")
+                        .foregroundColor(.orange)
+                    Text("• Clipboard only used when not in text field\n• Keeps your clipboard clean")
+                        .font(.caption)
+                        .padding(.leading, 28)
+                }
+                .padding(16)
+                .background(Color(NSColor.controlBackgroundColor))
+                .cornerRadius(8)
+            }
+            
+            // Interactive example
+            Button(action: { withAnimation { showExample.toggle() } }) {
+                HStack {
+                    Image(systemName: showExample ? "chevron.down" : "chevron.right")
+                        .frame(width: 12)
+                    Text("See how it works")
+                        .font(.caption)
+                }
+            }
+            .buttonStyle(.plain)
+            .foregroundColor(.accentColor)
+            
+            if showExample {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Example Scenarios:")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                    
+                    HStack(alignment: .top, spacing: 8) {
+                        Text("📝")
+                        Text("In TextEdit → Text inserted at cursor + Glass sound")
+                            .font(.caption)
+                    }
+                    
+                    HStack(alignment: .top, spacing: 8) {
+                        Text("🗂️")
+                        Text("In Finder → Saved to clipboard + Pop sound")
+                            .font(.caption)
+                    }
+                    
+                    HStack(alignment: .top, spacing: 8) {
+                        Text("🔒")
+                        Text("Password field → Always clipboard for safety")
+                            .font(.caption)
+                    }
+                }
+                .padding(12)
+                .background(Color.secondary.opacity(0.1))
+                .cornerRadius(6)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+            
+            Spacer()
+            
+            Text("You can change this anytime in Settings")
+                .font(.caption)
+                .foregroundColor(.secondary)
         }
     }
 }
