@@ -93,90 +93,202 @@ struct GeneralTab: View {
     @AppStorage("playFeedbackSounds") private var playFeedbackSounds = true
     @AppStorage("alwaysSaveToClipboard") private var alwaysSaveToClipboard = true
     @State private var isTestingHotkey = false
+    @State private var testingTimer: Timer?
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                // Hotkey selection
-                SettingsSection(title: "Activation Method", icon: "keyboard") {
-                    VStack(alignment: .leading, spacing: 6) {
-                        ForEach([
-                            ("right_option", "Right Option ⌥", "Tap to start/stop recording"),
-                            ("f13", "F13", "Tap F13 to start/stop (if available)")
-                        ], id: \.0) { value, label, description in
-                            HStack(alignment: .top, spacing: 8) {
-                                RadioButton(isSelected: selectedHotkey == value) {
+                // Hotkey section with improved design
+                SettingsSection(title: "Activation", icon: "keyboard") {
+                    VStack(alignment: .leading, spacing: 16) {
+                        // Radio buttons with better styling
+                        VStack(alignment: .leading, spacing: 12) {
+                            ForEach([
+                                ("right_option", "Right Option ⌥", "Tap once to start, tap again to stop", "keyboard.badge.ellipsis"),
+                                ("f13", "F13 Key", "For keyboards with F13 support", "keyboard")
+                            ], id: \.0) { value, label, description, icon in
+                                HStack(spacing: 12) {
+                                    RadioButton(isSelected: selectedHotkey == value) {
+                                        selectedHotkey = value
+                                        if let appDelegate = NSApp.delegate as? AppDelegate {
+                                            appDelegate.updateHotkey()
+                                        }
+                                    }
+                                    
+                                    Image(systemName: icon)
+                                        .font(.system(size: 16))
+                                        .foregroundColor(selectedHotkey == value ? .accentColor : .secondary)
+                                        .frame(width: 24)
+                                    
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(label)
+                                            .font(.system(size: 13, weight: .medium))
+                                        Text(description)
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                    
+                                    Spacer()
+                                }
+                                .padding(.vertical, 4)
+                                .padding(.horizontal, 8)
+                                .background(selectedHotkey == value ? Color.accentColor.opacity(0.1) : Color.clear)
+                                .cornerRadius(6)
+                                .contentShape(Rectangle())
+                                .onTapGesture {
                                     selectedHotkey = value
-                                    // Update hotkey immediately
                                     if let appDelegate = NSApp.delegate as? AppDelegate {
                                         appDelegate.updateHotkey()
                                     }
                                 }
+                            }
+                        }
+                        
+                        Divider()
+                        
+                        // Enhanced test area
+                        VStack(spacing: 12) {
+                            HStack {
+                                Image(systemName: "info.circle")
+                                    .font(.caption)
+                                    .foregroundColor(.blue)
+                                Text("Test your hotkey")
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                                Spacer()
+                            }
+                            
+                            HStack(spacing: 12) {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(isTestingHotkey ? Color.red : Color.secondary.opacity(0.2))
+                                    .frame(width: 4)
+                                    .animation(.easeInOut(duration: 0.3), value: isTestingHotkey)
                                 
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(label)
-                                        .font(.system(size: 13))
-                                    Text(description)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: isTestingHotkey ? "mic.fill" : "mic")
+                                            .foregroundColor(isTestingHotkey ? .red : .secondary)
+                                            .animation(.easeInOut(duration: 0.2), value: isTestingHotkey)
+                                        
+                                        Text(isTestingHotkey ? "Recording..." : "Press \(hotkeyDisplayName) to test")
+                                            .font(.system(size: 12, weight: .medium))
+                                            .foregroundColor(isTestingHotkey ? .red : .primary)
+                                    }
+                                    
+                                    Text(isTestingHotkey ? "Press \(hotkeyDisplayName) again to stop" : "Your hotkey is working when you see the red indicator")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
                                 
                                 Spacer()
                             }
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                selectedHotkey = value
-                                if let appDelegate = NSApp.delegate as? AppDelegate {
-                                    appDelegate.updateHotkey()
-                                }
-                            }
+                            .padding(12)
+                            .background(Color(NSColor.controlBackgroundColor))
+                            .cornerRadius(8)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(isTestingHotkey ? Color.red.opacity(0.3) : Color.clear, lineWidth: 1)
+                            )
                         }
                     }
-                    
-                    Text("Tap once to start recording, tap again to stop")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    // Test hotkey area
-                    HStack {
-                        Image(systemName: isTestingHotkey ? "mic.fill" : "mic")
-                            .foregroundColor(isTestingHotkey ? .red : .secondary)
-                        Text(isTestingHotkey ? "Recording..." : "Press \(hotkeyDisplayName) to test")
-                            .font(.caption)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                    .background(Color.secondary.opacity(0.1))
-                    .cornerRadius(6)
                 }
                 
-                // Startup and Feedback in two columns
-                HStack(alignment: .top, spacing: 16) {
-                    SettingsSection(title: "Startup", icon: "power") {
-                        Toggle("Launch WhisperKey at login", isOn: $launchAtLogin)
-                            .onChange(of: launchAtLogin) { newValue in
-                                updateLaunchAtLogin(newValue)
+                // Behavior settings
+                SettingsSection(title: "Behavior", icon: "gearshape.2") {
+                    VStack(alignment: .leading, spacing: 16) {
+                        Toggle(isOn: $launchAtLogin) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Launch at login")
+                                    .font(.system(size: 13))
+                                Text("Start WhisperKey automatically when you log in")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
                             }
-                    }
-                    .frame(maxWidth: .infinity)
-                    
-                    SettingsSection(title: "Visual & Audio Feedback", icon: "eye") {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Toggle("Show recording indicator", isOn: $showRecordingIndicator)
-                                .help("Shows a floating indicator when recording")
-                            
-                            Toggle("Play feedback sounds", isOn: $playFeedbackSounds)
-                                .help("Play sounds when starting/stopping recording")
-                            
-                            Toggle("Always save to clipboard", isOn: $alwaysSaveToClipboard)
-                                .help("Save transcriptions to clipboard as backup even when inserting at cursor")
+                        }
+                        .onChange(of: launchAtLogin) { newValue in
+                            updateLaunchAtLogin(newValue)
+                        }
+                        
+                        Divider()
+                        
+                        Toggle(isOn: $showRecordingIndicator) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Show recording indicator")
+                                    .font(.system(size: 13))
+                                Text("Display a floating window with timer during recording")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        
+                        Toggle(isOn: $playFeedbackSounds) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Play feedback sounds")
+                                    .font(.system(size: 13))
+                                Text("Audio cues for start, stop, and completion")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        
+                        Toggle(isOn: $alwaysSaveToClipboard) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Always save to clipboard")
+                                    .font(.system(size: 13))
+                                Text("Keep a backup copy in clipboard even when inserting at cursor")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
                         }
                     }
-                    .frame(maxWidth: .infinity)
+                }
+                
+                // Quick tips
+                SettingsSection(title: "Quick Tips", icon: "lightbulb") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Label {
+                            Text("WhisperKey works in any text field across all apps")
+                                .font(.caption)
+                        } icon: {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                                .font(.caption)
+                        }
+                        
+                        Label {
+                            Text("Press ESC anytime to cancel recording")
+                                .font(.caption)
+                        } icon: {
+                            Image(systemName: "info.circle.fill")
+                                .foregroundColor(.blue)
+                                .font(.caption)
+                        }
+                        
+                        Label {
+                            Text("Your voice never leaves your Mac")
+                                .font(.caption)
+                        } icon: {
+                            Image(systemName: "lock.circle.fill")
+                                .foregroundColor(.purple)
+                                .font(.caption)
+                        }
+                    }
                 }
             }
             .padding(24)
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .onAppear {
+            // Listen for recording state changes to update test indicator
+            NotificationCenter.default.addObserver(
+                forName: NSNotification.Name("RecordingStateChanged"),
+                object: nil,
+                queue: .main
+            ) { notification in
+                if let isRecording = notification.userInfo?["isRecording"] as? Bool {
+                    isTestingHotkey = isRecording
+                }
+            }
         }
     }
     

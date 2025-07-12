@@ -248,6 +248,13 @@ class DictationService: NSObject, ObservableObject {
             Task { @MainActor in
                 RecordingIndicatorManager.shared.showRecordingIndicator()
             }
+            
+            // Notify preferences window for test indicator
+            NotificationCenter.default.post(
+                name: NSNotification.Name("RecordingStateChanged"),
+                object: nil,
+                userInfo: ["isRecording": true]
+            )
         } catch {
             DebugLogger.log("=== WHISPERKEY: Failed to start recording: \(error) ===")
             NSLog("=== WHISPERKEY: Failed to start recording: %@", error.localizedDescription)
@@ -269,6 +276,13 @@ class DictationService: NSObject, ObservableObject {
         Task { @MainActor in
             RecordingIndicatorManager.shared.hideRecordingIndicator()
         }
+        
+        // Notify preferences window for test indicator
+        NotificationCenter.default.post(
+            name: NSNotification.Name("RecordingStateChanged"),
+            object: nil,
+            userInfo: ["isRecording": false]
+        )
         
         // Play stop sound if enabled
         if UserDefaults.standard.bool(forKey: "playFeedbackSounds") {
