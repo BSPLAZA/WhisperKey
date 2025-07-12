@@ -45,6 +45,11 @@
   - Error sound when switching contexts
   - Core functionality completely broken
   - NEED TO FIX URGENTLY
+- 🔄 **PARTIAL FIX** (2:00 PM):
+  - ✅ Fixed error sound issue - no more keyboard simulation in non-text areas
+  - ✅ Clipboard notification now only shows when appropriate
+  - ❌ STILL BROKEN: Text insertion in text fields
+  - Committed partial fix to preserve progress
 
 **Discovered**:
 - Window lifecycle management is critical for SwiftUI dialogs
@@ -54,25 +59,32 @@
 - AX API returns different roles (AXList, AXTextField, etc) for focus detection
 - Clipboard backup as optional feature improves user control
 - Recording tab was confusing because it mixed technical terms with user concepts
+- CRITICAL LESSON: Commit partial fixes immediately to avoid losing progress
+- Keyboard simulation in non-text areas causes system error sounds
 
-**Time Spent**: ~9.5 hours (3:30 AM - 12:51 PM with breaks)
+**Time Spent**: ~10.5 hours (3:30 AM - 2:00 PM with breaks)
 
 **Remaining Tasks**:
-1. **Polish General Tab UI** (in progress):
-   - Improve visual design and layout
-   - Make it feel more cohesive
+1. **FIX TEXT INSERTION** (CRITICAL):
+   - Text not inserting in text fields
+   - Always going to clipboard
+   - Core functionality broken
    
-2. **Polish Onboarding UI/UX**:
+2. **Polish Models Tab UI**:
+   - Match style of General and Recording tabs
+   - Use SettingsSection components
+   
+3. **Polish Onboarding UI/UX**:
    - Improve visual design and spacing
    - Ensure smooth transitions between steps
    - Make it feel more premium/polished
    
-3. **Complete Testing**:
+4. **Complete Testing**:
    - Work through BETA_TESTING_PLAN.md systematically
    - Test in multiple apps
    - Verify all error recovery paths
    
-4. **Create DMG Release**:
+5. **Create DMG Release**:
    - Package app for distribution
    - Include README and docs
 
