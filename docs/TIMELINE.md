@@ -315,9 +315,20 @@
   - Clear "Microphone sensitivity" naming
   - User-friendly 1-5 scale
   - Descriptive sensitivity levels
+  - Added Recording Tips section
+  - Organized into Recording Behavior and Safety Limits sections
+  - Better visual hierarchy with SettingsSection component
 - ✅ Polished General tab UI (1:00 PM)
-  - Beautiful sections with animations
-  - Interactive test indicator
+  - Reorganized into Activation, Behavior, and Quick Tips sections
+  - Enhanced hotkey selection with icons and highlighting
+  - Polished test area with animated recording indicator
+  - Real-time test indicator connected to recording state
+  - Better toggle presentation with descriptions
+  - Added helpful Quick Tips with colorful icons
+- ✅ Added Clipboard Notification UI (1:15 PM)
+  - Beautiful notification at bottom of screen
+  - Shows word count and paste instructions
+  - Auto-dismisses after 3 seconds
 - ❌ CRITICAL REGRESSION: Broke text insertion (1:30 PM)
 - 🔄 PARTIAL FIX: Fixed error sound, clipboard notification (2:00 PM)
 - ❌ STILL BROKEN: Text insertion in text fields
