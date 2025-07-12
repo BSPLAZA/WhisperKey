@@ -93,8 +93,7 @@ class TextInsertionService {
                 
                 if !textEditableRoles.contains(roleString) {
                     DebugLogger.log("TextInsertionService: Element role '\(roleString)' is not text-editable")
-                    // Not a text field - try keyboard simulation anyway
-                    _ = tryKeyboardSimulation(text)
+                    // Not a text field - don't try keyboard simulation to avoid error sound
                     return .keyboardSimulated
                 }
             }
@@ -131,8 +130,8 @@ class TextInsertionService {
         // No focused element found - could be Finder or other non-text area
         DebugLogger.log("TextInsertionService: No focused element found")
         
-        // Don't try keyboard simulation if there's no focused element
-        // This prevents the aggressive error sound in non-text areas
+        // Don't try keyboard simulation when no element is focused
+        // This prevents error sounds in non-text areas
         return .keyboardSimulated
     }
     
