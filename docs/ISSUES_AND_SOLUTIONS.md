@@ -199,19 +199,34 @@ Whisper requires 2-5 seconds of audio context for accurate transcription. Small 
 - Suggests keyboard simulation is still attempted in wrong context
 - The "always save to clipboard" setting logic may be interfering
 
-**Solution**: (NEEDED URGENTLY)
-- Need to revert or fix the insertion logic
-- Properly handle the three states:
-  1. In text field → Insert at cursor (no clipboard notification)
-  2. Not in text field → Save to clipboard (show notification)
-  3. Always save to clipboard ON → Save as backup but don't show notification when inserting works
+**Solution**: (PARTIAL FIX APPLIED)
+1. ✅ FIXED: Error sound when switching contexts
+   - Removed keyboard simulation in non-text areas
+   - Now properly detects non-text fields and skips simulation
+   
+2. ❌ STILL BROKEN: Text insertion in text fields
+   - Text goes to clipboard even in text fields
+   - Not inserting at cursor position
+   - Need to debug why insertion fails
+
+**What Fixed the Error Sound**:
+- Changed TextInsertionService to NOT attempt keyboard simulation when:
+  - Focused element is not text-editable (AXList, etc)
+  - No focused element found
+- This prevents the system error sound
+
+**What's Still Wrong**:
+- The insertion logic is not working for actual text fields
+- Need to investigate why text isn't being inserted
 
 **Prevention**: 
 - TEST AFTER EVERY CHANGE
+- COMMIT WORKING STATES IMMEDIATELY
 - Don't modify core functionality without understanding the flow
 - Keep insertion logic separate from clipboard backup logic
+- Document partial fixes to avoid losing progress
 
-**Time Lost**: In progress...
+**Time Lost**: 2+ hours and counting...
 
 ---
 
