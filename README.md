@@ -8,6 +8,8 @@
 **Privacy-focused local dictation for macOS**
 
 > ⚠️ **BETA SOFTWARE**: This is our first public release! While core functionality is solid, you may encounter some rough edges. Please report any issues you find.
+> 
+> 📅 **Current Status (July 12, 2025)**: Beta-ready with minor UI polish needed. Core features working reliably.
 
 WhisperKey brings the power of OpenAI's Whisper AI to your Mac for fast, accurate speech-to-text that works in any app. Your voice never leaves your device.
 

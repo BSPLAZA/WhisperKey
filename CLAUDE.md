@@ -155,6 +155,15 @@ instruments -t "Time Profiler" WhisperKey
 3. **Permission Loops**: May need to reset TCC database during dev
 4. **Model Loading Time**: Consider pre-loading base.en model
 
+## Current UI/UX Issues (July 12, 2025)
+1. **Recording Tab Terminology**: "Silence sensitivity" is confusing
+   - Should be "Microphone Sensitivity" or "Recording Threshold"
+   - Users don't understand what sliders control
+   - Needs clearer labels and descriptions
+2. **Onboarding Polish**: Functional but needs visual refinement
+   - Better spacing and transitions
+   - More premium feel
+
 ## Testing Scenarios Priority
 1. Basic dictation in TextEdit
 2. Web forms (Safari, Chrome)
