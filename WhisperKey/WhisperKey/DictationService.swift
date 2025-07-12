@@ -420,7 +420,7 @@ class DictationService: NSObject, ObservableObject {
                 }
             } else if Date().timeIntervalSince(self.lastSoundTime) > self.silenceDuration && tapCount > 50 {
                 // Auto-stop after silence (wait for more taps to ensure we have some audio)
-                DebugLogger.log("DictationService: Silence detected for 2 seconds, stopping... (samples recorded: \(samplesRecorded))")
+                DebugLogger.log("DictationService: Silence detected for \(self.silenceDuration) seconds, stopping... (samples recorded: \(samplesRecorded))")
                 DispatchQueue.main.async {
                     self.stopRecording()
                 }
@@ -429,9 +429,9 @@ class DictationService: NSObject, ObservableObject {
             // Check for maximum recording duration
             let recordingDuration = Date().timeIntervalSince(self.recordingStartTime)
             if recordingDuration > self.maxRecordingDuration {
-                DebugLogger.log("DictationService: Maximum recording duration reached (60 seconds), stopping...")
+                DebugLogger.log("DictationService: Maximum recording duration reached (\(Int(self.maxRecordingDuration)) seconds), stopping...")
                 DispatchQueue.main.async {
-                    self.transcriptionStatus = "⏱️ Recording stopped (60s limit)"
+                    self.transcriptionStatus = "⏱️ Recording stopped (\(Int(self.maxRecordingDuration))s limit)"
                     self.stopRecording()
                 }
             }
@@ -504,9 +504,9 @@ class DictationService: NSObject, ObservableObject {
                                 // Try to insert at cursor position
                                 let insertionResult = try await self?.textInsertion.insertText(transcribedText)
                                 
-                                // Check if we actually inserted or just simulated
+                                // Check insertion result
                                 if insertionResult == .insertedAtCursor {
-                                    // Successfully inserted at cursor
+                                    // Successfully inserted at cursor (either AX or keyboard simulation in text field)
                                     let wordCount = transcribedText.split(separator: " ").count
                                     self?.transcriptionStatus = "✅ Inserted \(wordCount) word\(wordCount == 1 ? "" : "s")"
                                     DebugLogger.log("DictationService: Text inserted at cursor successfully")
@@ -516,9 +516,8 @@ class DictationService: NSObject, ObservableObject {
                                     if UserDefaults.standard.bool(forKey: "playFeedbackSounds") {
                                         self?.playSound(named: "Glass")
                                     }
-                                } else {
-                                    // Keyboard simulation was attempted but we're not sure it worked
-                                    // Always save to clipboard when not in text field
+                                } else if insertionResult == .keyboardSimulated {
+                                    // No focused element found - not in a text field
                                     if !UserDefaults.standard.bool(forKey: "alwaysSaveToClipboard") {
                                         TextInsertionService.saveToClipboard(transcribedText)
                                         self?.debugLog("Text saved to clipboard (not in text field)")
@@ -527,6 +526,11 @@ class DictationService: NSObject, ObservableObject {
                                     let wordCount = transcribedText.split(separator: " ").count
                                     self?.transcriptionStatus = "📋 Saved to clipboard (\(wordCount) word\(wordCount == 1 ? "" : "s")) - press ⌘V to paste"
                                     DebugLogger.log("DictationService: No text field detected, clipboard backup used")
+                                    
+                                    // Show visual notification when not in text field
+                                    Task { @MainActor in
+                                        ClipboardNotificationManager.shared.showClipboardNotification(wordCount: wordCount)
+                                    }
                                     
                                     // Play clipboard sound
                                     if UserDefaults.standard.bool(forKey: "playFeedbackSounds") {
@@ -568,6 +572,16 @@ class DictationService: NSObject, ObservableObject {
                                     DebugLogger.log("DictationService: Using clipboard fallback")
                                 }
                                 
+                                // Show visual notification for clipboard saves
+                                switch error {
+                                case .noFocusedElement, .insertionFailed, .savedToClipboard:
+                                    Task { @MainActor in
+                                        ClipboardNotificationManager.shared.showClipboardNotification(wordCount: wordCount)
+                                    }
+                                default:
+                                    break
+                                }
+                                
                                 // Play sound for clipboard fallback
                                 if UserDefaults.standard.bool(forKey: "playFeedbackSounds") {
                                     self?.playSound(named: "Pop")
@@ -584,6 +598,11 @@ class DictationService: NSObject, ObservableObject {
                                 let wordCount = transcribedText.split(separator: " ").count
                                 self?.transcriptionStatus = "📋 Saved to clipboard (\(wordCount) word\(wordCount == 1 ? "" : "s")) - press ⌘V to paste"
                                 DebugLogger.log("DictationService: Failed to insert text: \(error)")
+                                
+                                // Show visual notification
+                                Task { @MainActor in
+                                    ClipboardNotificationManager.shared.showClipboardNotification(wordCount: wordCount)
+                                }
                                 
                                 // Play sound for clipboard fallback
                                 if UserDefaults.standard.bool(forKey: "playFeedbackSounds") {

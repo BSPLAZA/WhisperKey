@@ -156,13 +156,17 @@ instruments -t "Time Profiler" WhisperKey
 4. **Model Loading Time**: Consider pre-loading base.en model
 
 ## Current UI/UX Issues (July 12, 2025)
-1. **Recording Tab Terminology**: "Silence sensitivity" is confusing
-   - Should be "Microphone Sensitivity" or "Recording Threshold"
-   - Users don't understand what sliders control
-   - Needs clearer labels and descriptions
+1. **Models Tab UI**: Needs to match the style of other tabs
+   - Should use SettingsSection component like General and Recording tabs
+   - Better visual hierarchy and spacing
+   - More consistent with the polished look of other tabs
 2. **Onboarding Polish**: Functional but needs visual refinement
    - Better spacing and transitions
    - More premium feel
+3. **Long Error Sound**: When keyboard simulation fails in non-text fields
+   - System generates error sound for each character
+   - Results in long error sound for long transcriptions
+   - May need to detect and avoid keyboard simulation in non-text areas
 
 ## Testing Scenarios Priority
 1. Basic dictation in TextEdit

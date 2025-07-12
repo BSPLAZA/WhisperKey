@@ -131,10 +131,8 @@ class TextInsertionService {
         // No focused element found - could be Finder or other non-text area
         DebugLogger.log("TextInsertionService: No focused element found")
         
-        // Try keyboard simulation anyway - some apps work without AX
-        _ = tryKeyboardSimulation(text)
-        
-        // We can't confirm it worked without a focused element
+        // Don't try keyboard simulation if there's no focused element
+        // This prevents the aggressive error sound in non-text areas
         return .keyboardSimulated
     }
     

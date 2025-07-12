@@ -171,6 +171,50 @@ Whisper requires 2-5 seconds of audio context for accurate transcription. Small 
 
 ---
 
+## Issue #022: Critical Text Insertion Regression (July 12, 2025)
+
+**Discovered**: 2025-07-12 - Beta Testing Phase  
+**Severity**: CRITICAL  
+**Symptoms**: 
+- Text ALWAYS saves to clipboard, even in text fields
+- Text NOT inserting at cursor in text fields
+- Clipboard notification ALWAYS shows (should only show for non-text fields)
+- Long error sound plays when switching from text field to non-text area
+- Everything worked fine before recent changes
+
+**Root Cause**: 
+- Broke the insertion logic while trying to fix clipboard notifications
+- Changed keyboard simulation behavior in non-text fields
+- Misunderstood the InsertionResult enum handling
+
+**Current State**: BROKEN - Major regression in core functionality
+
+**What We Changed That Broke It**:
+1. Modified TextInsertionService to NOT simulate keyboard when no focused element
+2. Changed DictationService logic for handling insertion results
+3. Added clipboard notification system
+
+**Observations**:
+- Error sound happens when transcribing after switching from text field to settings
+- Suggests keyboard simulation is still attempted in wrong context
+- The "always save to clipboard" setting logic may be interfering
+
+**Solution**: (NEEDED URGENTLY)
+- Need to revert or fix the insertion logic
+- Properly handle the three states:
+  1. In text field → Insert at cursor (no clipboard notification)
+  2. Not in text field → Save to clipboard (show notification)
+  3. Always save to clipboard ON → Save as backup but don't show notification when inserting works
+
+**Prevention**: 
+- TEST AFTER EVERY CHANGE
+- Don't modify core functionality without understanding the flow
+- Keep insertion logic separate from clipboard backup logic
+
+**Time Lost**: In progress...
+
+---
+
 ## Issue #005: Model Path Missing Forward Slash
 
 **Discovered**: 2025-07-01 19:30 PST - Phase 2  

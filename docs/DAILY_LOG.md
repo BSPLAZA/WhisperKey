@@ -34,7 +34,17 @@
   - Added descriptive levels: Very Sensitive → Least Sensitive
   - Organized into logical sections with help text
   - Much more intuitive for non-technical users
-- 🔄 Working on General tab UI improvements...
+- ✅ **Polished General tab UI** (1:00 PM):
+  - Beautiful new design with sections and animations
+  - Interactive test indicator
+  - Quick Tips section
+- ✅ **Added clipboard notification UI**
+- ❌ **CRITICAL REGRESSION** (1:30 PM):
+  - Broke text insertion - always goes to clipboard
+  - Clipboard notification always shows
+  - Error sound when switching contexts
+  - Core functionality completely broken
+  - NEED TO FIX URGENTLY
 
 **Discovered**:
 - Window lifecycle management is critical for SwiftUI dialogs
