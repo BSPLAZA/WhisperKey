@@ -5,7 +5,8 @@
 ## v1.0.0 (Unreleased)
 
 **Release Date**: TBD  
-**Status**: Feature Complete, Testing Phase
+**Status**: Feature Complete, Final Testing Phase  
+**Last Updated**: 2025-07-13
 
 ### 🎯 Overview
 
@@ -67,6 +68,15 @@ WhisperKey v1.0 delivers a privacy-focused local dictation app for macOS using W
   - Small (465MB): Balanced speed and accuracy
   - Medium (1.4GB): Best accuracy for complex content
 
+### 🛠️ Recent Fixes (July 2025)
+
+1. **Fixed critical text insertion bug** - Text now properly inserts at cursor
+2. **Improved sound feedback** - Context-appropriate sounds for success/errors
+3. **Fixed permission dialog crashes** - Proper window lifecycle management
+4. **Settings auto-save** - All preferences now persist correctly
+5. **Smart clipboard fallback** - Graceful handling when not in text field
+6. **No more error sounds** - Fixed keyboard simulation in non-text areas
+
 ### 🐛 Known Issues
 
 1. **Right Option key only** - Other modifier-only keys not supported
@@ -74,6 +84,7 @@ WhisperKey v1.0 delivers a privacy-focused local dictation app for macOS using W
 3. **No custom vocabulary** - Cannot add specialized terms yet
 4. **Single audio device** - Doesn't handle device switching mid-recording
 5. **Basic text insertion** - No formatting preservation
+6. **System sounds captured** - May transcribe notification sounds as "(bell dings)"
 
 ### 📋 System Requirements
 

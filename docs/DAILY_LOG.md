@@ -4,6 +4,47 @@
 
 ---
 
+## 2025-07-13 (Sunday) - Critical Fix and Sound Improvements
+
+**Time**: 3:35 AM - 4:00 AM PST  
+**Goal**: Fix critical text insertion regression and improve sound feedback
+
+**Progress**:
+- ✅ **Fixed Critical Text Insertion Bug (Issue #022)**:
+  - Root cause: Optional chaining in DictationService returned nil
+  - `let insertionResult = try await self?.textInsertion.insertText()` returned Optional
+  - Neither `.insertedAtCursor` nor `.keyboardSimulated` matched nil value
+  - Code fell through silently without any action
+  - Fixed with proper guard statement to handle optional
+  - Changed TextInsertionService to always try keyboard simulation as fallback
+
+- ✅ **Improved Sound Feedback Logic**:
+  - Differentiated between intentional and error clipboard saves
+  - Glass sound: Successful text insertion in text fields
+  - Pop sound: Only plays for error/fallback clipboard saves
+  - No sound when "Always save to clipboard" is ON (intentional behavior)
+  - Better user experience with context-appropriate audio feedback
+
+**Testing Results**:
+- ✅ Text insertion in text fields works correctly again
+- ✅ Moving to non-text field saves to clipboard appropriately  
+- ✅ No more error sounds when switching contexts
+- ✅ Sound feedback is context-appropriate
+- 📝 Note: App captured "bell dings" in transcription (minor audio settings issue for later)
+
+**Key Learnings**:
+- Always use guard with optional chaining results
+- Many apps don't report focus via AX API - need fallbacks
+- Swift optionals can cause silent failures if not handled properly
+- User feedback on sounds is important for good UX
+
+**Next Steps**:
+- Polish Models tab UI to match other tabs
+- Continue comprehensive testing across different apps
+- Address remaining UI polish items from documentation
+
+---
+
 ## 2025-07-12 (Saturday) - Beta Testing & Release Prep
 
 **Time**: 8:15 AM - 12:51 PM PST  

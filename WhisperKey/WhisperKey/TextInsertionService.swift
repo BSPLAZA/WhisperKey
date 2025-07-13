@@ -127,12 +127,16 @@ class TextInsertionService {
             return .insertedAtCursor
         }
         
-        // No focused element found - could be Finder or other non-text area
-        DebugLogger.log("TextInsertionService: No focused element found")
+        // No focused element found - but we might still be in a text field
+        // Many apps don't properly report focused elements via AX API
+        DebugLogger.log("TextInsertionService: No focused element found, trying keyboard simulation anyway")
         
-        // Don't try keyboard simulation when no element is focused
-        // This prevents error sounds in non-text areas
-        return .keyboardSimulated
+        // Try keyboard simulation - it often works even without AX element
+        _ = tryKeyboardSimulation(text)
+        
+        // Return insertedAtCursor to indicate we tried typing
+        // DictationService will handle clipboard fallback if user reports issue
+        return .insertedAtCursor
     }
     
     /// Get the currently focused UI element

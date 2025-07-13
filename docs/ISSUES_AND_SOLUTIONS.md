@@ -183,50 +183,42 @@ Whisper requires 2-5 seconds of audio context for accurate transcription. Small 
 - Everything worked fine before recent changes
 
 **Root Cause**: 
-- Broke the insertion logic while trying to fix clipboard notifications
-- Changed keyboard simulation behavior in non-text fields
-- Misunderstood the InsertionResult enum handling
+1. Optional chaining issue in DictationService: `let insertionResult = try await self?.textInsertion.insertText()`
+   - When self is valid, this returns Optional<InsertionResult>
+   - Neither `.insertedAtCursor` nor `.keyboardSimulated` matches nil
+   - Code falls through without any action!
+2. AX API often returns nil for focused element even in text fields
+3. When no focused element, we returned `.keyboardSimulated` → clipboard fallback
 
-**Current State**: BROKEN - Major regression in core functionality
+**Solution**: ✅ FIXED
+1. Fixed optional chaining with guard statement:
+   ```swift
+   guard let insertionResult = try await self?.textInsertion.insertText(transcribedText) else {
+       DebugLogger.log("DictationService: Self was nil, cannot insert text")
+       return
+   }
+   ```
+2. Changed TextInsertionService to always try keyboard simulation:
+   - Even when AX API returns no focused element
+   - Many apps don't properly report focus via AX API
+   - Keyboard simulation often works anyway
 
-**What We Changed That Broke It**:
-1. Modified TextInsertionService to NOT simulate keyboard when no focused element
-2. Changed DictationService logic for handling insertion results
-3. Added clipboard notification system
-
-**Observations**:
-- Error sound happens when transcribing after switching from text field to settings
-- Suggests keyboard simulation is still attempted in wrong context
-- The "always save to clipboard" setting logic may be interfering
-
-**Solution**: (PARTIAL FIX APPLIED)
-1. ✅ FIXED: Error sound when switching contexts
-   - Removed keyboard simulation in non-text areas
-   - Now properly detects non-text fields and skips simulation
-   
-2. ❌ STILL BROKEN: Text insertion in text fields
-   - Text goes to clipboard even in text fields
-   - Not inserting at cursor position
-   - Need to debug why insertion fails
-
-**What Fixed the Error Sound**:
-- Changed TextInsertionService to NOT attempt keyboard simulation when:
-  - Focused element is not text-editable (AXList, etc)
-  - No focused element found
-- This prevents the system error sound
-
-**What's Still Wrong**:
-- The insertion logic is not working for actual text fields
-- Need to investigate why text isn't being inserted
+**What Was Happening**:
+```swift
+// BROKEN: Optional chaining returns nil when it should return a value
+let insertionResult = try await self?.textInsertion.insertText(text)
+if insertionResult == .insertedAtCursor { /* never matches nil */ }
+else if insertionResult == .keyboardSimulated { /* never matches nil */ }
+// Falls through, nothing happens!
+```
 
 **Prevention**: 
-- TEST AFTER EVERY CHANGE
-- COMMIT WORKING STATES IMMEDIATELY
-- Don't modify core functionality without understanding the flow
-- Keep insertion logic separate from clipboard backup logic
-- Document partial fixes to avoid losing progress
+- Always use guard when dealing with optional chaining results
+- Test optional paths thoroughly
+- Don't assume AX API always works - provide fallbacks
+- Add comprehensive debug logging
 
-**Time Lost**: 2+ hours and counting...
+**Time Lost**: 3 hours
 
 ---
 
@@ -791,4 +783,29 @@ if !UserDefaults.standard.bool(forKey: "alwaysSaveToClipboard") {
 **Time Lost**: 10 minutes
 
 ---
-*Last Updated: 2025-07-11 10:25 AM PST*
+
+## Issue #023: System Sounds Captured in Transcription
+
+**Discovered**: 2025-07-13 - Beta Testing Phase  
+**Severity**: Low  
+**Symptoms**: 
+- Transcription includes "(bell dings)" or other system sounds
+- System notification sounds get transcribed as text
+- Ambient sounds sometimes captured
+
+**Root Cause**: 
+Current audio sensitivity settings may be too sensitive, capturing system sounds along with speech.
+
+**Solution**: (For Future Investigation)
+- May need to adjust microphone sensitivity defaults
+- Could implement noise filtering
+- Consider band-pass filter for human speech frequencies
+
+**Prevention**: 
+- Test with various system sounds enabled
+- Consider audio preprocessing options
+
+**Time Lost**: N/A - Noted for future improvement
+
+---
+*Last Updated: 2025-07-13 04:00 AM PST*

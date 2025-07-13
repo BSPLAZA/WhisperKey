@@ -502,7 +502,10 @@ class DictationService: NSObject, ObservableObject {
                                 self?.debugLog("Attempting to insert text at cursor...")
                                 
                                 // Try to insert at cursor position
-                                let insertionResult = try await self?.textInsertion.insertText(transcribedText)
+                                guard let insertionResult = try await self?.textInsertion.insertText(transcribedText) else {
+                                    DebugLogger.log("DictationService: Self was nil, cannot insert text")
+                                    return
+                                }
                                 
                                 // Check insertion result
                                 if insertionResult == .insertedAtCursor {
@@ -532,8 +535,9 @@ class DictationService: NSObject, ObservableObject {
                                         ClipboardNotificationManager.shared.showClipboardNotification(wordCount: wordCount)
                                     }
                                     
-                                    // Play clipboard sound
-                                    if UserDefaults.standard.bool(forKey: "playFeedbackSounds") {
+                                    // Play clipboard sound only if we actually saved to clipboard (not when user has "always save" on)
+                                    if UserDefaults.standard.bool(forKey: "playFeedbackSounds") && 
+                                       !UserDefaults.standard.bool(forKey: "alwaysSaveToClipboard") {
                                         self?.playSound(named: "Pop")
                                     }
                                 }
@@ -582,8 +586,9 @@ class DictationService: NSObject, ObservableObject {
                                     break
                                 }
                                 
-                                // Play sound for clipboard fallback
-                                if UserDefaults.standard.bool(forKey: "playFeedbackSounds") {
+                                // Play sound for clipboard fallback only on actual errors (not intentional saves)
+                                if UserDefaults.standard.bool(forKey: "playFeedbackSounds") && 
+                                   !UserDefaults.standard.bool(forKey: "alwaysSaveToClipboard") {
                                     self?.playSound(named: "Pop")
                                 }
                                 
@@ -604,8 +609,9 @@ class DictationService: NSObject, ObservableObject {
                                     ClipboardNotificationManager.shared.showClipboardNotification(wordCount: wordCount)
                                 }
                                 
-                                // Play sound for clipboard fallback
-                                if UserDefaults.standard.bool(forKey: "playFeedbackSounds") {
+                                // Play sound for clipboard fallback only on actual errors (not intentional saves)
+                                if UserDefaults.standard.bool(forKey: "playFeedbackSounds") && 
+                                   !UserDefaults.standard.bool(forKey: "alwaysSaveToClipboard") {
                                     self?.playSound(named: "Pop")
                                 }
                             }
