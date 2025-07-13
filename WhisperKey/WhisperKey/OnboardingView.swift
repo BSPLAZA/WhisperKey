@@ -24,28 +24,68 @@ struct OnboardingView: View {
     private let steps = 5
     
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 24) {
             // Header with progress indicator
-            VStack(spacing: 16) {
-                HStack {
-                    Image(systemName: "mic.fill")
-                        .font(.system(size: 24))
-                        .foregroundColor(.accentColor)
-                    Text("Welcome to WhisperKey")
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                }
-                
-                // Progress indicator
+            VStack(spacing: 20) {
                 HStack(spacing: 12) {
-                    ForEach(0..<steps, id: \.self) { step in
+                    ZStack {
                         Circle()
-                            .fill(step <= currentStep ? Color.accentColor : Color.gray.opacity(0.3))
-                            .frame(width: 10, height: 10)
-                            .scaleEffect(step == currentStep ? 1.3 : 1.0)
-                            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentStep)
+                            .fill(LinearGradient(colors: [Color.accentColor.opacity(0.2), Color.accentColor.opacity(0.1)], 
+                                               startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .frame(width: 48, height: 48)
+                        
+                        Image(systemName: "mic.fill")
+                            .font(.system(size: 24))
+                            .foregroundColor(.accentColor)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Welcome to WhisperKey")
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                        Text("Step \(currentStep + 1) of \(steps)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 40)
+                
+                // Progress indicator with labels
+                HStack(spacing: 0) {
+                    ForEach(0..<steps, id: \.self) { step in
+                        HStack(spacing: 0) {
+                            // Progress dot
+                            ZStack {
+                                Circle()
+                                    .fill(step <= currentStep ? Color.accentColor : Color.gray.opacity(0.2))
+                                    .frame(width: 12, height: 12)
+                                
+                                if step < currentStep {
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 8, weight: .bold))
+                                        .foregroundColor(.white)
+                                } else if step == currentStep {
+                                    Circle()
+                                        .fill(Color.white)
+                                        .frame(width: 6, height: 6)
+                                }
+                            }
+                            .scaleEffect(step == currentStep ? 1.2 : 1.0)
+                            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: currentStep)
+                            
+                            // Progress line
+                            if step < steps - 1 {
+                                Rectangle()
+                                    .fill(step < currentStep ? Color.accentColor : Color.gray.opacity(0.2))
+                                    .frame(height: 2)
+                                    .animation(.easeInOut(duration: 0.3), value: currentStep)
+                            }
+                        }
                     }
                 }
+                .padding(.horizontal, 60)
             }
             .padding(.top, 30)
             
@@ -75,40 +115,99 @@ struct OnboardingView: View {
             .frame(maxHeight: .infinity)
             .padding(.horizontal, 40)
             
-            // Navigation buttons
-            HStack {
+            // Navigation buttons with enhanced styling
+            HStack(spacing: 16) {
                 if currentStep > 0 {
-                    Button("Previous") {
+                    Button(action: {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             currentStep -= 1
                         }
+                    }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 14, weight: .medium))
+                            Text("Previous")
+                                .font(.system(size: 14, weight: .medium))
+                        }
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(Color(NSColor.controlBackgroundColor))
+                                .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
+                        )
                     }
                     .buttonStyle(.plain)
-                    .foregroundColor(.secondary)
                 }
                 
                 Spacer()
                 
                 if currentStep < steps - 1 {
-                    Button(nextButtonText) {
+                    Button(action: {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             currentStep += 1
                         }
+                    }) {
+                        HStack(spacing: 6) {
+                            Text(nextButtonText)
+                                .font(.system(size: 14, weight: .semibold))
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .semibold))
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(canProceed ? Color.accentColor : Color.gray)
+                                .shadow(color: canProceed ? Color.accentColor.opacity(0.3) : Color.clear, 
+                                      radius: 6, x: 0, y: 3)
+                        )
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.plain)
                     .disabled(!canProceed)
+                    .animation(.easeInOut(duration: 0.2), value: canProceed)
                 } else {
-                    Button("Get Started") {
-                        completeOnboarding()
+                    Button(action: completeOnboarding) {
+                        HStack(spacing: 8) {
+                            Text("Get Started")
+                                .font(.system(size: 15, weight: .semibold))
+                            Image(systemName: "arrow.right.circle.fill")
+                                .font(.system(size: 18))
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(LinearGradient(colors: [Color.green, Color.green.opacity(0.8)],
+                                                   startPoint: .topLeading, endPoint: .bottomTrailing))
+                                .shadow(color: Color.green.opacity(0.4), radius: 8, x: 0, y: 4)
+                        )
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.plain)
                 }
             }
             .padding(.horizontal, 40)
             .padding(.bottom, 30)
         }
         .frame(width: 700, height: 700)
-        .background(Color(NSColor.windowBackgroundColor))
+        .background(
+            ZStack {
+                Color(NSColor.windowBackgroundColor)
+                
+                // Subtle gradient background
+                LinearGradient(
+                    colors: [
+                        Color.accentColor.opacity(0.03),
+                        Color.clear
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            }
+        )
         .onAppear {
             checkPermissions()
         }
@@ -160,56 +259,84 @@ struct OnboardingView: View {
 
 struct WelcomeStep: View {
     @State private var isAnimating = false
+    @State private var showFeatures = false
     
     var body: some View {
-        VStack(spacing: 16) {
-                // Animated icon
+        VStack(spacing: 24) {
+                // Animated icon with multiple layers
                 ZStack {
+                    // Outer pulse
                     Circle()
                         .fill(Color.accentColor.opacity(0.1))
-                        .frame(width: 100, height: 100)
-                        .scaleEffect(isAnimating ? 1.1 : 1.0)
-                        .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: isAnimating)
+                        .frame(width: 120, height: 120)
+                        .scaleEffect(isAnimating ? 1.2 : 0.9)
+                        .opacity(isAnimating ? 0 : 0.3)
+                        .animation(.easeOut(duration: 2).repeatForever(autoreverses: false), value: isAnimating)
+                    
+                    // Middle ring
+                    Circle()
+                        .stroke(LinearGradient(colors: [Color.accentColor, Color.accentColor.opacity(0.5)],
+                                             startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 3)
+                        .frame(width: 90, height: 90)
+                        .rotationEffect(.degrees(isAnimating ? 360 : 0))
+                        .animation(.linear(duration: 20).repeatForever(autoreverses: false), value: isAnimating)
+                    
+                    // Inner circle
+                    Circle()
+                        .fill(LinearGradient(colors: [Color.accentColor.opacity(0.2), Color.accentColor.opacity(0.1)],
+                                           startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .frame(width: 80, height: 80)
                     
                     Image(systemName: "waveform.circle.fill")
-                        .font(.system(size: 60))
-                        .foregroundColor(.accentColor)
+                        .font(.system(size: 50))
+                        .foregroundStyle(
+                            LinearGradient(colors: [Color.accentColor, Color.accentColor.opacity(0.8)],
+                                         startPoint: .top, endPoint: .bottom)
+                        )
                 }
-                .onAppear { isAnimating = true }
+                .onAppear { 
+                    isAnimating = true
+                    withAnimation(.easeOut(duration: 0.6).delay(0.3)) {
+                        showFeatures = true
+                    }
+                }
                 
                 VStack(spacing: 8) {
                     Text("Transform Your Voice")
-                        .font(.title)
+                        .font(.largeTitle)
                         .fontWeight(.bold)
+                        .multilineTextAlignment(.center)
                     
-                    Text("Privacy-first transcription on your Mac")
-                        .font(.callout)
+                    Text("Privacy-first transcription powered by AI")
+                        .font(.title3)
                         .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
                 }
                 
-                // How to use
-                VStack(alignment: .leading, spacing: 12) {
-                    Label("Tap Right Option key (activation key) to start/stop recording", systemImage: "keyboard")
-                }
-                .font(.callout)
-                .padding(16)
-                .background(Color(NSColor.controlBackgroundColor))
-                .cornerRadius(8)
-                
-                // Feature cards
-                VStack(spacing: 10) {
+                // Feature cards with staggered animation
+                VStack(spacing: 12) {
                     FeatureCard(icon: "lock.shield.fill", 
                                title: "100% Private",
                                description: "All processing happens locally")
+                        .opacity(showFeatures ? 1 : 0)
+                        .offset(y: showFeatures ? 0 : 20)
+                        .animation(.easeOut(duration: 0.5).delay(0.1), value: showFeatures)
                     
                     FeatureCard(icon: "bolt.fill",
                                title: "Lightning Fast", 
                                description: "Metal-accelerated transcription")
+                        .opacity(showFeatures ? 1 : 0)
+                        .offset(y: showFeatures ? 0 : 20)
+                        .animation(.easeOut(duration: 0.5).delay(0.2), value: showFeatures)
                     
                     FeatureCard(icon: "app.badge",
                                title: "Works Everywhere",
                                description: "Any text field, any app")
+                        .opacity(showFeatures ? 1 : 0)
+                        .offset(y: showFeatures ? 0 : 20)
+                        .animation(.easeOut(duration: 0.5).delay(0.3), value: showFeatures)
                 }
+                .padding(.horizontal, 40)
             }
         }
 }
@@ -218,28 +345,51 @@ struct FeatureCard: View {
     let icon: String
     let title: String
     let description: String
+    @State private var isHovered = false
     
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.title3)
-                .foregroundColor(.accentColor)
-                .frame(width: 30)
+        HStack(spacing: 16) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(LinearGradient(colors: [Color.accentColor.opacity(0.15), Color.accentColor.opacity(0.08)],
+                                       startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .frame(width: 44, height: 44)
+                    .shadow(color: Color.accentColor.opacity(0.2), radius: isHovered ? 8 : 4, x: 0, y: 2)
+                
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundColor(.accentColor)
+                    .scaleEffect(isHovered ? 1.1 : 1.0)
+            }
+            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isHovered)
             
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .font(.callout)
-                    .fontWeight(.medium)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.primary)
                 Text(description)
-                    .font(.caption)
+                    .font(.system(size: 12))
                     .foregroundColor(.secondary)
+                    .lineLimit(1)
             }
             
             Spacer()
         }
-        .padding(12)
-        .background(Color(NSColor.controlBackgroundColor))
-        .cornerRadius(8)
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(NSColor.controlBackgroundColor))
+                .shadow(color: Color.black.opacity(0.08), radius: isHovered ? 6 : 3, x: 0, y: 2)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.accentColor.opacity(isHovered ? 0.2 : 0), lineWidth: 1)
+        )
+        .scaleEffect(isHovered ? 1.02 : 1.0)
+        .animation(.easeInOut(duration: 0.2), value: isHovered)
+        .onHover { hovering in
+            isHovered = hovering
+        }
     }
 }
 
@@ -247,16 +397,43 @@ struct PermissionsStep: View {
     @Binding var hasAccessibilityPermission: Bool
     @Binding var hasMicrophonePermission: Bool
     @State private var permissionCheckTimer: Timer?
+    @State private var showContent = false
     
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Required Permissions")
-                .font(.title2)
-                .fontWeight(.semibold)
-                .padding(.top, 20)
-            
-            Text("WhisperKey needs these permissions to work properly")
-                .foregroundColor(.secondary)
+        VStack(spacing: 24) {
+            // Header with icon
+            VStack(spacing: 16) {
+                ZStack {
+                    Circle()
+                        .fill(LinearGradient(colors: [Color.orange.opacity(0.2), Color.orange.opacity(0.1)],
+                                           startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .frame(width: 80, height: 80)
+                    
+                    Image(systemName: "shield.checkered")
+                        .font(.system(size: 40))
+                        .foregroundStyle(
+                            LinearGradient(colors: [Color.orange, Color.orange.opacity(0.8)],
+                                         startPoint: .top, endPoint: .bottom)
+                        )
+                }
+                .scaleEffect(showContent ? 1 : 0.8)
+                .opacity(showContent ? 1 : 0)
+                .animation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.1), value: showContent)
+                
+                VStack(spacing: 8) {
+                    Text("Required Permissions")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                    
+                    Text("WhisperKey needs these permissions to work properly")
+                        .font(.callout)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .opacity(showContent ? 1 : 0)
+                .offset(y: showContent ? 0 : 10)
+                .animation(.easeOut(duration: 0.4).delay(0.2), value: showContent)
+            }
             
             VStack(spacing: 16) {
                 // Microphone permission
@@ -303,6 +480,9 @@ struct PermissionsStep: View {
         }
         .onAppear {
             startPermissionChecking()
+            withAnimation {
+                showContent = true
+            }
         }
         .onDisappear {
             stopPermissionChecking()
@@ -340,7 +520,7 @@ struct PermissionsStep: View {
     private func requestMicrophonePermission() {
         AVCaptureDevice.requestAccess(for: .audio) { granted in
             DispatchQueue.main.async {
-                hasMicrophonePermission = granted
+                self.hasMicrophonePermission = granted
             }
         }
     }
@@ -357,13 +537,21 @@ struct PermissionRow: View {
     let description: String
     let isGranted: Bool
     let action: () -> Void
+    @State private var isPressed = false
     
     var body: some View {
         HStack(spacing: 16) {
-            Image(systemName: icon)
-                .font(.system(size: 24))
-                .foregroundColor(isGranted ? .green : .secondary)
-                .frame(width: 30)
+            ZStack {
+                Circle()
+                    .fill(isGranted ? Color.green.opacity(0.15) : Color.secondary.opacity(0.1))
+                    .frame(width: 44, height: 44)
+                
+                Image(systemName: isGranted ? "checkmark.\(icon)" : icon)
+                    .font(.system(size: 22))
+                    .foregroundColor(isGranted ? .green : .secondary)
+                    .symbolRenderingMode(.hierarchical)
+            }
+            .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isGranted)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
@@ -377,19 +565,38 @@ struct PermissionRow: View {
             
             if isGranted {
                 Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 20))
                     .foregroundColor(.green)
+                    .transition(.scale.combined(with: .opacity))
             } else {
-                Button("Grant") {
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.1)) {
+                        isPressed = true
+                    }
                     action()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        isPressed = false
+                    }
+                }) {
+                    Text("Grant")
+                        .font(.system(size: 13, weight: .medium))
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
+                .scaleEffect(isPressed ? 0.95 : 1.0)
             }
         }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 16)
-        .background(Color.secondary.opacity(0.1))
-        .cornerRadius(8)
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(NSColor.controlBackgroundColor))
+                .shadow(color: Color.black.opacity(0.06), radius: 4, x: 0, y: 2)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(isGranted ? Color.green.opacity(0.3) : Color.clear, lineWidth: 1)
+        )
+        .animation(.easeInOut(duration: 0.3), value: isGranted)
     }
 }
 
@@ -397,6 +604,7 @@ struct ModelSelectionStep: View {
     @Binding var selectedModel: String
     @Binding var isDownloading: Bool
     @StateObject private var modelManager = ModelManager.shared
+    @State private var showContent = false
     
     let models = [
         ("base.en", "Base English (141 MB)", "Fast, good for quick notes"),
@@ -406,14 +614,40 @@ struct ModelSelectionStep: View {
     ]
     
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Choose Your Model")
-                .font(.title2)
-                .fontWeight(.semibold)
-                .padding(.top, 20)
-            
-            Text("Select a Whisper model based on your needs")
-                .foregroundColor(.secondary)
+        VStack(spacing: 24) {
+            // Header with icon
+            VStack(spacing: 16) {
+                ZStack {
+                    Circle()
+                        .fill(LinearGradient(colors: [Color.purple.opacity(0.2), Color.purple.opacity(0.1)],
+                                           startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .frame(width: 80, height: 80)
+                    
+                    Image(systemName: "cpu")
+                        .font(.system(size: 40))
+                        .foregroundStyle(
+                            LinearGradient(colors: [Color.purple, Color.purple.opacity(0.8)],
+                                         startPoint: .top, endPoint: .bottom)
+                        )
+                }
+                .scaleEffect(showContent ? 1 : 0.8)
+                .opacity(showContent ? 1 : 0)
+                .animation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.1), value: showContent)
+                
+                VStack(spacing: 8) {
+                    Text("Choose Your Model")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                    
+                    Text("Select a Whisper model based on your needs")
+                        .font(.callout)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .opacity(showContent ? 1 : 0)
+                .offset(y: showContent ? 0 : 10)
+                .animation(.easeOut(duration: 0.4).delay(0.2), value: showContent)
+            }
             
             ScrollView {
                 VStack(spacing: 12) {
@@ -455,6 +689,11 @@ struct ModelSelectionStep: View {
                 Text("You can change or download models later in Preferences")
                     .font(.caption)
                     .foregroundColor(.secondary)
+            }
+        }
+        .onAppear {
+            withAnimation {
+                showContent = true
             }
         }
         .onReceive(modelManager.$isDownloading) { newValue in
@@ -526,32 +765,73 @@ struct ModelRow: View {
 struct ClipboardSettingsStep: View {
     @AppStorage("alwaysSaveToClipboard") private var alwaysSaveToClipboard = true
     @State private var showExample = false
+    @State private var showContent = false
     
     var body: some View {
         VStack(spacing: 24) {
-            Text("Clipboard Backup")
-                .font(.title2)
-                .fontWeight(.semibold)
-                .padding(.top, 20)
-            
-            Text("Choose how WhisperKey handles your transcriptions")
-                .foregroundColor(.secondary)
-            
-            // Main toggle
-            VStack(alignment: .leading, spacing: 16) {
-                Toggle(isOn: $alwaysSaveToClipboard) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Always save to clipboard")
-                            .fontWeight(.medium)
-                        Text("Your transcriptions are saved to clipboard as a safety net")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
+            // Header with icon
+            VStack(spacing: 16) {
+                ZStack {
+                    Circle()
+                        .fill(LinearGradient(colors: [Color.blue.opacity(0.2), Color.blue.opacity(0.1)],
+                                           startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .frame(width: 80, height: 80)
+                    
+                    Image(systemName: "doc.on.clipboard")
+                        .font(.system(size: 40))
+                        .foregroundStyle(
+                            LinearGradient(colors: [Color.blue, Color.blue.opacity(0.8)],
+                                         startPoint: .top, endPoint: .bottom)
+                        )
                 }
-                .toggleStyle(.switch)
-                .padding(16)
-                .background(Color.accentColor.opacity(0.1))
-                .cornerRadius(10)
+                .scaleEffect(showContent ? 1 : 0.8)
+                .opacity(showContent ? 1 : 0)
+                .animation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.1), value: showContent)
+                
+                VStack(spacing: 8) {
+                    Text("Clipboard Backup")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                    
+                    Text("Choose how WhisperKey handles your transcriptions")
+                        .font(.callout)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .opacity(showContent ? 1 : 0)
+                .offset(y: showContent ? 0 : 10)
+                .animation(.easeOut(duration: 0.4).delay(0.2), value: showContent)
+            }
+            
+            // Main toggle with enhanced styling
+            VStack(alignment: .leading, spacing: 16) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Always save to clipboard")
+                            .font(.system(size: 15, weight: .semibold))
+                        Text("Your transcriptions are saved to clipboard as a safety net")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    
+                    Spacer(minLength: 20)
+                    
+                    Toggle("", isOn: $alwaysSaveToClipboard)
+                        .toggleStyle(SwitchToggleStyle(tint: Color.accentColor))
+                        .labelsHidden()
+                }
+                .padding(18)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(LinearGradient(colors: [Color.accentColor.opacity(0.12), Color.accentColor.opacity(0.08)],
+                                           startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .shadow(color: Color.accentColor.opacity(0.1), radius: 4, x: 0, y: 2)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.accentColor.opacity(0.2), lineWidth: 1)
+                )
                 
                 // Explanation
                 VStack(alignment: .leading, spacing: 12) {
@@ -572,17 +852,31 @@ struct ClipboardSettingsStep: View {
                 .cornerRadius(8)
             }
             
-            // Interactive example
-            Button(action: { withAnimation { showExample.toggle() } }) {
-                HStack {
-                    Image(systemName: showExample ? "chevron.down" : "chevron.right")
-                        .frame(width: 12)
+            // Interactive example with better styling
+            Button(action: { 
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { 
+                    showExample.toggle() 
+                } 
+            }) {
+                HStack(spacing: 6) {
+                    Image(systemName: showExample ? "chevron.down.circle.fill" : "chevron.right.circle")
+                        .font(.system(size: 16))
                     Text("See how it works")
-                        .font(.caption)
+                        .font(.system(size: 13, weight: .medium))
                 }
+                .foregroundColor(.accentColor)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(Color.accentColor.opacity(0.1))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(Color.accentColor.opacity(0.2), lineWidth: 1)
+                )
             }
             .buttonStyle(.plain)
-            .foregroundColor(.accentColor)
             
             if showExample {
                 VStack(alignment: .leading, spacing: 8) {
@@ -620,16 +914,50 @@ struct ClipboardSettingsStep: View {
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
+        .onAppear {
+            withAnimation {
+                showContent = true
+            }
+        }
     }
 }
 
 struct ReadyStep: View {
+    @State private var showContent = false
+    @State private var pulseAnimation = false
+    
     var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: 80))
-                .foregroundColor(.green)
-                .padding(.top, 20)
+        VStack(spacing: 24) {
+            // Success animation
+            ZStack {
+                // Outer pulse
+                Circle()
+                    .fill(Color.green.opacity(0.1))
+                    .frame(width: 140, height: 140)
+                    .scaleEffect(pulseAnimation ? 1.3 : 0.9)
+                    .opacity(pulseAnimation ? 0 : 0.4)
+                    .animation(.easeInOut(duration: 2).repeatForever(autoreverses: false), value: pulseAnimation)
+                
+                // Middle ring
+                Circle()
+                    .fill(LinearGradient(colors: [Color.green.opacity(0.2), Color.green.opacity(0.1)],
+                                       startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .frame(width: 100, height: 100)
+                
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: 60))
+                    .foregroundStyle(
+                        LinearGradient(colors: [Color.green, Color.green.opacity(0.8)],
+                                     startPoint: .top, endPoint: .bottom)
+                    )
+                    .scaleEffect(showContent ? 1 : 0.5)
+                    .rotationEffect(.degrees(showContent ? 0 : -90))
+            }
+            .opacity(showContent ? 1 : 0)
+            .animation(.spring(response: 0.6, dampingFraction: 0.6).delay(0.1), value: showContent)
+            .onAppear {
+                pulseAnimation = true
+            }
             
             Text("You're All Set!")
                 .font(.title)
@@ -665,23 +993,45 @@ struct ReadyStep: View {
                 .foregroundColor(.secondary)
                 .padding(.top, 10)
         }
+        .onAppear {
+            withAnimation {
+                showContent = true
+            }
+        }
     }
 }
 
 struct HowToRow: View {
     let number: String
     let text: String
+    @State private var isVisible = false
     
     var body: some View {
         HStack(spacing: 12) {
-            Text(number)
-                .font(.system(size: 16, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
-                .frame(width: 24, height: 24)
-                .background(Circle().fill(Color.accentColor))
+            ZStack {
+                Circle()
+                    .fill(LinearGradient(colors: [Color.accentColor, Color.accentColor.opacity(0.8)],
+                                       startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .frame(width: 28, height: 28)
+                    .shadow(color: Color.accentColor.opacity(0.3), radius: 4, x: 0, y: 2)
+                
+                Text(number)
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+            }
+            .scaleEffect(isVisible ? 1 : 0.5)
+            .opacity(isVisible ? 1 : 0)
+            .animation(.spring(response: 0.4, dampingFraction: 0.6).delay(Double(number)! * 0.1), value: isVisible)
             
             Text(text)
-                .font(.callout)
+                .font(.system(size: 14))
+                .foregroundColor(.primary)
+                .opacity(isVisible ? 1 : 0)
+                .offset(x: isVisible ? 0 : -20)
+                .animation(.easeOut(duration: 0.4).delay(Double(number)! * 0.1 + 0.1), value: isVisible)
+        }
+        .onAppear {
+            isVisible = true
         }
     }
 }
