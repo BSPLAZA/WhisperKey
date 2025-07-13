@@ -468,52 +468,106 @@ struct ModelsTab: View {
     }
     
     var body: some View {
-        Form {
-            Section {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Whisper Models")
-                        .font(.headline)
-                    
-                    Text("Download and select AI models for transcription")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    HStack {
-                        Text("Current Model:")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                        Text(modelDisplayName)
-                            .font(.caption)
-                            .foregroundColor(.blue)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                // Model Selection Section
+                SettingsSection(title: "AI Models", icon: "cpu") {
+                    VStack(alignment: .leading, spacing: 16) {
+                        // Current model display
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Active Model")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text(modelDisplayName)
+                                    .font(.system(.body, design: .rounded))
+                                    .foregroundColor(.accentColor)
+                                    .fontWeight(.medium)
+                            }
+                            Spacer()
+                            Image(systemName: whisperModel.contains("base") ? "circle" : 
+                                           whisperModel.contains("small") ? "circle.inset.filled" : 
+                                           whisperModel.contains("medium") ? "circle.fill" : "circle.grid.3x3.fill")
+                                .font(.title2)
+                                .foregroundColor(.accentColor)
+                                .opacity(0.8)
+                        }
+                        .padding(12)
+                        .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+                        .cornerRadius(8)
+                        
+                        // Model selection list
+                        VStack(spacing: 8) {
+                            ForEach(modelManager.availableModels, id: \.filename) { model in
+                                ModelDownloadRow(model: model)
+                            }
+                        }
                     }
-                    .padding(.bottom, 8)
-                    
-                    // Model selection with download support
-                    ForEach(modelManager.availableModels, id: \.filename) { model in
-                        ModelDownloadRow(model: model)
-                    }
-                    
-                    Divider()
-                    
-                    // Auto-selection
-                    Toggle("Automatically select model based on performance", isOn: $autoSelectModel)
-                        .disabled(true) // Not implemented yet
-                        .help("Coming soon: Let WhisperKey choose the best model")
-                    
-                    // Model location info
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Model Location")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                        Text("~/Developer/whisper.cpp/models/")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .textSelection(.enabled)
-                    }
-                    .padding(.top, 8)
                 }
+                
+                // Model Features Section
+                SettingsSection(title: "Model Information", icon: "info.circle") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        // Model descriptions
+                        VStack(alignment: .leading, spacing: 8) {
+                            Label("Base: Fast but basic accuracy", systemImage: "circle")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Label("Small: Balanced speed and quality", systemImage: "circle.inset.filled")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Label("Medium: Best accuracy, slower", systemImage: "circle.fill")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        Divider()
+                        
+                        // Model location
+                        VStack(alignment: .leading, spacing: 4) {
+                            Label("Model Storage Location", systemImage: "folder")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                            Text("~/Developer/whisper.cpp/models/")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                                .textSelection(.enabled)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+                                .cornerRadius(4)
+                        }
+                    }
+                }
+                
+                // Advanced Options Section
+                SettingsSection(title: "Advanced Options", icon: "gearshape.2") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Toggle(isOn: $autoSelectModel) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Auto-select optimal model")
+                                Text("Let WhisperKey choose based on your hardware")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .disabled(true)
+                        .opacity(0.6)
+                        
+                        HStack {
+                            Image(systemName: "clock")
+                                .font(.caption)
+                                .foregroundColor(.orange)
+                            Text("Coming in a future update")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+                
+                Spacer(minLength: 20)
             }
-            .padding()
+            .padding(20)
         }
     }
 }

@@ -20,43 +20,43 @@ As a QA expert, I approach WhisperKey testing with these principles:
 - [ ] TCC database corruption handling
 
 ### 🎤 Audio Tests
-- [ ] Multiple microphone devices
+- [x] Multiple microphone devices - Works with built-in and external
 - [ ] Bluetooth headset switching
 - [ ] USB microphone hot-plug
 - [ ] System audio device changes
 - [ ] High sample rate devices
-- [ ] Silence detection accuracy
+- [x] Silence detection accuracy - 2.5s threshold working well
 
 ### ⌨️ Hotkey Tests
-- [ ] Right Option key detection
-- [ ] Left Option vs Right Option
+- [x] Right Option key detection - Working correctly
+- [x] Left Option vs Right Option - Only right triggers
 - [ ] Option key with other modifiers
 - [ ] External keyboard support
 - [ ] Bluetooth keyboard support
-- [ ] Key held down behavior
-- [ ] Rapid key press handling
+- [x] Key held down behavior - Tap to start/stop model
+- [x] Rapid key press handling - Debouncing works
 - [ ] Hotkey during CPU intensive tasks
-- [ ] Hotkey in secure input mode
-- [ ] Alternative hotkeys (Caps Lock, F13, etc)
+- [x] Hotkey in secure input mode - Properly detected
+- [x] Alternative hotkeys (F13) - Available in settings
 
 ### 📝 Text Insertion Tests
 
 #### Native macOS Apps
 | App | Version | Basic Text | Rich Text | Secure Fields | Notes |
 |-----|---------|------------|-----------|---------------|-------|
-| TextEdit | System | ⏳ | ⏳ | N/A | - |
-| Notes | System | ⏳ | ⏳ | ⏳ | - |
+| TextEdit | System | ✅ | ✅ | N/A | Perfect insertion |
+| Notes | System | ✅ | ✅ | N/A | Works well |
 | Mail | System | ⏳ | ⏳ | N/A | - |
-| Safari | System | ⏳ | ⏳ | ⏳ | - |
-| Terminal | System | ⏳ | N/A | ⏳ | Special handling needed |
-| Xcode | 15.4 | ⏳ | N/A | N/A | - |
+| Safari | System | ✅ | ✅ | ⏳ | Text fields work |
+| Terminal | System | ✅ | N/A | ⏳ | Works in normal mode |
+| Xcode | 15.4 | ✅ | N/A | N/A | Code editor works |
 
 #### Third-Party Apps
 | App | Version | Basic Text | Rich Text | Secure Fields | Notes |
 |-----|---------|------------|-----------|---------------|-------|
-| Chrome | Latest | ⏳ | ⏳ | ⏳ | - |
-| Slack | Latest | ⏳ | ⏳ | N/A | - |
-| VS Code | Latest | ⏳ | N/A | N/A | - |
+| Chrome | Latest | ⏳ | ⏳ | ⏳ | Need to test |
+| Slack | Latest | ✅ | ✅ | N/A | Works great |
+| VS Code | Latest | ✅ | N/A | N/A | Perfect for coding |
 | Discord | Latest | ⏳ | ⏳ | N/A | - |
 | 1Password | 8.x | ⏳ | N/A | ⏳ | - |
 

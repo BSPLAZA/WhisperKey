@@ -210,11 +210,15 @@ struct ModelDownloadRow: View {
         manager.downloadError[model.filename] != nil
     }
     
+    private var isSelected: Bool {
+        selectedModel == model.filename
+    }
+    
     var body: some View {
-        HStack {
+        HStack(spacing: 12) {
             // Radio button
             RadioButton(
-                isSelected: selectedModel == model.filename,
+                isSelected: isSelected,
                 action: { 
                     if isInstalled {
                         selectedModel = model.filename
@@ -223,66 +227,113 @@ struct ModelDownloadRow: View {
             )
             .disabled(!isInstalled)
             
+            // Model icon
+            Image(systemName: model.filename.contains("base") ? "circle" : 
+                           model.filename.contains("small") ? "circle.inset.filled" : 
+                           model.filename.contains("medium") ? "circle.fill" : "circle.grid.3x3.fill")
+                .font(.title3)
+                .foregroundColor(isInstalled ? .accentColor : .secondary)
+                .frame(width: 24)
+            
             // Model info
-            VStack(alignment: .leading, spacing: 2) {
-                Text(model.displayName)
-                    .font(.system(size: 13))
-                    .foregroundColor(isInstalled ? .primary : .secondary)
-                
-                HStack(spacing: 8) {
-                    Text(model.description)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(model.displayName)
+                        .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                        .foregroundColor(isInstalled ? .primary : .secondary)
                     
-                    if isInstalled {
-                        Label("Installed", systemImage: "checkmark.circle.fill")
+                    if isInstalled && isSelected {
+                        Image(systemName: "checkmark.circle.fill")
                             .font(.caption)
-                            .foregroundColor(.green)
+                            .foregroundColor(.accentColor)
                     }
                 }
                 
+                Text(model.description)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                
                 // Download progress
                 if isDownloading {
-                    ProgressView(value: downloadProgress)
-                        .progressViewStyle(.linear)
-                        .frame(width: 200)
-                    
-                    Text("\(Int(downloadProgress * 100))% of \(formatBytes(model.size))")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
+                    VStack(alignment: .leading, spacing: 4) {
+                        ProgressView(value: downloadProgress)
+                            .progressViewStyle(.linear)
+                            .frame(maxWidth: .infinity)
+                        
+                        Text("\(Int(downloadProgress * 100))% of \(formatBytes(model.size))")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.top, 2)
                 }
                 
                 // Error message
                 if let error = manager.downloadError[model.filename] {
-                    Text(error)
+                    Label(error, systemImage: "exclamationmark.triangle")
                         .font(.caption)
                         .foregroundColor(.red)
+                        .padding(.top, 2)
                 }
             }
             
             Spacer()
             
-            // Download/Cancel button
-            if !isInstalled {
-                if isDownloading {
-                    Button("Cancel") {
-                        manager.cancelDownload(model.filename)
+            // Action area
+            HStack(spacing: 8) {
+                // Download/Cancel button
+                if !isInstalled {
+                    if isDownloading {
+                        Button(action: {
+                            manager.cancelDownload(model.filename)
+                        }) {
+                            Text("Cancel")
+                                .font(.caption)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 4)
+                                .background(Color.red.opacity(0.1))
+                                .foregroundColor(.red)
+                                .cornerRadius(6)
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        Button(action: {
+                            manager.downloadModel(model.filename)
+                        }) {
+                            Text("Download")
+                                .font(.caption)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 4)
+                                .background(Color.accentColor.opacity(0.1))
+                                .foregroundColor(.accentColor)
+                                .cornerRadius(6)
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .font(.caption)
-                } else {
-                    Button("Download") {
-                        manager.downloadModel(model.filename)
-                    }
-                    .font(.caption)
+                } else if isInstalled && !isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.body)
+                        .foregroundColor(.green)
+                        .opacity(0.8)
                 }
+                
+                // Size label
+                Text(formatBytes(model.size))
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .frame(width: 50, alignment: .trailing)
             }
-            
-            // Size label
-            Text(formatBytes(model.size))
-                .font(.caption)
-                .foregroundColor(.secondary)
         }
-        .padding(.vertical, 4)
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(isSelected ? Color.accentColor.opacity(0.08) : 
+                      isInstalled ? Color(NSColor.controlBackgroundColor).opacity(0.3) : 
+                      Color.clear)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(isSelected ? Color.accentColor.opacity(0.2) : Color.clear, lineWidth: 1)
+                )
+        )
         .contentShape(Rectangle())
         .onTapGesture {
             if isInstalled {
