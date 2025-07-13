@@ -9,7 +9,7 @@
 
 > ⚠️ **BETA SOFTWARE**: This is our first public release! While core functionality is solid, you may encounter some rough edges. Please report any issues you find.
 > 
-> 📅 **Current Status (July 12, 2025)**: Beta-ready with minor UI polish needed. Core features working reliably.
+> 📅 **Current Status (July 13, 2025)**: Feature complete, all critical bugs fixed. Ready for final testing and release.
 
 WhisperKey brings the power of OpenAI's Whisper AI to your Mac for fast, accurate speech-to-text that works in any app. Your voice never leaves your device.
 
@@ -20,8 +20,10 @@ WhisperKey brings the power of OpenAI's Whisper AI to your Mac for fast, accurat
 - ⚡ **Fast & Accurate** - Powered by Whisper AI with Metal acceleration
 - 🎯 **Simple to Use** - Just tap your hotkey and speak
 - 🎨 **Native Mac App** - Clean menu bar interface that feels right at home
-- ⏱️ **Recording Timer** - See how long you've been recording
-- 🔊 **Audio Feedback** - Optional sounds for start/stop/success
+- ⏱️ **Recording Timer** - See how long you've been recording with live audio levels
+- 🔊 **Smart Audio Feedback** - Different sounds for success vs clipboard saves
+- 📋 **Clipboard Fallback** - Automatically saves to clipboard when not in a text field
+- ⚙️ **Customizable** - Adjust silence detection, microphone sensitivity, and more
 
 ## Quick Start
 
@@ -80,14 +82,14 @@ swift build
 **Current beta requires manual setup:**
 - You need to install [whisper.cpp](https://github.com/ggerganov/whisper.cpp) separately
 - WhisperKey will guide you if it's not found
-- Models need to be downloaded on first use
-- Some apps may require additional accessibility permissions
+- Models need to be downloaded on first use (easy in-app download)
+- English models only (multilingual coming in v2.0)
 
 **Coming in v1.0:**
 - Bundled whisper.cpp (no separate installation)
-- Automatic model downloads
-- One-click installer
-- More language support in UI
+- Pre-downloaded base model
+- One-click DMG installer
+- Code signing and notarization
 
 ## Models
 
@@ -126,10 +128,11 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ## Known Issues
 
-- Terminal apps may require special handling
-- Some Electron apps need extra permissions
+- System sounds may be transcribed (e.g., notifications appear as "bell dings")
 - Recording indicator may appear behind full-screen apps
-- First launch after granting permissions may require restart
+- No formatting preservation (plain text only)
+- Single audio device support (doesn't handle switching mid-recording)
+- Custom vocabulary not yet supported
 
 ## Support
 
