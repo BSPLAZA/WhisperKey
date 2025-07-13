@@ -48,6 +48,11 @@
 
 ## Fixed Issues (Resolved in Beta)
 
+### ✅ Long Error Sound in Non-Text Fields
+**Fixed**: 2025-07-13  
+**Was**: System generated long error sound when keyboard simulation failed in non-text fields  
+**Solution**: Now properly detects non-text fields and saves to clipboard with normal notification sound  
+
 ### ✅ Text Insertion Not Working (Issue #022)
 **Fixed**: 2025-07-13  
 **Was**: Text always went to clipboard instead of cursor  
