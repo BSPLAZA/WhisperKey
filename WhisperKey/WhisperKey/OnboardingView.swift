@@ -442,6 +442,7 @@ struct PermissionsStep: View {
                     title: "Microphone Access",
                     description: "To record your voice for transcription",
                     isGranted: hasMicrophonePermission,
+                    isAccessibility: false,
                     action: {
                         requestMicrophonePermission()
                     }
@@ -453,6 +454,7 @@ struct PermissionsStep: View {
                     title: "Accessibility Access",
                     description: "To insert text at your cursor position",
                     isGranted: hasAccessibilityPermission,
+                    isAccessibility: true,
                     action: {
                         requestAccessibilityPermission()
                     }
@@ -460,22 +462,13 @@ struct PermissionsStep: View {
             }
             .padding(.horizontal, 40)
             
+            // Note about accessibility permission
             if !hasAccessibilityPermission {
-                VStack(spacing: 8) {
-                    Text("Note: You may need to restart WhisperKey after granting accessibility permission")
-                        .font(.caption)
-                        .foregroundColor(.orange)
-                        .multilineTextAlignment(.center)
-                    
-                    Button("Open System Settings") {
-                        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                            NSWorkspace.shared.open(url)
-                        }
-                    }
-                    .buttonStyle(.link)
+                Text("Note: You may need to restart WhisperKey after granting accessibility permission")
                     .font(.caption)
-                }
-                .padding(.horizontal, 40)
+                    .foregroundColor(.orange)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
             }
         }
         .onAppear {
@@ -526,8 +519,11 @@ struct PermissionsStep: View {
     }
     
     private func requestAccessibilityPermission() {
-        let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
-        _ = AXIsProcessTrustedWithOptions(options)
+        // For accessibility, we can't trigger a native dialog reliably
+        // So we'll just open System Settings directly
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
+        }
     }
 }
 
@@ -536,6 +532,7 @@ struct PermissionRow: View {
     let title: String
     let description: String
     let isGranted: Bool
+    let isAccessibility: Bool
     let action: () -> Void
     @State private var isPressed = false
     
@@ -578,7 +575,7 @@ struct PermissionRow: View {
                         isPressed = false
                     }
                 }) {
-                    Text("Grant")
+                    Text(isAccessibility ? "Open Settings" : "Grant")
                         .font(.system(size: 13, weight: .medium))
                 }
                 .buttonStyle(.borderedProminent)
