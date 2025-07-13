@@ -1,12 +1,12 @@
 # WhisperKey Quick Reference
 
-> Keep this open while developing - Updated 2025-07-02
+> Keep this open while developing - Updated 2025-07-13
 
 ## Current Status
-- **Phase**: Testing & Polish  
-- **Version**: 0.9.0 (Pre-release)
-- **Status**: MVP Complete, polishing for release
-- **Remaining**: 10 tasks (8 testing, 2 features)
+- **Phase**: Ready for Release
+- **Version**: 1.0.0-beta
+- **Status**: Feature Complete, All Critical Bugs Fixed
+- **Remaining**: Final testing and DMG creation
 
 ## Key Commands
 
@@ -68,10 +68,9 @@ width: 320, height: 60  // Recording indicator dimensions
 
 ### Hotkey Options
 ```swift
-"right_option"     // keyCode 61
-"caps_lock"        // Caps Lock key
-"f13" - "f15"      // Function keys
-"cmd_shift_space"  // Command+Shift+Space
+"right_option"     // keyCode 61 (Default)
+"f13"             // F13 key (Alternative)
+// Other options removed for simplicity
 ```
 
 ## Key Classes (Architecture)
@@ -145,6 +144,8 @@ if TextInsertionService.isInSecureField() {
 - `modelNotFound` - Download from preferences
 - `diskFull` - Free up space
 - `memoryPressure` - Close other apps
+- `noFocusedElement` - Click in a text field first
+- `insertionFailed` - Text saved to clipboard instead
 
 ## Testing Checklist
 
@@ -195,5 +196,25 @@ defaults read /Applications/WhisperKey.app/Contents/Info.plist CFBundleIdentifie
 killall WhisperKey
 ```
 
+## New Features Added
+
+### Clipboard Fallback
+- Automatically saves to clipboard when not in text field
+- Shows notification with word count
+- Different sound feedback (Pop vs Glass)
+- Optional "Always save to clipboard" setting
+
+### Sound Feedback
+- Start recording: Tink
+- Stop recording: Pop
+- Success (text inserted): Glass
+- Clipboard save: Pop (only if not "always save")
+
+### UI Improvements
+- Models tab uses SettingsSection styling
+- Enhanced recording indicator with live audio
+- Better error messages and recovery
+- Polished settings organization
+
 ---
-*Last Updated: 2025-07-02 16:30 PST*
+*Last Updated: 2025-07-13 14:15 PST*

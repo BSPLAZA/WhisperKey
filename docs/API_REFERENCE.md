@@ -1,7 +1,7 @@
 # WhisperKey API Reference
 
 > Internal API documentation for WhisperKey components  
-> Updated: 2025-07-10
+> Updated: 2025-07-13
 
 ## Core Services
 
@@ -64,12 +64,23 @@ class WhisperCppTranscriber {
 **Purpose**: Insert text at cursor position across all apps
 
 ```swift
+enum InsertionResult {
+    case insertedAtCursor
+    case keyboardSimulated
+    case savedToClipboard
+}
+
 class TextInsertionService {
     static func isInSecureField() -> Bool
+    static func saveToClipboard(_ text: String)
     
-    func insertText(_ text: String) async throws
+    func insertText(_ text: String) async throws -> InsertionResult
     func clearPreviousText(characterCount: Int) async throws
     func getCurrentFieldInfo() -> String
+    
+    // Private helpers
+    private func getFocusedElement() -> AXUIElement?
+    private func tryKeyboardSimulation(_ text: String) -> Bool
 }
 ```
 
@@ -216,11 +227,15 @@ class ModelManager: ObservableObject {
 9. "Pop" sound plays (if enabled)
 10. Recording stops automatically
 11. `WhisperCppTranscriber` processes audio file
-12. `TextInsertionService` inserts transcribed text
-13. "Glass" sound plays on success (if enabled)
-14. Success message shows word count ("✅ Inserted X words")
-15. Status auto-clears after 3 seconds
-16. Temp file cleaned up
+12. `TextInsertionService` attempts insertion:
+    - If in text field: Insert at cursor → Glass sound
+    - If not in text field: Save to clipboard → Pop sound
+    - Show appropriate message with word count
+13. Success message shows result:
+    - "✅ Inserted X words" (for cursor insertion)
+    - "📋 Saved to clipboard (X words)" (for clipboard)
+14. Status auto-clears after 3 seconds
+15. Temp file cleaned up
 
 ### Permission Flow
 1. Check `AXIsProcessTrusted()` on startup
