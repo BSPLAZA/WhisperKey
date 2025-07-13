@@ -227,14 +227,6 @@ struct ModelDownloadRow: View {
             )
             .disabled(!isInstalled)
             
-            // Model icon
-            Image(systemName: model.filename.contains("base") ? "circle" : 
-                           model.filename.contains("small") ? "circle.inset.filled" : 
-                           model.filename.contains("medium") ? "circle.fill" : "circle.grid.3x3.fill")
-                .font(.title3)
-                .foregroundColor(isInstalled ? .accentColor : .secondary)
-                .frame(width: 24)
-            
             // Model info
             VStack(alignment: .leading, spacing: 4) {
                 HStack {

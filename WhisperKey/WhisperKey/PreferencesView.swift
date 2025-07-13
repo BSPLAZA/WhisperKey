@@ -485,12 +485,6 @@ struct ModelsTab: View {
                                     .fontWeight(.medium)
                             }
                             Spacer()
-                            Image(systemName: whisperModel.contains("base") ? "circle" : 
-                                           whisperModel.contains("small") ? "circle.inset.filled" : 
-                                           whisperModel.contains("medium") ? "circle.fill" : "circle.grid.3x3.fill")
-                                .font(.title2)
-                                .foregroundColor(.accentColor)
-                                .opacity(0.8)
                         }
                         .padding(12)
                         .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
@@ -510,13 +504,13 @@ struct ModelsTab: View {
                     VStack(alignment: .leading, spacing: 12) {
                         // Model descriptions
                         VStack(alignment: .leading, spacing: 8) {
-                            Label("Base: Fast but basic accuracy", systemImage: "circle")
+                            Text("• Base: Fast but basic accuracy")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                            Label("Small: Balanced speed and quality", systemImage: "circle.inset.filled")
+                            Text("• Small: Balanced speed and quality")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                            Label("Medium: Best accuracy, slower", systemImage: "circle.fill")
+                            Text("• Medium: Best accuracy, slower")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
