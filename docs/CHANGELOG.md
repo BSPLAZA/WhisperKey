@@ -5,6 +5,29 @@ All notable changes to WhisperKey will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0-beta] - 2025-07-13
+
+### Added
+- Premium onboarding UI with gradient backgrounds and animations
+- Auto-refresh for permission dialog when permissions granted
+- Hover effects and staggered animations for feature cards
+- Pulsing success animation in onboarding ready step
+- Enhanced navigation button styling
+- Better visual depth with shadows
+
+### Changed
+- Models tab now uses SettingsSection components for consistency
+- Improved permission dialog with real-time status updates
+- Enhanced toggle styling in clipboard settings
+- Overall more polished and premium user experience
+
+### Fixed
+- Critical text insertion bug where text always went to clipboard
+- Sound feedback logic now context-appropriate
+- Permission dialog now refreshes automatically
+- Error sounds no longer play when switching contexts
+- Models tab UI now matches other settings tabs
+
 ## [1.0.0-rc2] - 2025-07-09
 
 ### Added

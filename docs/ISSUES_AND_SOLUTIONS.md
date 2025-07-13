@@ -855,4 +855,69 @@ git commit -m "Changes"
 **Time Lost**: Trust impact
 
 ---
-*Last Updated: 2025-07-13 13:42 PST*
+
+## Issue #025: Permission Dialog Not Refreshing After Grant
+
+**Discovered**: 2025-07-13 14:00 PST - Beta Testing Phase  
+**Severity**: Medium  
+**Symptoms**: 
+- User grants permissions in System Settings
+- Returns to WhisperKey permission dialog
+- Dialog still shows permissions as not granted
+- User has to dismiss and reopen to see updated status
+
+**Root Cause**: 
+Permission status was only checked once when dialog opened. No polling or refresh mechanism to detect when user granted permissions in System Settings.
+
+**Solution**: 
+Added timer-based polling to check permission status every 0.5 seconds while dialog is open:
+```swift
+// Add timer to poll permission status
+.onAppear {
+    checkPermissions()
+    // Start polling for permission changes
+    Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
+        checkPermissions()
+    }
+}
+```
+
+**Prevention**: 
+- Always consider that users may grant permissions while dialogs are open
+- Add refresh mechanisms for any status that can change externally
+- Use timers or observers to detect system changes
+
+**Time Lost**: 15 minutes
+
+---
+
+## Issue #026: Onboarding UI Needed Premium Polish
+
+**Discovered**: 2025-07-13 14:30 PST - UI Polish Phase  
+**Severity**: Low (Aesthetic)  
+**Status**: ✅ RESOLVED
+
+**Symptoms**: 
+- Onboarding functional but looked basic
+- Lacked visual polish and animations
+- Didn't feel premium
+
+**Solution**: 
+Enhanced entire onboarding experience:
+1. Added gradient backgrounds to feature cards
+2. Implemented hover effects with scale transforms
+3. Added staggered animations for feature cards
+4. Enhanced navigation buttons with custom styling
+5. Added pulsing success animation to ready step
+6. Improved toggle styling for clipboard settings
+7. Added subtle shadows and visual depth
+
+**Result**: 
+- Professional, premium appearance
+- Smooth animations and transitions
+- Delightful user experience
+
+**Time Lost**: 1 hour (worth it for polish)
+
+---
+*Last Updated: 2025-07-13 14:35 PST*

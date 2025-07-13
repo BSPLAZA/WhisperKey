@@ -1,7 +1,7 @@
 # WhisperKey API Reference
 
 > Internal API documentation for WhisperKey components  
-> Updated: 2025-07-13
+> Updated: 2025-07-13 14:40 PST
 
 ## Core Services
 
@@ -16,11 +16,20 @@ class DictationService: ObservableObject {
     @Published var hasMicrophonePermission = false
     @Published var hasAccessibilityPermission = false
     
-    // Audio settings
-    private let sampleRate: Double = 16000
-    private let silenceThreshold: Float = 0.015
-    private let silenceDuration: TimeInterval = 2.5
-    private let maxRecordingDuration: TimeInterval = 60.0
+    // Audio settings (now read from UserDefaults)
+    private var sampleRate: Double { 16000 }
+    private var silenceThreshold: Float {
+        let stored = UserDefaults.standard.float(forKey: "silenceThreshold")
+        return stored != 0 ? stored : 0.015
+    }
+    private var silenceDuration: TimeInterval {
+        let stored = UserDefaults.standard.double(forKey: "silenceDuration")
+        return stored != 0 ? stored : 2.5
+    }
+    private var maxRecordingDuration: TimeInterval {
+        let stored = UserDefaults.standard.double(forKey: "maxRecordingDuration")
+        return stored != 0 ? stored : 60.0
+    }
     
     func startRecording()
     func stopRecording()
@@ -223,11 +232,12 @@ class ModelManager: ObservableObject {
 5. Audio captured to temp file (`/var/folders/*/T/whisperkey_*.wav`)
 6. Duration timer updates every 0.1 seconds
 7. Warning shown when <10s remaining before max time
-8. Silence detected after 2.5 seconds OR user taps hotkey again
+8. Silence detected after configured duration OR user taps hotkey again
 9. "Pop" sound plays (if enabled)
 10. Recording stops automatically
 11. `WhisperCppTranscriber` processes audio file
 12. `TextInsertionService` attempts insertion:
+    - If "Always save to clipboard" is ON: Save to clipboard (no sound)
     - If in text field: Insert at cursor → Glass sound
     - If not in text field: Save to clipboard → Pop sound
     - Show appropriate message with word count
