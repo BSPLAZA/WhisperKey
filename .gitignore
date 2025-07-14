@@ -57,3 +57,11 @@ CLAUDE.local.md
 Secrets.swift
 .env
 .env.local
+
+# Build artifacts
+*.dmg
+WhisperKey/build-output/
+
+# Test artifacts
+test_keycodes
+tests/
