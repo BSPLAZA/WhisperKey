@@ -1,5 +1,7 @@
 # Setting Up whisper.cpp for WhisperKey
 
+> **Note**: WhisperKey v1.0.0 is now available! [Download here](https://github.com/BSPLAZA/WhisperKey/releases/tag/v1.0.0)
+
 WhisperKey requires whisper.cpp to be installed on your system for transcription. This guide will help you set it up.
 
 ## Prerequisites
@@ -155,4 +157,4 @@ If you encounter issues not covered here, please [open an issue](https://github.
 - Steps you've tried
 
 ---
-*Last updated: 2025-07-10*
+*Last updated: 2025-07-14*

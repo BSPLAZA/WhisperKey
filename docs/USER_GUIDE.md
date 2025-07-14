@@ -4,14 +4,22 @@
 
 ## Table of Contents
 
-1. [Getting Started](#getting-started)
-2. [Basic Usage](#basic-usage)
-3. [Recording Controls](#recording-controls)
-4. [Settings & Preferences](#settings--preferences)
-5. [AI Models](#ai-models)
-6. [Tips & Tricks](#tips--tricks)
-7. [Keyboard Shortcuts](#keyboard-shortcuts)
-8. [Troubleshooting](#troubleshooting)
+1. [Installation](#installation)
+2. [Getting Started](#getting-started)
+3. [Basic Usage](#basic-usage)
+4. [Recording Controls](#recording-controls)
+5. [Settings & Preferences](#settings--preferences)
+6. [AI Models](#ai-models)
+7. [Tips & Tricks](#tips--tricks)
+8. [Keyboard Shortcuts](#keyboard-shortcuts)
+9. [Troubleshooting](#troubleshooting)
+
+## Installation
+
+1. **Download**: Get [WhisperKey-1.0.0.dmg](https://github.com/BSPLAZA/WhisperKey/releases/download/v1.0.0/WhisperKey-1.0.0.dmg) (696KB)
+2. **Install**: Open the DMG and drag WhisperKey to Applications
+3. **First Launch**: Right-click WhisperKey and select "Open" (required for unsigned apps)
+4. **Setup**: Follow the onboarding wizard
 
 ## Getting Started
 

@@ -3,13 +3,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![macOS](https://img.shields.io/badge/macOS-12.0%2B-blue.svg)](https://www.apple.com/macos)
 [![Swift](https://img.shields.io/badge/Swift-5.9-orange.svg)](https://swift.org)
-[![Beta](https://img.shields.io/badge/Status-Beta-orange.svg)](https://github.com/BSPLAZA/WhisperKey/releases)
+[![Release](https://img.shields.io/badge/Version-1.0.0-green.svg)](https://github.com/BSPLAZA/WhisperKey/releases/tag/v1.0.0)
 
 **Privacy-focused local dictation for macOS**
 
-> ⚠️ **BETA SOFTWARE**: This is our first public release! While core functionality is solid, you may encounter some rough edges. Please report any issues you find.
-> 
-> 📅 **Current Status (July 13, 2025)**: Feature complete, all critical bugs fixed. Ready for final testing and release.
+> 🎉 **v1.0.0 Released!** (July 14, 2025): WhisperKey is now available for download. This is our first public release - we welcome your feedback and contributions!
 
 WhisperKey brings the power of OpenAI's Whisper AI to your Mac for fast, accurate speech-to-text that works in any app. Your voice never leaves your device.
 
@@ -41,11 +39,11 @@ You can change this in Settings to F13 if preferred.
 
 ## Installation
 
-### Option 1: Download Beta Release (Recommended)
-1. Download the latest beta from the [Releases page](https://github.com/BSPLAZA/WhisperKey/releases)
+### Option 1: Download Release (Recommended)
+1. Download [WhisperKey-1.0.0.dmg](https://github.com/BSPLAZA/WhisperKey/releases/download/v1.0.0/WhisperKey-1.0.0.dmg) (~700KB)
 2. Open the DMG and drag WhisperKey to Applications
-3. Launch WhisperKey - it will help you set up whisper.cpp
-4. Follow the setup wizard for permissions and model selection
+3. **Important**: Right-click WhisperKey and select "Open" (unsigned app)
+4. Follow the onboarding wizard for permissions and model setup
 
 ### Option 2: Build from Source
 ```bash
@@ -77,19 +75,19 @@ swift build
 - Cannot dictate into password fields for security
 - Success message shows word count inserted
 
-## Beta Limitations
+## Current Limitations
 
-**Current beta requires manual setup:**
-- You need to install [whisper.cpp](https://github.com/ggerganov/whisper.cpp) separately
-- WhisperKey will guide you if it's not found
-- Models need to be downloaded on first use (easy in-app download)
-- English models only (multilingual coming in v2.0)
+**v1.0.0 Notes:**
+- You need to install [whisper.cpp](https://github.com/ggerganov/whisper.cpp) separately (WhisperKey will guide you)
+- Models are downloaded on first use through the app
+- App is unsigned - right-click and "Open" on first launch
+- Models must be in `~/Developer/whisper.cpp/models/` directory
 
-**Coming in v1.0:**
-- Bundled whisper.cpp (no separate installation)
-- Pre-downloaded base model
-- One-click DMG installer
-- Code signing and notarization
+**Coming in v1.1:**
+- Code signing and notarization (no more security warnings)
+- Multilingual support in the UI
+- Custom model path selection
+- Bundled whisper.cpp option
 
 ## Models
 

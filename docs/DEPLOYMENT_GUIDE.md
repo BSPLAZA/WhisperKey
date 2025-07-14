@@ -2,14 +2,16 @@
 
 *Step-by-step guide for building, packaging, and distributing WhisperKey*
 
+> **Update**: v1.0.0 has been released! See the [release page](https://github.com/BSPLAZA/WhisperKey/releases/tag/v1.0.0) for the latest build.
+
 ## Overview
 
 This guide covers:
-1. Building a release version
-2. Creating a DMG installer
-3. Code signing (optional)
-4. Notarization (optional)
-5. Distribution methods
+1. Building a release version ✅
+2. Creating a DMG installer ✅
+3. Code signing (coming in v1.0.1)
+4. Notarization (coming in v1.0.1)
+5. Distribution methods ✅
 
 ## Prerequisites
 
