@@ -44,14 +44,14 @@ jobs:
     
     - name: Resolve Package Dependencies
       run: |
-        xcodebuild -resolvePackageDependencies -project WhisperKey.xcodeproj -scheme WhisperKey
+        xcodebuild -resolvePackageDependencies -project WhisperKey/WhisperKey.xcodeproj -scheme WhisperKey
     
     - name: Install xcpretty
       run: gem install xcpretty
     
     - name: Build
       run: |
-        xcodebuild build -project WhisperKey.xcodeproj \
+        xcodebuild build -project WhisperKey/WhisperKey.xcodeproj \
           -scheme WhisperKey \
           -destination 'platform=macOS' \
           -configuration Release \
@@ -59,7 +59,7 @@ jobs:
     
     - name: Run Tests
       run: |
-        xcodebuild test -project WhisperKey.xcodeproj \
+        xcodebuild test -project WhisperKey/WhisperKey.xcodeproj \
           -scheme WhisperKey \
           -destination 'platform=macOS' \
           -configuration Debug \
