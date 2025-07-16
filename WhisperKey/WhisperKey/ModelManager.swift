@@ -211,14 +211,15 @@ class ModelManager: ObservableObject {
                 throw NSError(domain: "ModelManager", code: 3, userInfo: [NSLocalizedDescriptionKey: "File not found at destination after move"])
             }
             
-            DispatchQueue.main.async {
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
                 self.isDownloading[filename] = false
                 self.downloadProgress[filename] = nil
                 self.downloadError[filename] = nil
                 
                 // Refresh WhisperService to ensure it knows about the new model
-                Task {
-                    await self.whisperService.refreshModelsPath()
+                Task { [weak self] in
+                    await self?.whisperService.refreshModelsPath()
                 }
                 
                 // Force a check to update the UI
@@ -240,16 +241,16 @@ class ModelManager: ObservableObject {
             }
         } catch {
             DebugLogger.log("ModelManager: Error moving file: \(error)")
-            DispatchQueue.main.async {
-                self.isDownloading[filename] = false
-                self.downloadError[filename] = "Failed to install model: \(error.localizedDescription)"
+            DispatchQueue.main.async { [weak self] in
+                self?.isDownloading[filename] = false
+                self?.downloadError[filename] = "Failed to install model: \(error.localizedDescription)"
             }
         }
     }
     
     class DownloadDelegate: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
         let filename: String
-        let manager: ModelManager?
+        weak var manager: ModelManager?
         
         init(filename: String, manager: ModelManager) {
             self.filename = filename

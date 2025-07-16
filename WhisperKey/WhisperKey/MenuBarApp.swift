@@ -377,12 +377,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self = self else { return }
             
             // Log the event for debugging
-            if event.keyCode == 61 {
-                NSLog("AppDelegate: Right Option event - keyCode: 61, modifiers: \(event.modifierFlags.rawValue)")
+            if event.keyCode == KeyCode.rightOption {
+                NSLog("AppDelegate: Right Option event - keyCode: \(KeyCode.rightOption), modifiers: \(event.modifierFlags.rawValue)")
             }
             
-            // Check if option key is pressed and it's the right one (keyCode 61)
-            if event.keyCode == 61 { // Right Option key code
+            // Check if option key is pressed and it's the right one
+            if event.keyCode == KeyCode.rightOption {
                 if event.modifierFlags.contains(.option) && !self.isRightOptionPressed {
                     // Right Option pressed down - TOGGLE recording
                     self.isRightOptionPressed = true

@@ -373,22 +373,22 @@ class TextInsertionService {
         let source = CGEventSource(stateID: .hidSystemState)
         
         // Key down Cmd
-        let cmdDown = CGEvent(keyboardEventSource: source, virtualKey: 0x37, keyDown: true)
+        let cmdDown = CGEvent(keyboardEventSource: source, virtualKey: KeyCode.command, keyDown: true)
         cmdDown?.flags = .maskCommand
         cmdDown?.post(tap: .cghidEventTap)
         
         // Key down V
-        let vDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true)
+        let vDown = CGEvent(keyboardEventSource: source, virtualKey: KeyCode.v, keyDown: true)
         vDown?.flags = .maskCommand
         vDown?.post(tap: .cghidEventTap)
         
         // Key up V
-        let vUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false)
+        let vUp = CGEvent(keyboardEventSource: source, virtualKey: KeyCode.v, keyDown: false)
         vUp?.flags = .maskCommand
         vUp?.post(tap: .cghidEventTap)
         
         // Key up Cmd
-        let cmdUp = CGEvent(keyboardEventSource: source, virtualKey: 0x37, keyDown: false)
+        let cmdUp = CGEvent(keyboardEventSource: source, virtualKey: KeyCode.command, keyDown: false)
         cmdUp?.post(tap: .cghidEventTap)
         
         // Restore clipboard after a delay
@@ -409,11 +409,11 @@ class TextInsertionService {
         // Simulate backspace key presses
         for _ in 0..<characterCount {
             // Create backspace key down event
-            if let backspaceDown = CGEvent(keyboardEventSource: source, virtualKey: 0x33, keyDown: true) {
+            if let backspaceDown = CGEvent(keyboardEventSource: source, virtualKey: KeyCode.backspace, keyDown: true) {
                 backspaceDown.post(tap: .cghidEventTap)
                 
                 // Create backspace key up event
-                if let backspaceUp = CGEvent(keyboardEventSource: source, virtualKey: 0x33, keyDown: false) {
+                if let backspaceUp = CGEvent(keyboardEventSource: source, virtualKey: KeyCode.backspace, keyDown: false) {
                     backspaceUp.post(tap: .cghidEventTap)
                 }
                 

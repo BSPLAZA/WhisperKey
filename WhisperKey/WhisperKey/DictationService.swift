@@ -420,24 +420,23 @@ class DictationService: NSObject, ObservableObject {
                 }
             }
             
-            if level > self.silenceThreshold {
-                self.lastSoundTime = Date()
-                if tapCount <= 10 || tapCount % 10 == 0 {
-                    DebugLogger.log("DictationService: Sound detected, level: \(level)")
-                }
-            } else if Date().timeIntervalSince(self.lastSoundTime) > self.silenceDuration && tapCount > 50 {
-                // Auto-stop after silence (wait for more taps to ensure we have some audio)
-                DebugLogger.log("DictationService: Silence detected for \(self.silenceDuration) seconds, stopping... (samples recorded: \(samplesRecorded))")
-                DispatchQueue.main.async {
+            // Handle silence detection and duration checks on main actor for thread safety
+            Task { @MainActor in
+                if level > self.silenceThreshold {
+                    self.lastSoundTime = Date()
+                    if tapCount <= 10 || tapCount % 10 == 0 {
+                        DebugLogger.log("DictationService: Sound detected, level: \(level)")
+                    }
+                } else if Date().timeIntervalSince(self.lastSoundTime) > self.silenceDuration && tapCount > 50 {
+                    // Auto-stop after silence (wait for more taps to ensure we have some audio)
+                    DebugLogger.log("DictationService: Silence detected for \(self.silenceDuration) seconds, stopping... (samples recorded: \(samplesRecorded))")
                     self.stopRecording()
                 }
-            }
-            
-            // Check for maximum recording duration
-            let recordingDuration = Date().timeIntervalSince(self.recordingStartTime)
-            if recordingDuration > self.maxRecordingDuration {
-                DebugLogger.log("DictationService: Maximum recording duration reached (\(Int(self.maxRecordingDuration)) seconds), stopping...")
-                DispatchQueue.main.async {
+                
+                // Check for maximum recording duration
+                let recordingDuration = Date().timeIntervalSince(self.recordingStartTime)
+                if recordingDuration > self.maxRecordingDuration {
+                    DebugLogger.log("DictationService: Maximum recording duration reached (\(Int(self.maxRecordingDuration)) seconds), stopping...")
                     self.transcriptionStatus = "⏱️ Recording stopped (\(Int(self.maxRecordingDuration))s limit)"
                     self.stopRecording()
                 }
