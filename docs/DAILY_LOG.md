@@ -4,6 +4,62 @@
 
 ---
 
+## 2025-07-16 (Wednesday) - v1.0.1 GitHub Release
+
+**Time**: 8:35 AM PST  
+**Goal**: Complete v1.0.1 release process and gather user feedback
+
+**Progress**:
+- ✅ **Quality Check & Code Review**:
+  - Reviewed all GitHub PRs and CI checks
+  - Fixed CI failures (Xcode path issues, updated to 16.1)
+  - Addressed HIGH priority issues from Claude's code review:
+    - Thread safety in DictationService
+    - Memory management in ModelManager
+    - Centralized keyboard constants in KeyCodes.swift
+  
+- ✅ **Build Integration**:
+  - Created copy-whisper-libraries.sh for automated library bundling
+  - Integrated into Xcode build process (both Debug and Release)
+  - No more manual copying required
+  
+- ✅ **Created Universal Binary**:
+  - Built for both x86_64 (Intel) and arm64 (Apple Silicon)
+  - Final DMG size: 2.1MB with all dependencies
+  - Verified all libraries properly bundled
+  
+- ✅ **GitHub Release Process**:
+  - Updated PR #4 with comprehensive description of all fixes
+  - Merged PR to main branch
+  - Created annotated tag v1.0.1 with detailed release notes
+  - Published GitHub release with DMG attachment
+  - Release available at: https://github.com/BSPLAZA/WhisperKey/releases/tag/v1.0.1
+
+**User Feedback Received**:
+- **Live Transcription**: Users want text to appear as they speak (like Apple)
+- **DMG UX**: Installer needs clearer drag-to-Applications visual
+- **Security Warning**: Need explicit instructions for Gatekeeper "Open Anyway"
+- **Language Support**: Request for multi-language dictation
+
+**Documentation**:
+- Created USER_FEEDBACK_AND_IMPROVEMENTS.md on feature branch
+- Updated TIMELINE.md with release details
+- Updated this daily log with full release process
+
+**Next Steps**:
+- Monitor user feedback and bug reports
+- Plan v1.0.2 improvements based on feedback
+- Consider code signing for smoother installation
+- Investigate live transcription feasibility
+
+**Lessons Learned**:
+- Always run CI checks before creating release PR
+- Code review catches important issues (thread safety, memory)
+- User testing reveals UX issues we don't see as developers
+- Clear installation instructions are critical for unsigned apps
+
+---
+
 ## 2025-07-15 (Tuesday) - v1.0.1 Final Build
 
 **Time**: 5:30 PM PST  

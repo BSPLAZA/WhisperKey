@@ -453,15 +453,35 @@
   - Cleaned up all references
   - Removed old artifacts
 
-### Final Release:
-- **WhisperKey-1.0.1.dmg** (2.2MB)
+### Final Release (July 16, 2025):
+- **WhisperKey-1.0.1.dmg** (2.1MB)
 - All critical issues resolved
-- Ready for distribution
+- ✅ **GitHub Release Published** (July 16, 8:30 AM PST)
+  - Merged PR #4 with all fixes
+  - Created v1.0.1 tag with comprehensive release notes
+  - Published release with DMG attachment
+  - Available at: https://github.com/BSPLAZA/WhisperKey/releases/tag/v1.0.1
+
+### Additional Fixes (July 16):
+- ✅ **Thread Safety Fixes** (HIGH priority from code review)
+- ✅ **Memory Management Fixes** (HIGH priority from code review)
+- ✅ **Code Organization** (created KeyCodes.swift)
+- ✅ **Build Integration** (automated library copying)
+- ✅ **CI/CD Pipeline** (fixed all GitHub Actions)
+- ✅ **Universal Binary** (Intel + Apple Silicon support)
+
+### User Feedback (July 16):
+- Request: Live transcription like Apple dictation
+- Request: Better DMG installer UX
+- Request: Clear Gatekeeper instructions
+- Request: Multi-language support
+- All feedback documented for v1.0.2 planning
 
 ### Known Minor Issues (non-critical):
 - Models tab UI needs visual polish
 - Long error sound in non-text fields
-- [ ] Create final v1.0.1 release
+- DMG installer UX could be clearer
+- Needs code signing for smoother install
 
 ---
-*Last Updated: 2025-07-15 17:45 PST - v1.0.1 complete and ready for release*
+*Last Updated: 2025-07-16 08:35 AM PST - v1.0.1 released to GitHub*
