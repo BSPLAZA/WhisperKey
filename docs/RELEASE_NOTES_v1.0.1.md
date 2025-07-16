@@ -1,12 +1,12 @@
 # WhisperKey v1.0.1 Release Notes
 
-**Release Date**: July 15, 2025  
+**Release Date**: July 16, 2025  
 **Version**: 1.0.1  
 **Type**: Hotfix Release
 
 ## Overview
 
-WhisperKey v1.0.1 is a critical hotfix release that addresses several important issues discovered after the v1.0.0 launch. This update ensures the app works reliably on all systems and improves the overall user experience.
+WhisperKey v1.0.1 is a critical hotfix release that addresses several important issues discovered after the v1.0.0 launch. This update ensures the app works reliably on all systems, improves security, and enhances the overall user experience.
 
 ## What's Fixed
 
@@ -27,6 +27,11 @@ WhisperKey v1.0.1 is a critical hotfix release that addresses several important 
    - Fixed model selection persistence
    - All UI components now share consistent settings
 
+4. **Version Display**
+   - Fixed incorrect version string showing "1.01 test v4"
+   - About dialog now dynamically reads version from bundle
+   - Consistent version numbering throughout the app
+
 ### 🎯 Improvements
 
 1. **Updated Default Settings**
@@ -34,10 +39,23 @@ WhisperKey v1.0.1 is a critical hotfix release that addresses several important 
    - "Always Save to Clipboard" now defaults to No
    - "Launch at Login" now defaults to Yes
 
-2. **Code Cleanup**
+2. **Code Quality & Security**
+   - Removed all force unwraps for safer code
+   - Fixed function naming conventions (SwiftLint compliance)
+   - Enhanced error handling throughout
+   - Improved input validation
+
+3. **Development Infrastructure**
+   - Fixed CI/CD pipeline for automated testing
+   - Added security validations to GitHub workflows
+   - Implemented dependency caching for faster builds
+   - Enhanced code review automation
+
+4. **Code Cleanup**
    - Removed obsolete WhisperSetupAssistant
-   - Cleaned up project artifacts
-   - Improved error messages
+   - Cleaned up project artifacts and test files
+   - Removed outdated development documentation
+   - Improved error messages and user feedback
 
 ## Technical Details
 
