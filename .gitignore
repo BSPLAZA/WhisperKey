@@ -26,7 +26,7 @@ xcuserdata/
 .build/
 .swiftpm/
 Packages/
-Package.resolved
+# Package.resolved - needed for CI, don't ignore
 *.xcodeproj/**/xcuserdata/
 
 # WhisperKey specific
