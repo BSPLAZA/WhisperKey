@@ -14,7 +14,7 @@ jobs:
     
     strategy:
       matrix:
-        xcode: ['15.0']
+        xcode: ['16.1']
     
     steps:
     - name: Checkout
