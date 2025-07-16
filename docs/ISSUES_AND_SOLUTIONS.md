@@ -45,7 +45,85 @@ macOS handles dictation key at a privileged system level before CGEventTap
 
 ---
 
-## Issue #002: Accessibility Permission False Negative
+## Issue #002: Missing GGML Library Dependencies
+
+**Discovered**: 2025-07-15 - Phase 5 (v1.0.1 Release)  
+**Severity**: Critical  
+**Symptoms**: 
+- WhisperKey crashes on launch with dylib errors
+- Debug log shows: "libggml-blas.dylib' (no such file)"
+- whisper-cli fails to run due to missing libraries
+
+**Root Cause**: 
+The whisper-cli binary depends on several GGML libraries that weren't being copied to the app bundle:
+- libggml.dylib
+- libggml-base.dylib
+- libggml-cpu.dylib
+- libggml-blas.dylib
+- libggml-metal.dylib
+
+**Solution**: 
+Updated copy-whisper-v10.sh to include all GGML libraries:
+```bash
+# Copy GGML libraries
+echo "Copying GGML libraries..."
+cp ~/Developer/whisper.cpp/build/ggml/src/libggml.dylib "$APP_PATH/Contents/Frameworks/"
+cp ~/Developer/whisper.cpp/build/ggml/src/libggml-base.dylib "$APP_PATH/Contents/Frameworks/"
+cp ~/Developer/whisper.cpp/build/ggml/src/libggml-cpu.dylib "$APP_PATH/Contents/Frameworks/"
+cp ~/Developer/whisper.cpp/build/ggml/src/ggml-blas/libggml-blas.dylib "$APP_PATH/Contents/Frameworks/"
+cp ~/Developer/whisper.cpp/build/ggml/src/ggml-metal/libggml-metal.dylib "$APP_PATH/Contents/Frameworks/"
+```
+
+**Prevention**: 
+- Always check library dependencies with `otool -L` before distribution
+- Include all transitive dependencies in the app bundle
+- Test the app on a clean system without development tools
+
+**Time Lost**: 30 minutes
+
+---
+
+## Issue #003: Audio Feedback Sounds Not Playing
+
+**Discovered**: 2025-07-15 - Phase 5 (v1.0.1 Release)  
+**Severity**: High  
+**Symptoms**: 
+- Audio feedback sounds not playing despite being enabled in settings
+- Debug info shows "Play Feedback Sounds: false" even when checkbox is checked
+- No sounds on recording start/stop or successful transcription
+
+**Root Cause**: 
+UserDefaults weren't properly initialized with default values. The PreferencesView used @AppStorage with defaults, but when DictationService accessed UserDefaults.standard.bool(forKey:) directly, it returned false for unset keys.
+
+**Solution**: 
+1. Added proper defaults registration in AppDelegate:
+```swift
+let defaults: [String: Any] = [
+    "playFeedbackSounds": true,
+    // ... other defaults
+]
+UserDefaults.standard.register(defaults: defaults)
+```
+
+2. Enhanced sound implementation to use actual system sounds:
+```swift
+if let sound = NSSound(named: NSSound.Name(actualSoundName)) {
+    sound.play()
+} else {
+    NSSound.beep()  // Fallback
+}
+```
+
+**Prevention**: 
+- Always register UserDefaults with register(defaults:) in applicationDidFinishLaunching
+- Don't rely on @AppStorage defaults outside of SwiftUI views
+- Test all settings with fresh app installations
+
+**Time Lost**: 45 minutes
+
+---
+
+## Issue #004: Accessibility Permission False Negative
 
 **Discovered**: 2025-07-01 - Phase 1  
 **Severity**: High  
@@ -920,4 +998,601 @@ Enhanced entire onboarding experience:
 **Time Lost**: 1 hour (worth it for polish)
 
 ---
-*Last Updated: 2025-07-13 14:35 PST*
+
+## Issue #027: Model Download Path Creation Race Condition
+
+**Discovered**: 2025-07-15 - v1.0.1 Testing  
+**Severity**: Critical  
+**Symptoms**: 
+- Model downloads fail with "Failed to create models directory"
+- ModelManager calling whisperService.modelsPath which calls refreshModelsPath
+- refreshModelsPath publishes update which triggers ModelManager view update
+- Circular dependency causes crash
+
+**Root Cause**: 
+ModelManager's modelPath getter was calling refreshModelsPath indirectly, which publishes updates that trigger view refreshes while the view is being rendered, creating a circular dependency.
+
+**Solution**: 
+1. Made modelPath getter read-only - no side effects
+2. Create directory without calling refreshModelsPath
+3. Let WhisperService handle path initialization separately
+
+**Code Fix**:
+```swift
+// WRONG: Circular dependency
+private var modelPath: String {
+    let path = whisperService.modelsPath ?? default
+    // This creates directory AND calls refreshModelsPath!
+    return path
+}
+
+// CORRECT: No side effects in getter
+private var modelPath: String {
+    let path = whisperService.modelsPath ?? default
+    // Create directory but DON'T refresh
+    try? FileManager.default.createDirectory(atPath: path, ...)
+    return path
+}
+```
+
+**Prevention**: 
+- Never call methods that publish updates from computed properties
+- Keep getters pure - no side effects
+- Handle initialization in proper lifecycle methods
+
+**Time Lost**: 45 minutes
+
+---
+
+## Issue #028: whisper.cpp Binary Not Found Despite Being Bundled
+
+**Discovered**: 2025-07-15 - v1.0.1 Testing  
+**Severity**: Critical  
+**Symptoms**: 
+- App shows "whisper.cpp not found" even though it's bundled
+- Binary exists in Resources folder
+- Search paths not checking bundle first
+
+**Root Cause**: 
+WhisperService was using static array for search paths, which evaluated Bundle.main.resourcePath at class initialization time (returns nil). Need to make it a computed property.
+
+**Solution**: 
+Changed whisperSearchPaths from stored property to computed property:
+```swift
+// WRONG: Bundle.main.resourcePath is nil at init time
+private let whisperSearchPaths = [
+    Bundle.main.resourcePath + "/whisper-cli", // This is nil!
+    ...
+]
+
+// CORRECT: Evaluate at runtime
+private var whisperSearchPaths: [String] {
+    var paths: [String] = []
+    if let resourcePath = Bundle.main.resourcePath {
+        paths.append("\(resourcePath)/whisper-cli")
+    }
+    ...
+}
+```
+
+**Prevention**: 
+- Always use computed properties for Bundle paths
+- Check bundle resources first before system paths
+- Log all search paths during debugging
+
+**Time Lost**: 30 minutes
+
+---
+
+## Issue #029: Model Already Exists But App Tries to Download Again
+
+**Discovered**: 2025-07-15 - v1.0.1 Testing  
+**Severity**: High  
+**Symptoms**: 
+- Models exist in ~/Developer/whisper.cpp/models/
+- App still tries to download them
+- isModelInstalled only checks primary path
+
+**Root Cause**: 
+isModelInstalled() only checked the primary modelsPath, not all search paths. If user has models in a different location, app doesn't detect them.
+
+**Solution**: 
+Enhanced isModelInstalled to check all search paths:
+```swift
+func isModelInstalled(_ filename: String) -> Bool {
+    // Check primary path first
+    if FileManager.default.fileExists(atPath: primaryPath) {
+        return true
+    }
+    
+    // Also check all search paths
+    for searchPath in whisperService.modelsSearchPaths {
+        let modelFile = "\(expandedPath)/ggml-\(filename).bin"
+        if FileManager.default.fileExists(atPath: modelFile) {
+            return true
+        }
+    }
+    return false
+}
+```
+
+**Prevention**: 
+- Always check all possible locations before downloading
+- Avoid duplicate downloads by being thorough
+- Log which path contained the model
+
+**Time Lost**: 20 minutes
+
+---
+
+## Issue #030: Disk Space Check Missing for Model Downloads
+
+**Discovered**: 2025-07-15 - v1.0.1 Testing  
+**Severity**: High  
+**Symptoms**: 
+- Model downloads could fail on low disk space
+- No pre-flight check before starting download
+- User sees download progress then failure
+
+**Root Cause**: 
+No disk space validation before initiating model downloads.
+
+**Solution**: 
+Added disk space check with buffer:
+```swift
+// Check disk space (add 100MB buffer)
+let requiredSpace = model.size + 100_000_000
+if !ErrorHandler.checkDiskSpace(requiredBytes: requiredSpace) {
+    downloadError[filename] = "Not enough disk space. Need \(formatBytes(requiredSpace)) free."
+    return
+}
+```
+
+**Prevention**: 
+- Always validate resources before long operations
+- Add reasonable buffers to space requirements
+- Provide clear error messages about requirements
+
+**Time Lost**: 15 minutes
+
+---
+
+## Issue #031: Model File Verification After Download
+
+**Discovered**: 2025-07-15 - v1.0.1 Testing  
+**Severity**: Medium  
+**Symptoms**: 
+- Downloaded models might be corrupted
+- No verification of file size after download
+- User might get "model load failed" later
+
+**Root Cause**: 
+After moving downloaded file, we didn't verify it was complete and correct size.
+
+**Solution**: 
+Added file size verification after download:
+```swift
+// Verify file size is reasonable (within 10% of expected)
+if let expectedModel = availableModels.first(where: { $0.filename == filename }) {
+    let expectedSize = expectedModel.size
+    let actualSize = getFileSize(at: destinationPath)
+    
+    if actualSize < Int64(Double(expectedSize) * 0.9) {
+        // File is too small, likely corrupted
+        try? FileManager.default.removeItem(atPath: destinationPath)
+        throw DownloadError.corruptedFile
+    }
+}
+```
+
+**Prevention**: 
+- Always verify downloaded files
+- Check file integrity (size, checksum if available)
+- Clean up corrupted downloads automatically
+
+**Time Lost**: 10 minutes
+
+---
+
+## Issue #032: WhisperService Default Models Path Not Created
+
+**Discovered**: 2025-07-15 - v1.0.1 Testing  
+**Severity**: Medium  
+**Symptoms**: 
+- First-time users have no models directory
+- WhisperService doesn't create default path
+- Model downloads might fail
+
+**Root Cause**: 
+WhisperService only searched for existing paths but didn't create the default path if none existed.
+
+**Solution**: 
+Create default models directory during initialization:
+```swift
+// Create default models directory if it doesn't exist
+let defaultModelsPath = NSString(string: "~/.whisperkey/models").expandingTildeInPath
+do {
+    try FileManager.default.createDirectory(atPath: defaultModelsPath, 
+                                          withIntermediateDirectories: true)
+    modelsPath = defaultModelsPath
+} catch {
+    DebugLogger.log("Failed to create default models directory: \(error)")
+}
+```
+
+**Prevention**: 
+- Always ensure required directories exist
+- Create defaults for first-time users
+- Handle directory creation failures gracefully
+
+**Time Lost**: 15 minutes
+
+---
+
+## Issue #033: App Freeze on Accessibility Permission Grant
+**Date**: 2025-07-15  
+**Version**: 1.0.0  
+**Severity**: Critical  
+**Symptoms**: 
+- App completely freezes when user grants accessibility permission
+- Cannot quit the app normally
+- Requires force quit
+
+**Root Cause**: 
+Circular dependency between ModelManager and WhisperService causing infinite loop:
+1. ModelManager.modelPath getter called whisperService.refreshModelsPath()
+2. refreshModelsPath() triggered UI updates via objectWillChange.send()
+3. UI updates caused ModelManager to re-evaluate modelPath
+4. This created an infinite loop blocking the main thread
+
+**Solution**: 
+Remove side effects from computed properties:
+```swift
+// WRONG - Don't call methods with side effects in getters
+private var modelPath: String {
+    whisperService.refreshModelsPath() // ❌ Creates infinite loop!
+    return whisperService.modelsPath ?? defaultPath
+}
+
+// CORRECT - Pure computed property
+private var modelPath: String {
+    return whisperService.modelsPath ?? defaultPath // ✅ No side effects
+}
+```
+
+Also fixed timer in OnboardingView that was forcing excessive UI updates.
+
+**Prevention**: 
+- Never call methods with side effects in computed properties
+- Avoid circular dependencies between services
+- Use debouncing for periodic checks
+- Test permission flows thoroughly
+
+**Time Lost**: 2 hours
+
+---
+
+## Issue #034: Model Download Files Deleted Before Move
+**Date**: 2025-07-15  
+**Version**: 1.0.0  
+**Severity**: High  
+**Symptoms**: 
+- Model downloads complete but show error
+- "Downloaded file not found at /var/folders/.../CFNetworkDownload_XXX.tmp"
+- Cannot proceed past model download step
+
+**Root Cause**: 
+URLSession deletes temporary download files immediately after calling the completion delegate. The async Task was allowing URLSession to clean up the file before we could move it.
+
+**Solution**: 
+Copy the file synchronously within the delegate method:
+```swift
+func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, 
+                didFinishDownloadingTo location: URL) {
+    // WRONG - Async task allows file deletion
+    Task { @MainActor in
+        manager?.moveDownloadedFile(from: location, for: filename) // ❌ File gone!
+    }
+    
+    // CORRECT - Copy file immediately
+    let tempDestination = FileManager.default.temporaryDirectory
+        .appendingPathComponent("whisperkey_\(filename).tmp")
+    do {
+        try FileManager.default.copyItem(at: location, to: tempDestination)
+        DispatchQueue.main.async {
+            manager.moveDownloadedFile(from: tempDestination, for: self.filename)
+        }
+    } catch {
+        // Handle error
+    }
+}
+```
+
+**Prevention**: 
+- Understand URLSession file lifecycle
+- Handle downloaded files synchronously in delegates
+- Test file operations thoroughly
+
+**Time Lost**: 1.5 hours
+
+---
+
+## Issue #035: whisper.cpp Binary Not Bundled
+**Date**: 2025-07-15  
+**Version**: 1.0.0  
+**Severity**: Critical  
+**Symptoms**: 
+- After completing onboarding, app shows "WhisperKey Setup Assistant"
+- Says "whisper.cpp not found"
+- Requires manual installation via Homebrew
+
+**Root Cause**: 
+The app was looking for whisper.cpp in system paths but didn't include the binary in the app bundle. This violated the "bundle everything" principle from the release strategy.
+
+**Solution**: 
+1. Add whisper-cli binary to app bundle Resources
+2. Update WhisperService to check bundle first:
+```swift
+private var whisperSearchPaths: [String] {
+    var paths: [String] = []
+    
+    // FIRST: Check for bundled whisper-cli in app bundle
+    if let resourcePath = Bundle.main.resourcePath {
+        paths.append("\(resourcePath)/whisper-cli")
+    }
+    
+    // Then check system paths as fallback
+    paths.append(contentsOf: [/* system paths */])
+    
+    return paths
+}
+```
+
+**Prevention**: 
+- Include all required binaries in app bundle
+- Test complete user flow from clean install
+- Document all external dependencies
+
+**Time Lost**: 3 hours (including multiple test builds)
+
+---
+
+## Common Patterns from v1.0.1 Fixes
+
+### 🏗️ Initialization Issues
+- Bundle paths must use computed properties
+- Avoid circular dependencies in initialization
+- Create required directories proactively
+
+### 📁 File System Checks
+- Always check multiple locations for resources
+- Verify downloads are complete
+- Pre-check disk space for large operations
+
+### 🔄 State Management
+- Don't publish updates from getters
+- Avoid side effects in computed properties
+- Handle missing resources gracefully
+
+---
+
+## Issue #036: Silent Transcription Failure
+**Discovered**: 2025-07-15 - v1.0.1 Testing  
+**Severity**: Critical  
+**Symptoms**: 
+- Recording UI shows but nothing transcribes
+- No text appears in clipboard
+- No feedback sounds heard
+
+## Issue #037: Audio Feedback Not Working Despite Being Enabled
+**Discovered**: 2025-07-15 - v1.0.1 User Testing
+**Severity**: Medium
+**Symptoms**: 
+- "Play feedback sounds" is enabled (green checkbox)
+- No sounds play during recording start/stop
+- No sounds play on successful transcription
+
+**Root Cause**: 
+- Implementation is correct (uses NSSound.beep())
+- Likely system configuration issue:
+  - macOS alert volume may be zero
+  - System sounds may be muted
+  - Alert sounds disabled in System Preferences
+
+**Solution**:
+1. Added "Test Audio Feedback" button in Advanced settings
+2. Button plays test beep patterns
+3. Helps users diagnose if system sounds work
+
+**Code Added**:
+```swift
+// In DebugHelper.swift
+func testSystemSounds() {
+    DebugLogger.log("Testing system sounds...")
+    NSSound.beep()
+    // Multiple beep patterns for testing
+}
+
+// In PreferencesView.swift Advanced tab
+Button("Test Audio Feedback") {
+    testingAudio = true
+    Task {
+        await testAudioSounds()
+        testingAudio = false
+    }
+}
+```
+
+**Prevention**: 
+- Add audio test during onboarding
+- Document system sound requirements
+- Consider visual feedback as alternative
+
+## Issue #038: Advanced Tab Shows Developer Options to End Users
+**Discovered**: 2025-07-15 - v1.0.1 User Feedback
+**Severity**: Low
+**Symptoms**: 
+- "Enable debug logging" shown to all users
+- "Custom paths" section confusing
+- "Whisper CPP found" message unnecessary
+- Debug tools exposed in production
+
+**Root Cause**: 
+- Debug features not hidden in release builds
+- Too much technical information for average users
+- App is self-contained but UI suggests otherwise
+
+**Solution**:
+1. Wrapped debug features in #if DEBUG
+2. Removed custom paths section
+3. Kept only essential user options:
+   - Audio Testing
+   - Clean Temporary Files
+   - Reset All Settings
+   - Version info
+
+**Code Changes**:
+```swift
+#if DEBUG
+SettingsSection(title: "Developer Options", icon: "hammer") {
+    Toggle("Enable debug logging", isOn: $debugMode)
+    // Other debug features
+}
+#endif
+```
+
+**Prevention**: 
+- Review all UI from end-user perspective
+- Use conditional compilation for dev features
+- Test release builds before shipping
+- No error messages shown to user
+
+**Root Cause**: Multiple issues:
+1. Bundle.main.resourcePath evaluated at init time was nil
+
+## Issue #039: whisper-cli Library Not Loaded Error
+**Discovered**: 2025-07-15 - v1.0.1 Test v8
+**Severity**: Critical
+**Symptoms**: 
+- Transcription fails with "Library not loaded: @rpath/libwhisper.1.dylib"
+- Error shows library searching in developer paths
+- whisper-cli cannot find its dependencies
+
+**Root Cause**: 
+- Only copied whisper-cli binary to Resources
+- Did not bundle the required dynamic libraries
+- @rpath was not configured to find libraries
+
+**Solution**:
+1. Copy all whisper.cpp libraries to Contents/Frameworks/:
+   - libwhisper.1.7.6.dylib (and symlinks)
+   - libggml.dylib
+   - libggml-base.dylib
+   - libggml-cpu.dylib
+   - libggml-blas.dylib
+   - libggml-metal.dylib
+2. Add rpath to whisper-cli:
+   ```bash
+   install_name_tool -add_rpath @executable_path/../Frameworks whisper-cli
+   ```
+
+**Code Changes**:
+```bash
+# In build process
+mkdir -p Contents/Frameworks
+cp ~/Developer/whisper.cpp/build/src/*.dylib Contents/Frameworks/
+cp ~/Developer/whisper.cpp/build/ggml/src/*.dylib Contents/Frameworks/
+# Create symlinks and fix paths
+```
+
+**Prevention**: 
+- Always bundle all dependencies
+- Test on clean system without developer tools
+- Use otool -L to verify library dependencies
+
+## Issue #040: Debug Features Too Hidden for Users
+**Discovered**: 2025-07-15 - User Feedback
+**Severity**: Medium  
+**Symptoms**: 
+- Users cannot enable debug logging for troubleshooting
+- No way to export diagnostic information
+- Support becomes difficult without debug data
+
+**Root Cause**: 
+- All debug features were hidden behind #if DEBUG
+- Users had no way to help diagnose issues
+- Overcorrection from showing too many dev features
+
+**Solution**:
+1. Keep debug logging and export visible to all users
+2. Only hide truly developer-specific features:
+   - Custom paths
+   - Test transcription
+   - Path information display
+
+**Code Changes**:
+```swift
+// Available to all users
+SettingsSection(title: "Debug & Troubleshooting", icon: "ladybug") {
+    Toggle("Enable debug logging", isOn: $debugMode)
+    Button("Export Debug Info") { exportDebugInfo() }
+}
+
+#if DEBUG
+// Only developer features
+SettingsSection(title: "Developer Tools", icon: "hammer") {
+    // Path info, test buttons, etc.
+}
+#endif
+```
+
+**Prevention**: 
+- Consider user support needs when hiding features
+- Always provide diagnostic tools for users
+- Balance simplicity with troubleshooting capability
+2. Model path resolution only checked primary path, not all locations
+3. System sounds not available on all macOS versions
+4. Errors caught but not surfaced to user
+
+**Solution**: 
+1. Made whisperSearchPaths a computed property for runtime evaluation
+2. Updated getModelPath() to check ALL model locations
+3. Replaced custom sounds with NSSound.beep() with patterns
+4. Used error alerts and added debug logging visibility
+
+**Prevention**: 
+- Always use computed properties for Bundle paths
+- Ensure model detection and usage are consistent
+- Use system beep for audio feedback reliability
+- Surface all errors to user with actionable messages
+
+**Time Lost**: 2 hours
+
+---
+
+## Issue #037: Dynamic Library Path Issue
+
+**Discovered**: 2025-07-15 - v1.0.1 Testing  
+**Severity**: Critical  
+**Symptoms**: 
+- Error: "Library not loaded: @rpath/libwhisper.1.dylib"
+- whisper-cli looking for libraries in /Users/orion/Developer/whisper.cpp/build/...
+- Complete failure to transcribe on other users' machines
+
+**Root Cause**: 
+The bundled whisper-cli binary was dynamically linked with @rpath references pointing to development machine paths. These paths don't exist on other users' machines.
+
+**Solution**: 
+1. Bundled all required .dylib files (libwhisper, libggml, etc.) in app's Frameworks directory
+2. Used install_name_tool to change all @rpath references to @executable_path/../Frameworks/
+3. Fixed inter-library dependencies to use relative paths
+
+**Prevention**: 
+- Always use statically linked binaries for distribution
+- Or ensure all dynamic libraries are bundled with proper paths
+- Test on clean machines without development tools
+
+**Time Lost**: 1 hour
+
+---
+*Last Updated: 2025-07-15 09:45 PST*

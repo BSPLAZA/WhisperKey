@@ -3,11 +3,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![macOS](https://img.shields.io/badge/macOS-12.0%2B-blue.svg)](https://www.apple.com/macos)
 [![Swift](https://img.shields.io/badge/Swift-5.9-orange.svg)](https://swift.org)
-[![Release](https://img.shields.io/badge/Version-1.0.0-green.svg)](https://github.com/BSPLAZA/WhisperKey/releases/tag/v1.0.0)
+[![Release](https://img.shields.io/badge/Version-1.0.1-green.svg)](https://github.com/BSPLAZA/WhisperKey/releases/tag/v1.0.1)
 
 **Privacy-focused local dictation for macOS**
 
-> 🎉 **v1.0.0 Released!** (July 14, 2025): WhisperKey is now available for download. This is our first public release - we welcome your feedback and contributions!
+> 🚀 **v1.0.1 Released!** (July 15, 2025): Critical fixes including bundled whisper.cpp - no manual installation needed! [See release notes](docs/RELEASE_NOTES_v1.0.1.md)
 
 WhisperKey brings the power of OpenAI's Whisper AI to your Mac for fast, accurate speech-to-text that works in any app. Your voice never leaves your device.
 
@@ -28,8 +28,9 @@ WhisperKey brings the power of OpenAI's Whisper AI to your Mac for fast, accurat
 1. **Download & Launch** - Get the latest release and run WhisperKey
 2. **Complete Setup** - Follow the onboarding wizard
 3. **Grant Permissions** - Allow microphone and accessibility access
-4. **Install whisper.cpp** - If not found, WhisperKey will guide you
-5. **Start Dictating** - Tap Right Option (⌥) to start/stop recording
+4. **Start Dictating** - Tap Right Option (⌥) to start/stop recording
+
+*Note: As of v1.0.1, whisper.cpp is bundled with the app - no separate installation needed!*
 
 ## Default Hotkey
 
@@ -40,10 +41,20 @@ You can change this in Settings to F13 if preferred.
 ## Installation
 
 ### Option 1: Download Release (Recommended)
-1. Download [WhisperKey-1.0.0.dmg](https://github.com/BSPLAZA/WhisperKey/releases/download/v1.0.0/WhisperKey-1.0.0.dmg) (~700KB)
+1. Download the latest WhisperKey.dmg from [Releases](https://github.com/BSPLAZA/WhisperKey/releases)
 2. Open the DMG and drag WhisperKey to Applications
-3. **Important**: Right-click WhisperKey and select "Open" (unsigned app)
-4. Follow the onboarding wizard for permissions and model setup
+3. **Important - Security Steps**:
+   - Right-click WhisperKey in Applications and select "Open"
+   - You'll see a warning about an unidentified developer
+   - Click "Open" to proceed
+   - If the above doesn't work:
+     - Open System Settings → Privacy & Security
+     - Scroll to the bottom
+     - Look for "WhisperKey was blocked..." and click "Open Anyway"
+4. Follow the onboarding wizard which will:
+   - Guide you through permission setup
+   - Download AI models automatically
+   - Configure your preferences
 
 ### Option 2: Build from Source
 ```bash
@@ -63,7 +74,7 @@ swift build
 - macOS 12.0 or later
 - Apple Silicon or Intel Mac
 - ~500MB disk space for AI models
-- **whisper.cpp** installed separately (see Beta Limitations)
+- **whisper.cpp** (v1.0.1+ includes bundled binary or guides installation)
 
 ## Tips
 
@@ -77,17 +88,20 @@ swift build
 
 ## Current Limitations
 
-**v1.0.0 Notes:**
-- You need to install [whisper.cpp](https://github.com/ggerganov/whisper.cpp) separately (WhisperKey will guide you)
-- Models are downloaded on first use through the app
+**v1.0.1 Fixed:**
+- ✅ Now includes bundled whisper.cpp binary
+- ✅ Models download to `~/.whisperkey/models/` (no manual setup)
+- ✅ Improved error handling and disk space checks
+- ✅ Better model detection across multiple paths
+
+**Still Present:**
 - App is unsigned - right-click and "Open" on first launch
-- Models must be in `~/Developer/whisper.cpp/models/` directory
+- English models only (multilingual coming soon)
 
 **Coming in v1.1:**
 - Code signing and notarization (no more security warnings)
-- Multilingual support in the UI
-- Custom model path selection
-- Bundled whisper.cpp option
+- Multilingual support (UI and models)
+- Custom vocabulary support
 
 ## Models
 

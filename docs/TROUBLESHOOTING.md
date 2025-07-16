@@ -23,9 +23,10 @@ Before diving into detailed troubleshooting, try these quick fixes:
 3. Click "Open" in the dialog
 4. Only need to do this once
 
-#### "whisper.cpp not found"
-**Cause**: Required component not installed  
-**Solution**:
+#### "whisper.cpp not found" (v1.0.0)
+**Note**: This issue is fixed in v1.0.1+ which includes bundled whisper.cpp
+
+**For v1.0.0 users**:
 1. Follow the setup wizard when it appears
 2. Or manually install:
    ```bash
@@ -33,6 +34,11 @@ Before diving into detailed troubleshooting, try these quick fixes:
    cd whisper.cpp
    WHISPER_METAL=1 make -j
    ```
+
+**For v1.0.1+ users**:
+- This error should not occur
+- If it does, check Resources folder in app bundle
+- Report issue on GitHub
 
 ### Permission Problems
 

@@ -48,10 +48,10 @@ class ClipboardNotificationManager: ObservableObject {
                 let screenFrame = screen.visibleFrame
                 let windowWidth = window.frame.width
                 
-                let x = screenFrame.midX - windowWidth / 2
-                let y = screenFrame.minY + 100 // 100 points from bottom
+                let xPosition = screenFrame.midX - windowWidth / 2
+                let yPosition = screenFrame.minY + 100 // 100 points from bottom
                 
-                window.setFrameOrigin(NSPoint(x: x, y: y))
+                window.setFrameOrigin(NSPoint(x: xPosition, y: yPosition))
             }
             
             // Store reference

@@ -2,11 +2,27 @@
 
 > Track features, fixes, and known issues for each release
 
-## v1.0.0 (Unreleased)
+## v1.0.1 (July 15, 2025)
 
-**Release Date**: TBD  
-**Status**: Feature Complete, Final Testing Phase  
-**Last Updated**: 2025-07-13
+**Release Date**: July 15, 2025  
+**Type**: Hotfix Release  
+**Status**: Released
+
+Critical fixes for first-run experience. See [v1.0.1 Release Notes](RELEASE_NOTES_v1.0.1.md) for details.
+
+### Key Fixes
+- Bundled whisper.cpp binary (no manual installation)
+- Fixed model download issues
+- Improved resource detection
+- Better error handling
+
+---
+
+## v1.0.0 (July 14, 2025)
+
+**Release Date**: July 14, 2025  
+**Status**: Initial Release  
+**Last Updated**: 2025-07-14
 
 ### 🎯 Overview
 

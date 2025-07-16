@@ -12,13 +12,13 @@ import ServiceManagement
 
 struct PreferencesView: View {
     @AppStorage("selectedHotkey") private var selectedHotkey = "right_option"
-    @AppStorage("whisperModel") private var whisperModel = "small.en"
+    @AppStorage("whisperModel") private var whisperModel = "base.en"
     @AppStorage("silenceDuration") private var silenceDuration = 2.5
     @AppStorage("silenceThreshold") private var silenceThreshold = 0.015
-    @AppStorage("launchAtLogin") private var launchAtLogin = false
+    @AppStorage("launchAtLogin") private var launchAtLogin = true
     @AppStorage("showRecordingIndicator") private var showRecordingIndicator = true
     @AppStorage("playFeedbackSounds") private var playFeedbackSounds = true
-    @AppStorage("alwaysSaveToClipboard") private var alwaysSaveToClipboard = true
+    @AppStorage("alwaysSaveToClipboard") private var alwaysSaveToClipboard = false
     
     @State private var selectedTab = UserDefaults.standard.integer(forKey: "preferencesRequestedTab")
     
@@ -47,6 +47,14 @@ struct PreferencesView: View {
                     Label("Advanced", systemImage: "slider.horizontal.3")
                 }
                 .tag(3)
+            
+            #if DEBUG
+            DebugMenuView()
+                .tabItem {
+                    Label("Debug", systemImage: "ladybug")
+                }
+                .tag(4)
+            #endif
         }
         .padding(.top, 8) // Add space between title bar and tabs
         .frame(minWidth: 600, minHeight: 500)
@@ -88,10 +96,10 @@ struct SettingsSection<Content: View>: View {
 
 struct GeneralTab: View {
     @AppStorage("selectedHotkey") private var selectedHotkey = "right_option"
-    @AppStorage("launchAtLogin") private var launchAtLogin = false
+    @AppStorage("launchAtLogin") private var launchAtLogin = true
     @AppStorage("showRecordingIndicator") private var showRecordingIndicator = true
     @AppStorage("playFeedbackSounds") private var playFeedbackSounds = true
-    @AppStorage("alwaysSaveToClipboard") private var alwaysSaveToClipboard = true
+    @AppStorage("alwaysSaveToClipboard") private var alwaysSaveToClipboard = false
     @State private var isTestingHotkey = false
     @State private var testingTimer: Timer?
     
@@ -205,7 +213,7 @@ struct GeneralTab: View {
                                     .foregroundColor(.secondary)
                             }
                         }
-                        .onChange(of: launchAtLogin) { newValue in
+                        .onChange(of: launchAtLogin) { _, newValue in
                             updateLaunchAtLogin(newValue)
                         }
                         
@@ -453,7 +461,7 @@ struct RecordingTab: View {
 // MARK: - Models Tab
 
 struct ModelsTab: View {
-    @AppStorage("whisperModel") private var whisperModel = "small.en"
+    @AppStorage("whisperModel") private var whisperModel = "base.en"
     @AppStorage("autoSelectModel") private var autoSelectModel = false
     @StateObject private var modelManager = ModelManager.shared
     
@@ -522,7 +530,7 @@ struct ModelsTab: View {
                             Label("Model Storage Location", systemImage: "folder")
                                 .font(.caption)
                                 .fontWeight(.medium)
-                            Text("~/Developer/whisper.cpp/models/")
+                            Text(WhisperService.shared.modelsPath ?? "~/.whisperkey/models")
                                 .font(.caption2)
                                 .foregroundColor(.secondary)
                                 .textSelection(.enabled)
@@ -575,107 +583,129 @@ struct AdvancedTab: View {
     @State private var showingResetAlert = false
     @State private var showingWhisperPicker = false
     @State private var showingModelsPicker = false
+    @State private var testingAudio = false
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                // Debug mode
-                Toggle("Enable debug logging", isOn: $debugMode)
-                    .help("Shows detailed logs in Console.app")
-                
-                Divider()
-                
-                // Custom paths
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Custom Paths")
-                        .font(.headline)
-                    
-                    // Whisper path
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Whisper.cpp location:")
+                // Audio Test Section
+                SettingsSection(title: "Audio Testing", icon: "speaker.wave.3") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Test if system sounds are working properly")
                             .font(.caption)
                             .foregroundColor(.secondary)
+                        
                         HStack {
-                            TextField("Leave empty for auto-detection", text: $customWhisperPath)
-                                .textFieldStyle(.roundedBorder)
-                                .disabled(true)
-                            Button("Browse...") {
-                                selectWhisperPath()
-                            }
-                            .controlSize(.small)
-                            if !customWhisperPath.isEmpty {
-                                Button("Clear") {
-                                    customWhisperPath = ""
-                                    WhisperService.shared.checkAvailability()
+                            Button(action: {
+                                testingAudio = true
+                                Task {
+                                    await testAudioSounds()
+                                    testingAudio = false
                                 }
-                                .controlSize(.small)
+                            }) {
+                                Label(testingAudio ? "Testing..." : "Test Audio Feedback", systemImage: "play.circle")
+                            }
+                            .disabled(testingAudio)
+                            
+                            if testingAudio {
+                                ProgressView()
+                                    .scaleEffect(0.7)
+                                    .padding(.leading, 8)
                             }
                         }
+                        
+                        Text("You should hear several beeps if audio is working")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
                     }
-                    
-                    // Models path
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Models directory:")
+                }
+                
+                // Clean temporary files
+                SettingsSection(title: "Maintenance", icon: "trash") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Button("Clean Temporary Files") {
+                            DictationService.cleanupAllTempFiles()
+                            showCleanupSuccess()
+                        }
+                        Text("Remove all temporary audio recordings")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                        HStack {
-                            TextField("Leave empty for auto-detection", text: $customModelsPath)
-                                .textFieldStyle(.roundedBorder)
-                                .disabled(true)
-                            Button("Browse...") {
-                                selectModelsPath()
-                            }
-                            .controlSize(.small)
-                            if !customModelsPath.isEmpty {
-                                Button("Clear") {
-                                    customModelsPath = ""
-                                    WhisperService.shared.checkAvailability()
+                    }
+                }
+                
+                // Debug & Troubleshooting - available to all users
+                SettingsSection(title: "Debug & Troubleshooting", icon: "ladybug") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Toggle("Enable debug logging", isOn: $debugMode)
+                            .help("Shows detailed logs for troubleshooting")
+                        
+                        Text("Debug logs help diagnose issues when something goes wrong")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        Divider()
+                        
+                        Button("Export Debug Info") {
+                            exportDebugInfo()
+                        }
+                        .help("Export system and app configuration for troubleshooting")
+                        
+                        Text("Creates a text file with diagnostic information")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                #if DEBUG
+                // Developer Tools - only in debug builds
+                SettingsSection(title: "Developer Tools", icon: "hammer") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        // Path Information
+                        VStack(alignment: .leading, spacing: 4) {
+                            if let whisperPath = WhisperService.shared.whisperPath {
+                                HStack {
+                                    Text("Whisper binary:")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Text(whisperPath)
+                                        .font(.caption.monospaced())
+                                        .textSelection(.enabled)
                                 }
-                                .controlSize(.small)
+                            }
+                            
+                            if let modelsPath = WhisperService.shared.modelsPath {
+                                HStack {
+                                    Text("Models path:")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Text(modelsPath)
+                                        .font(.caption.monospaced())
+                                        .textSelection(.enabled)
+                                }
                             }
                         }
+                        
+                        Button("Test Transcription") {
+                            testTranscription()
+                        }
+                        .help("Record a 3-second test and show detailed debug output")
+                        .controlSize(.small)
                     }
-                    
-                    // Status
-                    if WhisperService.shared.isAvailable {
-                        Label("Whisper.cpp found", systemImage: "checkmark.circle.fill")
+                }
+                #endif
+                
+                // Reset settings - available in production
+                SettingsSection(title: "Reset", icon: "arrow.counterclockwise") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Button("Reset All Settings") {
+                            showingResetAlert = true
+                        }
+                        .foregroundColor(.red)
+                        Text("Restore all settings to defaults")
                             .font(.caption)
-                            .foregroundColor(.green)
-                    } else {
-                        Label("Whisper.cpp not found", systemImage: "exclamationmark.triangle.fill")
-                            .font(.caption)
-                            .foregroundColor(.orange)
+                            .foregroundColor(.secondary)
                     }
                 }
-                .padding(.vertical, 4)
-                
-                Divider()
-                
-                // Temp file cleanup
-                VStack(alignment: .leading, spacing: 8) {
-                    Button("Clean Temporary Files") {
-                        DictationService.cleanupAllTempFiles()
-                        showCleanupSuccess()
-                    }
-                    Text("Remove all temporary audio recordings")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                .padding(.vertical, 4)
-                
-                Divider()
-                
-                // Reset settings
-                VStack(alignment: .leading, spacing: 8) {
-                    Button("Reset All Settings") {
-                        showingResetAlert = true
-                    }
-                    .foregroundColor(.red)
-                    Text("Restore all settings to defaults")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                .padding(.vertical, 4)
                 
                 Spacer()
                 
@@ -683,7 +713,7 @@ struct AdvancedTab: View {
                 VStack(spacing: 4) {
                     Text("WhisperKey \(appVersion)")
                         .font(.caption)
-                    Text("Open Source • MIT License")
+                    Text("Privacy-focused local dictation")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -739,7 +769,7 @@ struct AdvancedTab: View {
         openPanel.begin { response in
             if response == .OK, let url = openPanel.url {
                 customWhisperPath = url.path
-                WhisperService.shared.setCustomPaths(whisper: customWhisperPath, models: nil)
+                WhisperService.shared.checkAvailability()
             }
         }
     }
@@ -756,8 +786,123 @@ struct AdvancedTab: View {
         openPanel.begin { response in
             if response == .OK, let url = openPanel.url {
                 customModelsPath = url.path
-                WhisperService.shared.setCustomPaths(whisper: nil, models: customModelsPath)
+                WhisperService.shared.checkAvailability()
             }
+        }
+    }
+    
+    private func testTranscription() {
+        let alert = NSAlert()
+        alert.messageText = "Test Transcription"
+        alert.informativeText = "This will record 3 seconds of audio and transcribe it with detailed debug output.\n\nClick 'Start Test' and speak clearly."
+        alert.addButton(withTitle: "Start Test")
+        alert.addButton(withTitle: "Cancel")
+        
+        if alert.runModal() == .alertFirstButtonReturn {
+            // Record 3 seconds of test audio
+            Task { @MainActor in
+                DictationService.shared.startRecording()
+                
+                // Stop after 3 seconds
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                DictationService.shared.stopRecording()
+                
+                // Show debug log after a delay
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                showDebugOutput()
+            }
+        }
+    }
+    
+    private func openDebugLog() {
+        let logPath = "/tmp/whisperkey_debug.log"
+        if FileManager.default.fileExists(atPath: logPath) {
+            NSWorkspace.shared.open(URL(fileURLWithPath: logPath))
+        } else {
+            let alert = NSAlert()
+            alert.messageText = "Debug Log Not Found"
+            alert.informativeText = "The debug log file doesn't exist yet. Try recording something first."
+            alert.alertStyle = .informational
+            alert.runModal()
+        }
+    }
+    
+    private func exportDebugInfo() {
+        var debugInfo = "WhisperKey Debug Information\n"
+        debugInfo += "Generated: \(Date())\n"
+        debugInfo += "========================\n\n"
+        
+        debugInfo += "App Version: \(appVersion)\n"
+        debugInfo += "macOS Version: \(ProcessInfo.processInfo.operatingSystemVersionString)\n"
+        debugInfo += "Architecture: \(getArchitecture())\n\n"
+        
+        debugInfo += "Whisper Configuration:\n"
+        debugInfo += "Whisper Path: \(WhisperService.shared.whisperPath ?? "Not found")\n"
+        debugInfo += "Models Path: \(WhisperService.shared.modelsPath ?? "Not found")\n"
+        debugInfo += "Selected Model: \(UserDefaults.standard.string(forKey: "whisperModel") ?? "small.en")\n\n"
+        
+        debugInfo += "Settings:\n"
+        debugInfo += "Hotkey: \(UserDefaults.standard.string(forKey: "selectedHotkey") ?? "right_option")\n"
+        debugInfo += "Play Feedback Sounds: \(UserDefaults.standard.bool(forKey: "playFeedbackSounds"))\n"
+        debugInfo += "Always Save to Clipboard: \(UserDefaults.standard.bool(forKey: "alwaysSaveToClipboard"))\n"
+        debugInfo += "Silence Duration: \(UserDefaults.standard.double(forKey: "silenceDuration"))\n"
+        debugInfo += "Silence Threshold: \(UserDefaults.standard.double(forKey: "silenceThreshold"))\n\n"
+        
+        // Add recent debug log
+        if let logData = try? String(contentsOfFile: "/tmp/whisperkey_debug.log", encoding: .utf8) {
+            debugInfo += "Recent Debug Log (last 1000 chars):\n"
+            debugInfo += "========================\n"
+            debugInfo += String(logData.suffix(1000))
+        }
+        
+        // Save to file
+        let savePanel = NSSavePanel()
+        savePanel.nameFieldStringValue = "WhisperKey-Debug-\(Date().ISO8601Format()).txt"
+        
+        // Make save panel a child of the preferences window to ensure proper ordering
+        if let window = NSApp.keyWindow {
+            savePanel.beginSheetModal(for: window) { response in
+                if response == .OK, let url = savePanel.url {
+                    try? debugInfo.write(to: url, atomically: true, encoding: .utf8)
+                }
+            }
+        } else {
+            // Fallback to standard modal
+            savePanel.begin { response in
+                if response == .OK, let url = savePanel.url {
+                    try? debugInfo.write(to: url, atomically: true, encoding: .utf8)
+                }
+            }
+        }
+    }
+    
+    private func showDebugOutput() {
+        if let logData = try? String(contentsOfFile: "/tmp/whisperkey_debug.log", encoding: .utf8) {
+            let alert = NSAlert()
+            alert.messageText = "Test Transcription Debug Output"
+            alert.informativeText = String(logData.suffix(1000))
+            alert.alertStyle = .informational
+            alert.addButton(withTitle: "OK")
+            alert.addButton(withTitle: "Copy to Clipboard")
+            
+            if alert.runModal() == .alertSecondButtonReturn {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(logData, forType: .string)
+            }
+        }
+    }
+    
+    private func getArchitecture() -> String {
+        var size = 0
+        sysctlbyname("hw.machine", nil, &size, nil, 0)
+        var machine = [CChar](repeating: 0, count: size)
+        sysctlbyname("hw.machine", &machine, &size, nil, 0)
+        return String(cString: machine)
+    }
+    
+    private func testAudioSounds() async {
+        await MainActor.run {
+            DebugHelper.shared.testSystemSounds()
         }
     }
 }

@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "WhisperKey",
     platforms: [
-        .macOS(.v13)
+        .macOS(.v15)
     ],
     products: [
         .executable(name: "WhisperKey", targets: ["WhisperKey"])

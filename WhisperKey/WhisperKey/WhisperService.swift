@@ -24,16 +24,31 @@ class WhisperService: ObservableObject {
     @AppStorage("customModelsPath") private var customModelsPath = ""
     
     // Common installation locations to search
-    private let whisperSearchPaths = [
-        "~/.whisperkey/bin/whisper-cli",
-        "~/Developer/whisper.cpp/build/bin/whisper-cli",
-        "~/Developer/whisper.cpp/main",
-        "/usr/local/bin/whisper-cli",
-        "/opt/homebrew/bin/whisper-cli",
-        "/opt/local/bin/whisper-cli"
-    ]
+    private var whisperSearchPaths: [String] {
+        var paths: [String] = []
+        
+        // FIRST: Check for bundled whisper-cli in app bundle
+        // This must be computed at runtime, not init time
+        let bundlePath = Bundle.main.bundlePath
+        let resourcePath = (bundlePath as NSString).appendingPathComponent("Contents/Resources")
+        let whisperPath = (resourcePath as NSString).appendingPathComponent("whisper-cli")
+        paths.append(whisperPath)
+        DebugLogger.log("WhisperService: Checking bundle path: \(whisperPath)")
+        
+        // Then check system paths as fallback
+        paths.append(contentsOf: [
+            "~/.whisperkey/bin/whisper-cli",
+            "~/Developer/whisper.cpp/build/bin/whisper-cli",
+            "~/Developer/whisper.cpp/main",
+            "/usr/local/bin/whisper-cli",
+            "/opt/homebrew/bin/whisper-cli",
+            "/opt/local/bin/whisper-cli"
+        ])
+        
+        return paths
+    }
     
-    private let modelsSearchPaths = [
+    let modelsSearchPaths = [
         "~/.whisperkey/models",
         "~/Developer/whisper.cpp/models",
         "~/.local/share/whisper/models",
@@ -61,10 +76,11 @@ class WhisperService: ObservableObject {
         if whisperPath == nil {
             for path in whisperSearchPaths {
                 let expandedPath = NSString(string: path).expandingTildeInPath
+                DebugLogger.log("WhisperService: Checking for whisper at: \(expandedPath)")
                 if validateWhisperExecutable(at: expandedPath) {
                     whisperPath = expandedPath
                     isAvailable = true
-                    DebugLogger.log("Found whisper.cpp at: \(expandedPath)")
+                    DebugLogger.log("WhisperService: Found whisper.cpp at: \(expandedPath)")
                     break
                 }
             }
@@ -80,6 +96,17 @@ class WhisperService: ObservableObject {
         }
         
         if modelsPath == nil {
+            // Create default models directory if it doesn't exist
+            let defaultModelsPath = NSString(string: "~/.whisperkey/models").expandingTildeInPath
+            do {
+                try FileManager.default.createDirectory(atPath: defaultModelsPath, withIntermediateDirectories: true, attributes: nil)
+                DebugLogger.log("Created default models directory at: \(defaultModelsPath)")
+                modelsPath = defaultModelsPath
+            } catch {
+                DebugLogger.log("Failed to create default models directory: \(error)")
+            }
+            
+            // Still search other paths in case models exist elsewhere
             for path in modelsSearchPaths {
                 let expandedPath = NSString(string: path).expandingTildeInPath
                 if FileManager.default.fileExists(atPath: expandedPath) {
@@ -121,36 +148,76 @@ class WhisperService: ObservableObject {
     }
     
     func getModelPath(for modelName: String) -> String? {
-        guard let modelsPath = modelsPath else { return nil }
-        
         let modelFile = "ggml-\(modelName).bin"
-        let fullPath = (modelsPath as NSString).appendingPathComponent(modelFile)
         
-        if FileManager.default.fileExists(atPath: fullPath) {
-            return fullPath
+        // First check primary models path if set
+        if let modelsPath = modelsPath {
+            let fullPath = (modelsPath as NSString).appendingPathComponent(modelFile)
+            if FileManager.default.fileExists(atPath: fullPath) {
+                DebugLogger.log("WhisperService: Found model at primary path: \(fullPath)")
+                return fullPath
+            }
         }
         
+        // Then check all search paths to find models in alternate locations
+        for path in modelsSearchPaths {
+            let expandedPath = NSString(string: path).expandingTildeInPath
+            let fullPath = (expandedPath as NSString).appendingPathComponent(modelFile)
+            if FileManager.default.fileExists(atPath: fullPath) {
+                DebugLogger.log("WhisperService: Found model at alternate path: \(fullPath)")
+                return fullPath
+            }
+        }
+        
+        DebugLogger.log("WhisperService: Model \(modelName) not found in any location")
         return nil
     }
     
-    func showSetupError() {
-        // Show the interactive setup assistant
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 600, height: 500),
-            styleMask: [.titled, .closable],
-            backing: .buffered,
-            defer: false
-        )
-        window.title = "WhisperKey Setup"
-        window.center()
-        window.isReleasedWhenClosed = false
+    // Call this after model downloads to ensure paths are up to date
+    func refreshModelsPath() {
+        DebugLogger.log("WhisperService: Refreshing models path")
         
-        let setupView = WhisperSetupAssistant()
-        window.contentView = NSHostingView(rootView: setupView)
+        let previousPath = modelsPath
         
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        // First check if our current modelsPath exists and has models
+        if let currentPath = modelsPath {
+            if FileManager.default.fileExists(atPath: currentPath) {
+                DebugLogger.log("WhisperService: Current models path still valid: \(currentPath)")
+                // Don't send update if nothing changed
+                return
+            }
+        }
+        
+        // Re-check all paths
+        modelsPath = nil
+        
+        // Create default directory if needed
+        let defaultModelsPath = NSString(string: "~/.whisperkey/models").expandingTildeInPath
+        do {
+            try FileManager.default.createDirectory(atPath: defaultModelsPath, withIntermediateDirectories: true, attributes: nil)
+            modelsPath = defaultModelsPath
+            DebugLogger.log("WhisperService: Set models path to default: \(defaultModelsPath)")
+        } catch {
+            DebugLogger.log("WhisperService: Failed to create default models directory: \(error)")
+        }
+        
+        // Check other paths
+        for path in modelsSearchPaths {
+            let expandedPath = NSString(string: path).expandingTildeInPath
+            if FileManager.default.fileExists(atPath: expandedPath) {
+                modelsPath = expandedPath
+                DebugLogger.log("WhisperService: Found models at: \(expandedPath)")
+                break
+            }
+        }
+        
+        // Only send update if path actually changed
+        if previousPath != modelsPath {
+            objectWillChange.send()
+        }
     }
+    
+    // Setup assistant removed - whisper-cli is now bundled with the app
     
     func setCustomPaths(whisper: String?, models: String?) {
         if let whisper = whisper {

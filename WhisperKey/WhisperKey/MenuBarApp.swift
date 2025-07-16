@@ -250,10 +250,13 @@ struct MenuBarContentView: View {
     }
     
     func showAboutWindow() {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+        let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? ""
+        
         let alert = NSAlert()
         alert.messageText = "WhisperKey"
         alert.informativeText = """
-        Version 1.0.0
+        Version \(version) (Build \(buildNumber))
         
         Privacy-focused local dictation for macOS
         
@@ -284,16 +287,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Connect dictation service
         dictationService = DictationService.shared
         
-        // Set default to right_option if no preference exists
-        if UserDefaults.standard.string(forKey: "selectedHotkey") == nil {
-            UserDefaults.standard.set("right_option", forKey: "selectedHotkey")
-            NSLog("=== WHISPERKEY: Setting default hotkey to right_option ===")
-        }
+        // Register default values for all settings
+        let defaults: [String: Any] = [
+            "selectedHotkey": "right_option",
+            "alwaysSaveToClipboard": false,
+            "playFeedbackSounds": true,
+            "showRecordingIndicator": true,
+            "launchAtLogin": true,
+            "whisperModel": "base.en",
+            "silenceDuration": 2.5,
+            "silenceThreshold": 0.015
+        ]
+        UserDefaults.standard.register(defaults: defaults)
         
-        // Set default for clipboard backup (true for safety)
-        if UserDefaults.standard.object(forKey: "alwaysSaveToClipboard") == nil {
-            UserDefaults.standard.set(true, forKey: "alwaysSaveToClipboard")
-        }
+        // Log current settings
+        NSLog("=== WHISPERKEY: Current settings ===")
+        NSLog("Hotkey: \(UserDefaults.standard.string(forKey: "selectedHotkey") ?? "nil")")
+        NSLog("Play Feedback Sounds: \(UserDefaults.standard.bool(forKey: "playFeedbackSounds"))")
+        NSLog("Always Save to Clipboard: \(UserDefaults.standard.bool(forKey: "alwaysSaveToClipboard"))")
         
         let currentHotkey = UserDefaults.standard.string(forKey: "selectedHotkey") ?? "right_option"
         NSLog("=== WHISPERKEY: Current hotkey preference: \(currentHotkey) ===")

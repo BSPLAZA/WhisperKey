@@ -171,8 +171,11 @@ class TextInsertionService {
         // When successful, focusedElement contains an AXUIElement
         if result == .success {
             if CFGetTypeID(focusedElement) == AXUIElementGetTypeID() {
-                // Safe to force cast because we've verified the type
-                let element = focusedElement as! AXUIElement
+                // Safe cast because we've verified the type
+                guard let element = focusedElement as? AXUIElement else {
+                    DebugLogger.log("TextInsertionService: Failed to cast focused element")
+                    return nil
+                }
                 
                 // Debug: Get element info
                 var role: CFTypeRef?
@@ -247,7 +250,7 @@ class TextInsertionService {
     /// Check if Terminal has secure input mode enabled
     private func isTerminalSecureInputEnabled() -> Bool {
         // Use IOKit to check secure input state
-        return SecureInputModeEnabled()
+        return secureInputModeEnabled()
     }
     
     /// Check if the element is read-only
@@ -473,7 +476,7 @@ class TextInsertionService {
 // MARK: - Static Helper Methods
 
 // Function to check secure input mode
-private func SecureInputModeEnabled() -> Bool {
+private func secureInputModeEnabled() -> Bool {
     // Use IOKit to check secure input state
     var secureInputEnabled: DarwinBoolean = false
     if let ioFramework = CFBundleGetBundleWithIdentifier("com.apple.iokit" as CFString),
@@ -489,7 +492,7 @@ extension TextInsertionService {
     /// Check if Terminal or another app has secure input mode enabled
     static func getSecureInputApp() -> String? {
         // Check if secure input mode is enabled
-        if SecureInputModeEnabled() {
+        if secureInputModeEnabled() {
             // Get the frontmost app
             let workspace = NSWorkspace.shared
             if let activeApp = workspace.frontmostApplication {

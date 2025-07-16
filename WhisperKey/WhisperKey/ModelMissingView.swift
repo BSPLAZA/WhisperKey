@@ -15,6 +15,7 @@ struct ModelMissingView: View {
     @State private var isDownloading = false
     @State private var downloadProgress: Double = 0.0
     @ObservedObject private var modelManager = ModelManager.shared
+    @AppStorage("whisperModel") private var selectedModel = "base.en"
     @Environment(\.dismiss) private var dismiss
     
     var modelInfo: ModelManager.ModelInfo? {
@@ -170,7 +171,7 @@ struct ModelMissingView: View {
     }
     
     func selectModel(_ filename: String) {
-        UserDefaults.standard.set(filename, forKey: "whisperModel")
+        selectedModel = filename  // @AppStorage will automatically sync to UserDefaults
         dismiss()
     }
     

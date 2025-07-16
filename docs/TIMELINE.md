@@ -7,7 +7,8 @@
 **Project Start**: 2025-07-01  
 **MVP Achieved**: 2025-07-01 (Day 1!)  
 **v1.0.0 Released**: 2025-07-14 🎉  
-**Last Updated**: 2025-07-14  
+**v1.0.1 Released**: 2025-07-15 🎉  
+**Last Updated**: 2025-07-15 (17:45 PST)  
 **Methodology**: Iterative development with daily progress tracking
 
 ### Progress Summary
@@ -423,4 +424,44 @@
 - Single audio device support
 
 ---
-*Last Updated: 2025-07-14 - v1.0.0 Released! Available at https://github.com/BSPLAZA/WhisperKey/releases/tag/v1.0.0*
+
+## v1.0.1 Hotfix Development
+
+**Started**: 2025-07-15  
+**Completed**: 2025-07-15 (17:45 PST)  
+**Status**: ✅ Complete  
+**Focus**: Critical fixes and improvements
+
+### Progress (July 15):
+- ✅ **Fixed Missing GGML Libraries**:
+  - Updated copy-whisper-v10.sh to include all dependencies
+  - App no longer crashes on launch
+- ✅ **Fixed Audio Feedback Sounds**:
+  - Added proper UserDefaults registration
+  - Enhanced with actual system sounds (Tink, Pop, Glass)
+  - Now working correctly when enabled
+- ✅ **Fixed Settings Synchronization**:
+  - OnboardingView now uses @AppStorage
+  - ModelMissingView now uses @AppStorage
+  - All settings properly sync across UI
+- ✅ **Updated Default Settings**:
+  - Model: base.en (faster than small.en)
+  - Always Save to Clipboard: No
+  - Launch at Login: Yes
+- ✅ **Removed Obsolete Code**:
+  - Deleted WhisperSetupAssistant
+  - Cleaned up all references
+  - Removed old artifacts
+
+### Final Release:
+- **WhisperKey-1.0.1.dmg** (2.2MB)
+- All critical issues resolved
+- Ready for distribution
+
+### Known Minor Issues (non-critical):
+- Models tab UI needs visual polish
+- Long error sound in non-text fields
+- [ ] Create final v1.0.1 release
+
+---
+*Last Updated: 2025-07-15 17:45 PST - v1.0.1 complete and ready for release*

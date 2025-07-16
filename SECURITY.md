@@ -17,7 +17,8 @@ WhisperKey takes security seriously. If you discover a security vulnerability, p
 Security vulnerabilities should not be reported through public GitHub issues.
 
 ### 2. Contact Us Privately
-Send an email to: (Please create a security contact email or use GitHub's security advisories)
+Use GitHub's private security advisory system at:
+https://github.com/BSPLAZA/WhisperKey/security/advisories/new
 
 Include:
 - Description of the vulnerability

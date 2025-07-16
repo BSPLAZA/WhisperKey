@@ -15,7 +15,7 @@ struct OnboardingView: View {
     @State private var currentStep = 0
     @State private var hasAccessibilityPermission = false
     @State private var hasMicrophonePermission = false
-    @State private var selectedModel = "base.en"
+    @AppStorage("whisperModel") private var selectedModel = "base.en"
     @State private var isDownloading = false
     @Binding var showOnboarding: Bool
     
@@ -244,8 +244,7 @@ struct OnboardingView: View {
     }
     
     private func completeOnboarding() {
-        // Save selected model
-        UserDefaults.standard.set(selectedModel, forKey: "whisperModel")
+        // Model is automatically saved by @AppStorage
         
         // Mark onboarding as complete
         UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
@@ -601,7 +600,9 @@ struct ModelSelectionStep: View {
     @Binding var selectedModel: String
     @Binding var isDownloading: Bool
     @StateObject private var modelManager = ModelManager.shared
+    @StateObject private var whisperService = WhisperService.shared
     @State private var showContent = false
+    @State private var installCheckTimer: Timer?
     
     let models = [
         ("base.en", "Base English (141 MB)", "Fast, good for quick notes"),
@@ -692,11 +693,36 @@ struct ModelSelectionStep: View {
             withAnimation {
                 showContent = true
             }
+            // Ensure WhisperService has initialized before we start
+            whisperService.checkAvailability()
+            startInstallationChecking()
+        }
+        .onDisappear {
+            stopInstallationChecking()
         }
         .onReceive(modelManager.$isDownloading) { newValue in
             // Update downloading state
             isDownloading = newValue.values.contains(true)
         }
+    }
+    
+    private func startInstallationChecking() {
+        // Check periodically for model installation completion
+        installCheckTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
+            // Just log status - SwiftUI will update automatically through @Published properties
+            DebugLogger.log("OnboardingView: Checking models - whisperService.modelsPath: \(whisperService.modelsPath ?? "nil")")
+            
+            // Check if we need to refresh paths when models are detected
+            let hasModels = modelManager.availableModels.contains(where: { modelManager.isModelInstalled($0.filename) })
+            if hasModels && whisperService.modelsPath == nil {
+                whisperService.refreshModelsPath()
+            }
+        }
+    }
+    
+    private func stopInstallationChecking() {
+        installCheckTimer?.invalidate()
+        installCheckTimer = nil
     }
 }
 
@@ -760,7 +786,7 @@ struct ModelRow: View {
 }
 
 struct ClipboardSettingsStep: View {
-    @AppStorage("alwaysSaveToClipboard") private var alwaysSaveToClipboard = true
+    @AppStorage("alwaysSaveToClipboard") private var alwaysSaveToClipboard = false
     @State private var showExample = false
     @State private var showContent = false
     
