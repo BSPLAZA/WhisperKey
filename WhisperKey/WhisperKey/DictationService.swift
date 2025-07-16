@@ -86,7 +86,7 @@ class DictationService: NSObject, ObservableObject {
         
         // Initialize model selection
         if UserDefaults.standard.string(forKey: "whisperModel") == nil {
-            UserDefaults.standard.set("small.en", forKey: "whisperModel")
+            UserDefaults.standard.set("base.en", forKey: "whisperModel")
         }
         
         // Check permissions periodically
@@ -169,8 +169,7 @@ class DictationService: NSObject, ObservableObject {
         // Check if whisper.cpp is available
         guard WhisperService.shared.isAvailable else {
             DebugLogger.log("=== WHISPERKEY: Whisper.cpp not available ===")
-            transcriptionStatus = "⚠️ Whisper.cpp not found"
-            WhisperService.shared.showSetupError()
+            transcriptionStatus = "⚠️ Whisper.cpp not found - please reinstall WhisperKey"
             return
         }
         
@@ -297,20 +296,28 @@ class DictationService: NSObject, ObservableObject {
         // Process the audio file
         if let fileURL = audioFileURL {
             DebugLogger.log("DictationService: Processing audio file at: \(fileURL.path)")
+            debugLog("Processing audio file at: \(fileURL.path)")
             DebugLogger.log("DictationService: File exists after closing: \(FileManager.default.fileExists(atPath: fileURL.path))")
+            
+            // Log current whisper and model paths
+            debugLog("Current whisper path: \(WhisperService.shared.whisperPath ?? "nil")")
+            debugLog("Current model: \(UserDefaults.standard.string(forKey: "whisperModel") ?? "base.en")")
             
             // Check file size
             if let attributes = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
                let fileSize = attributes[.size] as? Int64 {
                 DebugLogger.log("DictationService: Audio file size: \(fileSize) bytes")
+                debugLog("Audio file size: \(fileSize) bytes")
                 
                 // Read first few bytes to verify it's a valid WAV file
                 if let data = try? Data(contentsOf: fileURL, options: .mappedIfSafe) {
                     let header = data.prefix(4).map { String(format: "%c", $0) }.joined()
                     DebugLogger.log("DictationService: File header: '\(header)' (should be 'RIFF' for WAV)")
+                    debugLog("File header: '\(header)'")
                 }
             } else {
                 DebugLogger.log("DictationService: ERROR - Could not get file attributes!")
+                debugLog("ERROR - Could not get file attributes!")
             }
             processAudioFile(at: fileURL)
         } else {
@@ -413,24 +420,23 @@ class DictationService: NSObject, ObservableObject {
                 }
             }
             
-            if level > self.silenceThreshold {
-                self.lastSoundTime = Date()
-                if tapCount <= 10 || tapCount % 10 == 0 {
-                    DebugLogger.log("DictationService: Sound detected, level: \(level)")
-                }
-            } else if Date().timeIntervalSince(self.lastSoundTime) > self.silenceDuration && tapCount > 50 {
-                // Auto-stop after silence (wait for more taps to ensure we have some audio)
-                DebugLogger.log("DictationService: Silence detected for \(self.silenceDuration) seconds, stopping... (samples recorded: \(samplesRecorded))")
-                DispatchQueue.main.async {
+            // Handle silence detection and duration checks on main actor for thread safety
+            Task { @MainActor in
+                if level > self.silenceThreshold {
+                    self.lastSoundTime = Date()
+                    if tapCount <= 10 || tapCount % 10 == 0 {
+                        DebugLogger.log("DictationService: Sound detected, level: \(level)")
+                    }
+                } else if Date().timeIntervalSince(self.lastSoundTime) > self.silenceDuration && tapCount > 50 {
+                    // Auto-stop after silence (wait for more taps to ensure we have some audio)
+                    DebugLogger.log("DictationService: Silence detected for \(self.silenceDuration) seconds, stopping... (samples recorded: \(samplesRecorded))")
                     self.stopRecording()
                 }
-            }
-            
-            // Check for maximum recording duration
-            let recordingDuration = Date().timeIntervalSince(self.recordingStartTime)
-            if recordingDuration > self.maxRecordingDuration {
-                DebugLogger.log("DictationService: Maximum recording duration reached (\(Int(self.maxRecordingDuration)) seconds), stopping...")
-                DispatchQueue.main.async {
+                
+                // Check for maximum recording duration
+                let recordingDuration = Date().timeIntervalSince(self.recordingStartTime)
+                if recordingDuration > self.maxRecordingDuration {
+                    DebugLogger.log("DictationService: Maximum recording duration reached (\(Int(self.maxRecordingDuration)) seconds), stopping...")
                     self.transcriptionStatus = "⏱️ Recording stopped (\(Int(self.maxRecordingDuration))s limit)"
                     self.stopRecording()
                 }
@@ -623,7 +629,32 @@ class DictationService: NSObject, ObservableObject {
                 self.cleanupTempFiles(primaryFile: url, convertedFile: convertedURL != url ? convertedURL : nil)
             } catch {
                 DebugLogger.log("DictationService: Error processing audio: \(error)")
+                self.debugLog("Error processing audio: \(error)")
                 self.transcriptionStatus = "❌ Processing failed - please try again"
+                
+                // Show detailed error to user
+                DispatchQueue.main.async {
+                    let alert = NSAlert()
+                    alert.messageText = "Processing Failed"
+                    alert.informativeText = "WhisperKey encountered an error:\n\n\(error.localizedDescription)\n\nPlease check:\n• Whisper.cpp is properly installed\n• Selected model is downloaded\n• You have enough disk space"
+                    alert.alertStyle = .warning
+                    
+                    // Add debug info button
+                    alert.addButton(withTitle: "OK")
+                    alert.addButton(withTitle: "Show Debug Log")
+                    
+                    let response = alert.runModal()
+                    if response == .alertSecondButtonReturn {
+                        // Show debug log
+                        if let logData = try? String(contentsOfFile: "/tmp/whisperkey_debug.log", encoding: .utf8) {
+                            let logAlert = NSAlert()
+                            logAlert.messageText = "Debug Log"
+                            logAlert.informativeText = String(logData.suffix(2000)) // Last 2000 chars
+                            logAlert.alertStyle = .informational
+                            logAlert.runModal()
+                        }
+                    }
+                }
             }
         }
     }
@@ -647,7 +678,7 @@ class DictationService: NSObject, ObservableObject {
     
     func updateModel() {
         // Model will be read from UserDefaults by transcriber
-        let modelName = UserDefaults.standard.string(forKey: "whisperModel") ?? "small.en"
+        let modelName = UserDefaults.standard.string(forKey: "whisperModel") ?? "base.en"
         DebugLogger.log("DictationService: Updated to model: \(modelName)")
     }
     
@@ -744,6 +775,35 @@ extension DictationService {
     // MARK: - Audio Feedback
     
     private func playSound(named soundName: String) {
-        NSSound(named: soundName)?.play()
+        // Use actual system sounds for better feedback
+        var actualSoundName: String
+        
+        switch soundName {
+        case "Tink":
+            // Start recording sound
+            actualSoundName = "Tink"
+            debugLog("Playing start recording sound: \(actualSoundName)")
+        case "Pop":
+            // Stop recording or clipboard sound
+            actualSoundName = "Pop"
+            debugLog("Playing stop/clipboard sound: \(actualSoundName)")
+        case "Glass":
+            // Success sound
+            actualSoundName = "Glass"
+            debugLog("Playing success sound: \(actualSoundName)")
+        default:
+            // Fallback
+            actualSoundName = soundName
+            debugLog("Playing sound: \(actualSoundName)")
+        }
+        
+        // Try to play the actual system sound
+        if let sound = NSSound(named: NSSound.Name(actualSoundName)) {
+            sound.play()
+        } else {
+            // Fallback to beep if sound not found
+            NSSound.beep()
+            debugLog("Sound '\(actualSoundName)' not found, using beep")
+        }
     }
 }

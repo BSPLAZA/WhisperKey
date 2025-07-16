@@ -4,6 +4,115 @@
 
 ---
 
+## 2025-07-15 (Tuesday) - v1.0.1 Final Build
+
+**Time**: 5:30 PM PST  
+**Goal**: Fix all critical issues and prepare final v1.0.1 release
+
+**Progress**:
+- ✅ **Fixed Missing GGML Libraries**:
+  - Issue: App crashed with "libggml-blas.dylib not found"
+  - Updated copy-whisper-v10.sh to include all GGML libraries
+  - All dependencies now properly bundled
+
+- ✅ **Fixed Audio Feedback Sounds**:
+  - Issue: Sounds not playing despite checkbox enabled
+  - Root cause: UserDefaults not initialized with defaults
+  - Added proper defaults registration in AppDelegate
+  - Enhanced to use actual system sounds (Tink, Pop, Glass)
+
+- ✅ **Fixed Settings Synchronization**:
+  - Issue: Onboarding changes not reflecting in preferences
+  - Fixed OnboardingView to use @AppStorage
+  - Fixed ModelMissingView to use @AppStorage
+  - All settings now properly sync across UI
+
+- ✅ **Updated Default Settings**:
+  - Model: base.en (faster, smaller than small.en)
+  - Always Save to Clipboard: No (was Yes)
+  - Launch at Login: Yes (was No)
+
+- ✅ **Removed Obsolete Code**:
+  - Deleted WhisperSetupAssistant (no longer needed)
+  - Removed showSetupError references
+  - Cleaned up all old artifacts
+
+**Final Build Ready**:
+- WhisperKey-1.0.1.dmg (2.2MB)
+- All critical issues resolved
+- Ready for distribution
+
+---
+
+## 2025-07-15 (Tuesday) - v1.0.1 Hotfix Development
+
+**Time**: 1:00 PM PST  
+**Goal**: Fix audio feedback issues and clean up Advanced settings for v1.0.1
+
+**Progress**:
+- ✅ **Investigated Audio Feedback Issue**:
+  - User reported sounds not playing despite setting enabled
+  - Implementation is correct (using NSSound.beep())
+  - Added "Test Audio Feedback" button to help diagnose system sound issues
+  - Likely a system configuration issue (muted alerts or zero volume)
+
+- ✅ **Cleaned Up Advanced Settings Tab**:
+  - Moved all developer options under #if DEBUG (hidden in production)
+  - Removed confusing "Custom paths" section (app is self-contained)
+  - Removed "Whisper CPP found" indicator (unnecessary for users)
+  - Kept only essential user options:
+    - Audio Testing - Help diagnose sound issues
+    - Maintenance - Clean temporary files  
+    - Reset - Reset all settings
+    - Version info
+
+- ✅ **Verified Self-Contained App**:
+  - Confirmed whisper-cli (809KB) bundled in Resources
+  - All libraries included in Frameworks/
+  - No external dependencies required
+  - Works on clean devices
+
+- ✅ **Project Cleanup**:
+  - Removed all old test DMGs (v6, v7)
+  - Cleaned build artifacts (187MB)
+  - Removed test summary files
+  - Kept only v8 test build
+
+**Known Issues**:
+- v8 DMG has an issue (user to report details)
+- Models tab UI still needs polish
+- Long error sound in non-text fields
+
+**Next Steps**:
+- Get details on v8 DMG issue ✅
+- Address remaining UI polish
+- Prepare final v1.0.1 release
+
+**Additional Progress** (3:00 PM PST):
+- ✅ **Fixed v8 DMG Issue**:
+  - Problem: v8 was just a copy of old release (no actual code changes)
+  - Built real v8 with all fixes
+  - User reported missing libraries error
+  
+- ✅ **Fixed Missing Libraries (v9)**:
+  - Added all whisper.cpp libraries to Frameworks/
+  - Fixed library paths with install_name_tool
+  - App now truly self-contained
+  
+- ✅ **Restored Debug Features for Users**:
+  - Debug logging toggle visible to all users
+  - Export Debug Info button available
+  - Only hid developer-specific features
+  - Better balance for user support
+
+**v9 DMG Ready**:
+- WhisperKey-1.0.1-test-v9.dmg (2.2MB)
+- Includes all libraries
+- Debug features accessible
+- Ready for testing
+
+---
+
 ## 2025-07-14 (Sunday) - v1.0.0 Released! 🎉
 
 **Time**: 3:00 AM - 4:00 AM PST  

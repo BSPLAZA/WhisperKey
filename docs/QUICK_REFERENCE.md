@@ -1,14 +1,17 @@
 # WhisperKey Quick Reference
 
-> Keep this open while developing - Updated 2025-07-13 14:55 PST
+> Keep this open while developing - Updated 2025-07-15 13:50 PST
 
 ## Current Status
-- **Phase**: Ready for Release
-- **Version**: 1.0.0-beta
-- **Status**: Feature Complete, All Critical Bugs Fixed
-- **UI/UX**: Fully Polished with Premium Design
-- **Documentation**: Fully Updated
-- **Remaining**: Test 4 apps (Chrome, Discord, Mail, 1Password) and create DMG
+- **Phase**: v1.0.1 Hotfix In Progress
+- **Version**: 1.0.1-test-v8
+- **Status**: Testing audio fixes and UI cleanup
+- **Key Fixes**: 
+  - Bundled whisper.cpp binary
+  - Added audio test button
+  - Cleaned up Advanced settings
+- **Documentation**: Fully updated
+- **Next**: Address v8 DMG issue, then release
 
 ## Key Commands
 
@@ -48,6 +51,25 @@ cd scripts
 ./new-decision.sh "Remove streaming mode due to quality issues"
 ./log-issue.sh "Streaming garbled" "Removed feature entirely"
 ```
+
+## Default Settings
+
+### User Preferences (v1.0.1)
+- **Hotkey**: Right Option ⌥
+- **Model**: base.en (changed from small.en)
+- **Silence Duration**: 2.5 seconds
+- **Silence Threshold**: 0.015
+- **Show Recording Indicator**: Yes
+- **Play Feedback Sounds**: Yes
+- **Always Save to Clipboard**: No (changed from Yes)
+- **Launch at Login**: Yes (changed from No)
+
+### Settings Synchronization
+All settings use @AppStorage which automatically syncs with UserDefaults:
+- Changes in onboarding immediately reflect in preferences
+- Changes in preferences immediately reflect throughout the app
+- Settings persist between app launches
+- The same key (e.g., "alwaysSaveToClipboard") is used everywhere
 
 ## Key Constants
 
@@ -95,9 +117,53 @@ width: 320, height: 60  // Recording indicator dimensions
 - `RecordingIndicatorManager` - Window management
 - `PreferencesWindowController` - Preferences window
 
+## v1.0.1 Critical Fixes Reference
+
+### Bundle Path Fix
+```swift
+// WRONG: nil at init time
+private let paths = [Bundle.main.resourcePath + "/whisper-cli"]
+
+// CORRECT: computed property
+private var paths: [String] {
+    if let resourcePath = Bundle.main.resourcePath {
+        return ["\(resourcePath)/whisper-cli"]
+    }
+    return []
+}
+```
+
+### Model Path Checking
+```swift
+// Check ALL locations before downloading
+for searchPath in whisperService.modelsSearchPaths {
+    if FileManager.default.fileExists(atPath: modelFile) {
+        return true  // Don't download again!
+    }
+}
+```
+
+### Disk Space Validation
+```swift
+let requiredSpace = model.size + 100_000_000  // Add buffer
+if !ErrorHandler.checkDiskSpace(requiredBytes: requiredSpace) {
+    // Show error, don't start download
+}
+```
+
 ## File Locations
 
-### Models
+### Models (v1.0.1+)
+- Primary: `~/.whisperkey/models/`
+- Legacy: `~/Developer/whisper.cpp/models/`
+- System: `/usr/local/share/whisper/models/`
+
+### whisper-cli (v1.0.1+)
+- Bundled: `WhisperKey.app/Contents/Resources/whisper-cli`
+- Fallback: `~/Developer/whisper.cpp/main`
+- System: `/usr/local/bin/whisper-cli`
+
+### Old Models Location (v1.0.0)
 ```bash
 ~/Developer/whisper.cpp/models/
 ├── ggml-base.en.bin    # 141 MB

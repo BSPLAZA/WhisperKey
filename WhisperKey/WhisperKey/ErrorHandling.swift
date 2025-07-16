@@ -213,9 +213,13 @@ class ErrorHandler: ObservableObject {
         if alert.runModal() == .alertFirstButtonReturn {
             // Open System Settings to the right pane
             if case .noMicrophonePermission = error {
-                NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")!)
+                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone") {
+                    NSWorkspace.shared.open(url)
+                }
             } else if case .noAccessibilityPermission = error {
-                NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
+                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+                    NSWorkspace.shared.open(url)
+                }
             }
         }
     }
@@ -264,7 +268,7 @@ class ErrorHandler: ObservableObject {
         case .diskFull:
             // Clean up temp files
             cleanupTempFiles()
-            return checkDiskSpace()
+            return Self.checkDiskSpace()
             
         case .audioEngineFailure:
             // Reset audio engine
@@ -293,10 +297,10 @@ class ErrorHandler: ObservableObject {
         }
     }
     
-    private func checkDiskSpace() -> Bool {
+    static func checkDiskSpace(requiredBytes: Int64 = 100_000_000) -> Bool {
         if let attributes = try? FileManager.default.attributesOfFileSystem(forPath: "/"),
            let freeSpace = attributes[.systemFreeSize] as? Int64 {
-            return freeSpace > 100_000_000 // 100MB
+            return freeSpace > requiredBytes
         }
         return false
     }
@@ -412,7 +416,7 @@ extension ErrorHandler {
     
     private func checkSystemHealth() {
         // Check disk space
-        if !checkDiskSpace() {
+        if !Self.checkDiskSpace() {
             handle(.diskFull)
         }
         

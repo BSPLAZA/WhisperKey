@@ -3,15 +3,23 @@ name: Claude Code Review
 on:
   pull_request:
     types: [opened, synchronize]
-    # Optional: Only run on specific file changes
-    # paths:
-    #   - "src/**/*.ts"
-    #   - "src/**/*.tsx"
-    #   - "src/**/*.js"
-    #   - "src/**/*.jsx"
+    # Only run on relevant file changes
+    paths:
+      - "**.swift"
+      - "**.m"
+      - "**.h"
+      - "**.md"
+      - "**/Info.plist"
+      - "**/*.xcodeproj/**"
+      - ".github/workflows/**"
 
 jobs:
   claude-review:
+    # Skip WIP and draft PRs
+    if: |
+      !contains(github.event.pull_request.title, '[skip-review]') &&
+      !contains(github.event.pull_request.title, '[WIP]') &&
+      !github.event.pull_request.draft
     # Optional: Filter by PR author
     # if: |
     #   github.event.pull_request.user.login == 'external-contributor' ||
@@ -19,6 +27,7 @@ jobs:
     #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
     
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       pull-requests: read
@@ -42,12 +51,19 @@ jobs:
           
           # Direct prompt for automated review (no @claude mention needed)
           direct_prompt: |
-            Please review this pull request and provide feedback on:
-            - Code quality and best practices
-            - Potential bugs or issues
-            - Performance considerations
-            - Security concerns
-            - Test coverage
+            Please review this WhisperKey pull request focusing on:
+            - Swift code quality and best practices
+            - macOS-specific considerations (permissions, sandboxing, etc.)
+            - Potential bugs or crashes
+            - Performance implications for audio processing
+            - Security and privacy concerns
+            - Memory management and retain cycles
+            
+            Consider:
+            - This is a menu bar app using SwiftUI
+            - It processes audio locally with no network connections
+            - Target is macOS 15.0 (Sequoia) and later
+            - Must work on both Apple Silicon and Intel Macs
             
             Be constructive and helpful in your feedback.
 
@@ -68,8 +84,8 @@ jobs:
           #   'Welcome! Please review this PR from a first-time contributor. Be encouraging and provide detailed explanations for any suggestions.' ||
           #   'Please provide a thorough code review focusing on our coding standards and best practices.' }}
           
-          # Optional: Add specific tools for running tests or linting
-          # allowed_tools: "Bash(npm run test),Bash(npm run lint),Bash(npm run typecheck)"
+          # Add specific tools for running tests or linting
+          allowed_tools: "Bash(swift test),Bash(swiftlint),Bash(xcodebuild -list)"
           
           # Optional: Skip review for certain conditions
           # if: |

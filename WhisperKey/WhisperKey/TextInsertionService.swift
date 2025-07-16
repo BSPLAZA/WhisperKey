@@ -171,7 +171,7 @@ class TextInsertionService {
         // When successful, focusedElement contains an AXUIElement
         if result == .success {
             if CFGetTypeID(focusedElement) == AXUIElementGetTypeID() {
-                // Safe to force cast because we've verified the type
+                // Safe cast because we've verified the type
                 let element = focusedElement as! AXUIElement
                 
                 // Debug: Get element info
@@ -247,7 +247,7 @@ class TextInsertionService {
     /// Check if Terminal has secure input mode enabled
     private func isTerminalSecureInputEnabled() -> Bool {
         // Use IOKit to check secure input state
-        return SecureInputModeEnabled()
+        return secureInputModeEnabled()
     }
     
     /// Check if the element is read-only
@@ -373,22 +373,22 @@ class TextInsertionService {
         let source = CGEventSource(stateID: .hidSystemState)
         
         // Key down Cmd
-        let cmdDown = CGEvent(keyboardEventSource: source, virtualKey: 0x37, keyDown: true)
+        let cmdDown = CGEvent(keyboardEventSource: source, virtualKey: KeyCode.command, keyDown: true)
         cmdDown?.flags = .maskCommand
         cmdDown?.post(tap: .cghidEventTap)
         
         // Key down V
-        let vDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true)
+        let vDown = CGEvent(keyboardEventSource: source, virtualKey: KeyCode.v, keyDown: true)
         vDown?.flags = .maskCommand
         vDown?.post(tap: .cghidEventTap)
         
         // Key up V
-        let vUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false)
+        let vUp = CGEvent(keyboardEventSource: source, virtualKey: KeyCode.v, keyDown: false)
         vUp?.flags = .maskCommand
         vUp?.post(tap: .cghidEventTap)
         
         // Key up Cmd
-        let cmdUp = CGEvent(keyboardEventSource: source, virtualKey: 0x37, keyDown: false)
+        let cmdUp = CGEvent(keyboardEventSource: source, virtualKey: KeyCode.command, keyDown: false)
         cmdUp?.post(tap: .cghidEventTap)
         
         // Restore clipboard after a delay
@@ -409,11 +409,11 @@ class TextInsertionService {
         // Simulate backspace key presses
         for _ in 0..<characterCount {
             // Create backspace key down event
-            if let backspaceDown = CGEvent(keyboardEventSource: source, virtualKey: 0x33, keyDown: true) {
+            if let backspaceDown = CGEvent(keyboardEventSource: source, virtualKey: KeyCode.backspace, keyDown: true) {
                 backspaceDown.post(tap: .cghidEventTap)
                 
                 // Create backspace key up event
-                if let backspaceUp = CGEvent(keyboardEventSource: source, virtualKey: 0x33, keyDown: false) {
+                if let backspaceUp = CGEvent(keyboardEventSource: source, virtualKey: KeyCode.backspace, keyDown: false) {
                     backspaceUp.post(tap: .cghidEventTap)
                 }
                 
@@ -473,7 +473,7 @@ class TextInsertionService {
 // MARK: - Static Helper Methods
 
 // Function to check secure input mode
-private func SecureInputModeEnabled() -> Bool {
+private func secureInputModeEnabled() -> Bool {
     // Use IOKit to check secure input state
     var secureInputEnabled: DarwinBoolean = false
     if let ioFramework = CFBundleGetBundleWithIdentifier("com.apple.iokit" as CFString),
@@ -489,7 +489,7 @@ extension TextInsertionService {
     /// Check if Terminal or another app has secure input mode enabled
     static func getSecureInputApp() -> String? {
         // Check if secure input mode is enabled
-        if SecureInputModeEnabled() {
+        if secureInputModeEnabled() {
             // Get the frontmost app
             let workspace = NSWorkspace.shared
             if let activeApp = workspace.frontmostApplication {

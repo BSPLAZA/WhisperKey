@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import AppKit
 
 @MainActor
 class WhisperCppTranscriber {
@@ -18,7 +19,7 @@ class WhisperCppTranscriber {
     }
     
     private var modelPath: String? {
-        let modelName = UserDefaults.standard.string(forKey: "whisperModel") ?? "small.en"
+        let modelName = UserDefaults.standard.string(forKey: "whisperModel") ?? "base.en"
         return whisperService.getModelPath(for: modelName)
     }
     
@@ -63,7 +64,7 @@ class WhisperCppTranscriber {
         
         // Check if model is available
         guard let modelPath = modelPath else {
-            let modelName = UserDefaults.standard.string(forKey: "whisperModel") ?? "small.en"
+            let modelName = UserDefaults.standard.string(forKey: "whisperModel") ?? "base.en"
             
             // Show the model missing dialog on the main thread
             await MainActor.run {
@@ -107,6 +108,18 @@ class WhisperCppTranscriber {
         if process.terminationStatus != 0 {
             let errorString = String(data: errorData, encoding: .utf8) ?? "Unknown error"
             DebugLogger.log("WhisperCppTranscriber: Error running whisper: \(errorString)")
+            DebugLogger.log("WhisperCppTranscriber: Exit code: \(process.terminationStatus)")
+            DebugLogger.log("WhisperCppTranscriber: Command was: \(whisperPath) \(process.arguments?.joined(separator: " ") ?? "")")
+            
+            // Show user-friendly error message
+            await MainActor.run {
+                let alert = NSAlert()
+                alert.messageText = "Transcription Failed"
+                alert.informativeText = "WhisperKey couldn't transcribe your speech. This might be due to:\n\n• Corrupted audio file\n• Missing model file\n• Whisper.cpp error\n\nTechnical details: \(errorString)"
+                alert.alertStyle = .warning
+                alert.runModal()
+            }
+            
             throw NSError(domain: "WhisperKey", code: 10, userInfo: [
                 NSLocalizedDescriptionKey: "Whisper transcription failed: \(errorString)"
             ])

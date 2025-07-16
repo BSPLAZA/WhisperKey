@@ -78,7 +78,7 @@ class MemoryMonitor: ObservableObject {
         if availableMemory > 3000 {
             return "medium.en" // Can run medium comfortably
         } else if availableMemory > 1000 {
-            return "small.en" // Can run small comfortably
+            return "base.en" // Default to base model
         } else {
             return "base.en" // Fall back to base
         }
@@ -151,7 +151,7 @@ extension MemoryMonitor {
         }
         
         // Check if current model can run
-        let currentModel = UserDefaults.standard.string(forKey: "whisperModel") ?? "small.en"
+        let currentModel = UserDefaults.standard.string(forKey: "whisperModel") ?? "base.en"
         if !canRunModel(currentModel) {
             // Suggest a smaller model
             let recommended = recommendedModel()

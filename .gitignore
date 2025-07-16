@@ -26,7 +26,7 @@ xcuserdata/
 .build/
 .swiftpm/
 Packages/
-Package.resolved
+# Package.resolved - needed for CI, don't ignore
 *.xcodeproj/**/xcuserdata/
 
 # WhisperKey specific
@@ -61,6 +61,9 @@ Secrets.swift
 # Build artifacts
 *.dmg
 WhisperKey/build-output/
+WhisperKey/build/
+*.profraw
+ExportOptions.plist
 
 # Test artifacts
 test_keycodes

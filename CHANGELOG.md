@@ -7,10 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- Model download improvements - better error handling for directory creation
+## [1.0.1] - 2025-07-15
 
-## [1.0.0] - 2025-07-10
+### Fixed
+- **Critical**: Bundled whisper.cpp binary now properly detected in app Resources
+- **Critical**: Fixed circular dependency crash during model downloads
+- Model detection now checks all common locations before downloading
+- Added disk space validation before model downloads
+- WhisperService creates default models directory on first run
+- Fixed Bundle.main.resourcePath initialization timing issue
+- Model downloads now verify file size after completion
+
+### Added
+- Bundled whisper-cli binary (no manual whisper.cpp installation required)
+- Comprehensive error messages for disk space issues
+- Better logging for troubleshooting resource detection
+- Model file integrity verification
+
+### Changed
+- Models now download to `~/.whisperkey/models/` by default
+- Improved first-run experience with bundled dependencies
+
+## [1.0.0] - 2025-07-14
 
 ### Added
 - Initial release of WhisperKey

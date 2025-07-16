@@ -512,4 +512,90 @@ Test phrase accuracy comparison showed streaming mode produces garbled text whil
 - Cloud-only future models - Privacy concern
 
 ---
-*Last Updated: 2025-07-10 08:30 PST*
+
+## ADR-021: Bundle whisper.cpp for Self-Contained App
+
+**Date**: 2025-07-15  
+**Status**: Accepted  
+**Context**:
+- Users struggled with separate whisper.cpp installation
+- v1.0.0 required terminal commands and manual setup
+- Distribution was complex with external dependencies
+**Decision**:
+- Bundle whisper-cli binary (809KB) in app Resources
+- Include all required libraries in Frameworks/
+- Check bundled version first, allow override
+- Make app work out-of-the-box
+**Consequences**:
+- ✅ Zero-setup experience for users
+- ✅ No terminal knowledge required
+- ✅ Simpler installation (just drag to Applications)
+- ✅ Consistent whisper version across users
+- ❌ Larger app size (but still under 3MB)
+- ❌ Need to update app for whisper updates
+**Implementation**:
+- Copy whisper-cli to Resources during build
+- Use @executable_path for library loading
+- Fall back to system paths for power users
+
+---
+
+## ADR-022: Use NSSound.beep() for Audio Feedback
+
+**Date**: 2025-07-15  
+**Status**: Accepted  
+**Context**:
+- Custom sound files had compatibility issues
+- System sounds (NSSound.Name) vary by macOS version
+- Users reported no audio feedback
+- Need reliable cross-system solution
+**Decision**:
+- Use NSSound.beep() for all feedback sounds
+- Different patterns for different events:
+  - Single beep: Start/stop recording
+  - Double beep: Successful transcription
+  - Single beep: Clipboard save
+**Consequences**:
+- ✅ Works on all macOS versions
+- ✅ Respects system alert volume
+- ✅ No sound file dependencies
+- ✅ Consistent behavior
+- ❌ Less variety in sounds
+- ❌ Can't customize sound types
+**Alternatives Considered**:
+- Custom sound files - Too many edge cases
+- NSSound system sounds - Version compatibility issues
+- No sounds - Poor user feedback
+
+---
+
+## ADR-023: Hide Developer Features in Production
+
+**Date**: 2025-07-15  
+**Status**: Accepted  
+**Context**:
+- Advanced tab showed debug options to all users
+- "Custom paths" confused non-technical users
+- Too much technical information exposed
+- App is self-contained but UI suggested otherwise
+**Decision**:
+- Wrap all debug features in #if DEBUG
+- Show only essential user options:
+  - Audio testing
+  - Temporary file cleanup
+  - Settings reset
+  - Version info
+- Move technical info to debug builds only
+**Consequences**:
+- ✅ Cleaner UI for end users
+- ✅ Less confusion about setup
+- ✅ Still accessible for developers
+- ❌ Support harder without debug info
+- ❌ Power users lose some options
+**Implementation**:
+- Use conditional compilation
+- Add "Test Audio" for user diagnostics
+- Keep reset option for recovery
+
+---
+*Last Updated: 2025-07-15 13:45 PST*

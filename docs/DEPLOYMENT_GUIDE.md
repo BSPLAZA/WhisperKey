@@ -19,6 +19,7 @@ This guide covers:
 - macOS 12.0 or later
 - Apple Developer account (for signing/notarization)
 - `create-dmg` tool (for DMG creation)
+- **whisper-cli binary** (Metal-enabled build for bundling)
 
 ## Building for Release
 
@@ -70,6 +71,32 @@ xcodebuild -exportArchive \
   -exportPath build/Release \
   -exportOptionsPlist ExportOptions.plist
 ```
+
+### 5. Bundle whisper-cli (v1.0.1+)
+
+**Important**: As of v1.0.1, WhisperKey includes a bundled whisper-cli binary.
+
+1. Build whisper.cpp with Metal support:
+   ```bash
+   git clone https://github.com/ggerganov/whisper.cpp
+   cd whisper.cpp
+   WHISPER_METAL=1 make -j
+   cp main whisper-cli
+   ```
+
+2. Copy to Resources folder:
+   ```bash
+   cp whisper-cli WhisperKey.app/Contents/Resources/
+   chmod +x WhisperKey.app/Contents/Resources/whisper-cli
+   ```
+
+3. Verify it's included:
+   ```bash
+   ls -la WhisperKey.app/Contents/Resources/whisper-cli
+   # Should show executable permissions
+   ```
+
+**Note**: The copy-whisper-cli.sh script handles this automatically during build.
 
 ## Creating DMG Installer
 

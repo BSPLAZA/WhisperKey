@@ -42,9 +42,9 @@ class RecordingIndicatorWindow: NSWindow {
         if let screen = NSScreen.main {
             let screenFrame = screen.visibleFrame
             let windowFrame = self.frame
-            let x = screenFrame.midX - windowFrame.width / 2
-            let y = screenFrame.minY + 40 // 40 points from bottom
-            self.setFrameOrigin(NSPoint(x: x, y: y))
+            let xPosition = screenFrame.midX - windowFrame.width / 2
+            let yPosition = screenFrame.minY + 40 // 40 points from bottom
+            self.setFrameOrigin(NSPoint(x: xPosition, y: yPosition))
         }
         
         self.orderFront(nil)

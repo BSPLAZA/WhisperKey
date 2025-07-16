@@ -18,6 +18,7 @@ jobs:
       (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
       (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       pull-requests: read
@@ -50,13 +51,16 @@ jobs:
           # assignee_trigger: "claude-bot"
           
           # Optional: Allow Claude to run specific commands
-          # allowed_tools: "Bash(npm install),Bash(npm run build),Bash(npm run test:*),Bash(npm run lint:*)"
+          allowed_tools: "Bash(swift build),Bash(swift test),Bash(xcodebuild -list),Bash(swiftlint)"
           
           # Optional: Add custom instructions for Claude to customize its behavior for your project
-          # custom_instructions: |
-          #   Follow our coding standards
-          #   Ensure all new code has tests
-          #   Use TypeScript for new files
+          custom_instructions: |
+            This is WhisperKey, a privacy-focused macOS dictation app.
+            Follow Swift coding standards and best practices.
+            Pay attention to macOS permissions and security.
+            Consider performance implications for audio processing.
+            Ensure compatibility with macOS 15.0 (Sequoia) and later.
+            Test with both Apple Silicon and Intel Macs in mind.
           
           # Optional: Custom environment variables for Claude
           # claude_env: |
