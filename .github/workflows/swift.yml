@@ -42,10 +42,6 @@ jobs:
     - name: Show Xcode version
       run: xcodebuild -version
     
-    - name: Resolve Package Dependencies
-      run: |
-        xcodebuild -resolvePackageDependencies -project WhisperKey/WhisperKey.xcodeproj -scheme WhisperKey
-    
     - name: Install xcpretty
       run: gem install xcpretty
     
