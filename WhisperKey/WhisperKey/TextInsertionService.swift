@@ -172,10 +172,7 @@ class TextInsertionService {
         if result == .success {
             if CFGetTypeID(focusedElement) == AXUIElementGetTypeID() {
                 // Safe cast because we've verified the type
-                guard let element = focusedElement as? AXUIElement else {
-                    DebugLogger.log("TextInsertionService: Failed to cast focused element")
-                    return nil
-                }
+                let element = focusedElement as! AXUIElement
                 
                 // Debug: Get element info
                 var role: CFTypeRef?

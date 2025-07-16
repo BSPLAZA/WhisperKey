@@ -2,7 +2,7 @@
 # Create DMG installer for WhisperKey v1.0.1
 
 DMG_NAME="WhisperKey-1.0.1.dmg"
-APP_PATH="/Applications/WhisperKey-v10.app"
+APP_PATH="$HOME/Desktop/WhisperKey.app"
 DMG_PATH="$HOME/Desktop/$DMG_NAME"
 
 # Check if app exists

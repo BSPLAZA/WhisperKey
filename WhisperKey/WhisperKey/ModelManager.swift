@@ -217,7 +217,9 @@ class ModelManager: ObservableObject {
                 self.downloadError[filename] = nil
                 
                 // Refresh WhisperService to ensure it knows about the new model
-                self.whisperService.refreshModelsPath()
+                Task {
+                    await self.whisperService.refreshModelsPath()
+                }
                 
                 // Force a check to update the UI
                 self.objectWillChange.send()
