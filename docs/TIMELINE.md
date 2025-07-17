@@ -484,4 +484,39 @@
 - Needs code signing for smoother install
 
 ---
-*Last Updated: 2025-07-16 08:35 AM PST - v1.0.1 released to GitHub*
+
+## v1.0.2 Bug Fix Development
+
+**Started**: 2025-07-17  
+**Status**: 🚧 In Progress  
+**Focus**: Critical bug fixes from user reports
+
+### GitHub Issue #5 (July 17):
+- 🔍 **Investigated User Report**:
+  - User @mikeypikeyfreep reported keyboard focus issues
+  - Recording UI not appearing in GitHub forms
+  - Thoroughly documented in ISSUES_AND_SOLUTIONS.md
+- 🐛 **Identified Root Causes**:
+  - Keyboard events not properly terminated after insertion
+  - Recording window blocked in certain web contexts
+- 🔧 **Created Fix Branch**: `fix/issue-5-keyboard-focus`
+- 📝 **Documentation**:
+  - Added Issue #038 to ISSUES_AND_SOLUTIONS.md
+  - Created FIX_ISSUE_5_KEYBOARD_FOCUS.md for implementation tracking
+  - Responded to user on GitHub with detailed analysis
+
+### Planned Fixes:
+- [ ] Send terminating event after keyboard simulation
+- [ ] Restore focus to text field after insertion
+- [ ] Fix recording UI window level for web contexts
+- [ ] Ensure clipboard notification appears as fallback
+- [ ] Add automated tests for focus behavior
+
+### Testing Required:
+- [ ] Verify Enter key works immediately after dictation
+- [ ] Test in: GitHub forms, Google Docs, Slack, VS Code
+- [ ] Ensure recording UI appears in all contexts
+- [ ] Verify no side effects from focus restoration
+
+---
+*Last Updated: 2025-07-17 09:50 AM PST - Working on v1.0.2 fixes*

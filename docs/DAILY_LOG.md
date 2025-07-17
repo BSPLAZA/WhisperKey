@@ -924,5 +924,53 @@ swift package update
 **Links/References**:
 - [Relevant links discovered]
 
+## 2025-07-17 (Thursday) - Addressing User Bug Report
+
+**Focus**: GitHub Issue #5 - Keyboard focus and UI display problems
+
+**Completed**:
+- ✅ Investigated GitHub issue #5 from user @mikeypikeyfreep
+- ✅ Reproduced both reported issues successfully
+- ✅ Identified root causes for both problems
+- ✅ Documented Issue #038 in ISSUES_AND_SOLUTIONS.md with detailed analysis
+- ✅ Created branch `fix/issue-5-keyboard-focus` for fixes
+- ✅ Created FIX_ISSUE_5_KEYBOARD_FOCUS.md to track implementation
+- ✅ Responded to user on GitHub with detailed explanation
+
+**Discovered**:
+- Keyboard simulation doesn't properly terminate the synthetic event stream
+- Text fields lose focus after our keyboard events complete
+- Recording UI window level may be too low for web contexts
+- Users need to click or type a character before Enter works after dictation
+- Transcription works perfectly but UI feedback fails in some windows
+
+**Blockers**:
+- None currently - have clear path to fix both issues
+
+**Time Spent**: 1 hour (investigation and documentation)
+
+**Tomorrow's Focus**:
+- Implement keyboard focus restoration fix
+- Test fix in multiple applications
+- Investigate recording UI window level issue
+- Create fallback visual feedback mechanism
+
+**Code Snippets/Commands**:
+```bash
+# Created fix branch
+git checkout -b fix/issue-5-keyboard-focus
+
+# Viewed issue details
+gh issue view 5 --repo BSPLAZA/WhisperKey
+
+# Submitted response to user
+gh issue comment 5 --repo BSPLAZA/WhisperKey --body "..."
+```
+
+**Links/References**:
+- https://github.com/BSPLAZA/WhisperKey/issues/5
+- Need to research CGEvent termination best practices
+- Look into NSWindow level options for recording indicator
+
 ---
 *Note: Keep entries brief - max 10 minutes to write*

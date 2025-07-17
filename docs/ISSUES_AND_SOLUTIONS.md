@@ -1595,4 +1595,91 @@ The bundled whisper-cli binary was dynamically linked with @rpath references poi
 **Time Lost**: 1 hour
 
 ---
-*Last Updated: 2025-07-15 09:45 PST*
+
+## Issue #038: Keyboard Focus Lost After Dictation & UI Missing in Some Windows
+
+**Discovered**: 2025-07-17 - GitHub Issue #5  
+**Severity**: High  
+**Symptoms**: 
+- **Problem 1**: After successful dictation, keyboard input doesn't work immediately
+  - User must click in text field OR type another character first
+  - Only then does Enter key (or other keys) work
+  - Text insertion is successful but focus is lost
+- **Problem 2**: In certain windows (GitHub issue forms, some web apps):
+  - Recording indicator UI doesn't appear
+  - Audio feedback sounds play correctly (start/stop/completion)
+  - Transcription works and text IS saved to clipboard
+  - But no visual feedback and no automatic insertion
+  - Clipboard fallback notification also doesn't appear
+
+**Root Cause**: 
+- **Focus Issue**: After keyboard simulation via CGEvent, the event stream isn't properly terminated
+  - System remains in synthetic input mode
+  - Text field doesn't recognize it should accept real keyboard input
+  - No focus restoration after our simulated typing completes
+- **UI Issue**: Recording indicator window likely being blocked or not properly layered in certain contexts
+  - Web browser forms may have different window layering
+  - Recording window might not be set to proper level for these contexts
+
+**Solution**: (In Development)
+1. **For Focus Issue**:
+   - Send a "null" keyboard event after text insertion to terminate synthetic input
+   - Explicitly restore focus to the text field using AX API
+   - Add small delay and release all modifier keys to reset state
+   - Consider sending a focus event or clicking at insertion point
+2. **For UI Issue**:
+   - Investigate window level settings for recording indicator
+   - Check if web contexts require different window presentation
+   - Add fallback visual feedback mechanism
+   - Ensure clipboard notification shows even when main UI fails
+
+**Code Examples**:
+```swift
+// Current problematic code - doesn't restore focus
+private func tryKeyboardSimulation(_ text: String) -> Bool {
+    let source = CGEventSource(stateID: .hidSystemState)
+    
+    for character in text {
+        // ... send key events ...
+    }
+    
+    return true  // Just returns without cleanup!
+}
+
+// Fixed version - properly terminates and restores focus
+private func tryKeyboardSimulation(_ text: String) -> Bool {
+    let source = CGEventSource(stateID: .hidSystemState)
+    
+    for character in text {
+        // ... send key events ...
+    }
+    
+    // CRITICAL: Send null event to terminate synthetic input
+    if let nullEvent = CGEvent(keyboardEventSource: source, virtualKey: 0xFF, keyDown: false) {
+        nullEvent.flags = []
+        nullEvent.post(tap: .cghidEventTap)
+    }
+    
+    // Small delay to let system process
+    usleep(50000) // 50ms
+    
+    // Attempt to restore focus if we have the element
+    if let element = self.lastFocusedElement {
+        AXUIElementSetAttributeValue(element, kAXFocusedAttribute as CFString, true as CFBoolean)
+    }
+    
+    return true
+}
+```
+
+**Prevention**: 
+- Always properly terminate synthetic event streams
+- Test keyboard functionality after text insertion
+- Verify UI appears in various window contexts (native, web, electron)
+- Implement multiple fallback mechanisms for user feedback
+- Store focused element before operations for restoration
+
+**Time Lost**: 3 hours (investigation + fix development)
+
+---
+*Last Updated: 2025-07-17 09:45 PST*
