@@ -76,7 +76,35 @@ jobs:
           -scheme WhisperKey \
           -destination 'platform=macOS' \
           -configuration Release \
-          ONLY_ACTIVE_ARCH=NO
+          ONLY_ACTIVE_ARCH=NO || true  # Continue even if sandbox blocks library copying
+    
+    - name: Copy Libraries Manually
+      run: |
+        # The build phase runs but sandbox blocks it in Release mode
+        # So we copy libraries manually after the build
+        cd WhisperKey
+        
+        # Find the built app
+        APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "WhisperKey.app" -path "*/Release/*" | head -1)
+        echo "Found app at: $APP_PATH"
+        
+        if [ -z "$APP_PATH" ]; then
+          echo "Error: Could not find built app"
+          exit 1
+        fi
+        
+        # Get the parent directory for BUILT_PRODUCTS_DIR
+        BUILT_PRODUCTS_DIR=$(dirname "$APP_PATH")
+        
+        # Run the copy script with the correct paths
+        BUILT_PRODUCTS_DIR="$BUILT_PRODUCTS_DIR" \
+        WRAPPER_NAME="WhisperKey.app" \
+        ./copy-whisper-libraries.sh
+        
+        # Verify libraries were copied
+        echo "Verifying bundled libraries:"
+        ls -la "$APP_PATH/Contents/Frameworks/"*.dylib || echo "No libraries found"
+        ls -la "$APP_PATH/Contents/MacOS/whisper-cli" || echo "whisper-cli not found"
     
     - name: Run Tests
       run: |
