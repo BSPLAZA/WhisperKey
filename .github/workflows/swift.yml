@@ -45,6 +45,21 @@ jobs:
     - name: Install xcpretty
       run: gem install xcpretty
     
+    - name: Build whisper.cpp
+      run: |
+        echo "Building whisper.cpp for CI..."
+        cd ~
+        git clone https://github.com/ggerganov/whisper.cpp
+        cd whisper.cpp
+        # Use a specific commit for reproducibility
+        git checkout 4bbb60efb1de8d436088064b1950a2e46089fec9
+        WHISPER_METAL=1 make -j
+        mkdir -p ~/Developer/whisper.cpp/build/bin
+        cp main ~/Developer/whisper.cpp/build/bin/whisper-cli
+        # Copy required libraries
+        mkdir -p ~/Developer/whisper.cpp/lib
+        find . -name "*.dylib" -type f -exec cp {} ~/Developer/whisper.cpp/lib/ \;
+    
     - name: Build
       run: |
         xcodebuild build -project WhisperKey/WhisperKey.xcodeproj \
