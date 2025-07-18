@@ -122,6 +122,7 @@ WhisperKey is a privacy-focused local dictation app for macOS that uses OpenAI's
 - [DECISIONS](DECISIONS.md) - Architecture Decision Records
 
 ### Implementation Guides  
+- [BUILD_PROCESS](BUILD_PROCESS.md) - **Build process and sandbox handling**
 - [RIGHT_OPTION_SETUP](RIGHT_OPTION_SETUP.md) - Hotkey implementation
 - [QUICK_REFERENCE](QUICK_REFERENCE.md) - Constants and snippets
 - [API_REFERENCE](API_REFERENCE.md) - Internal APIs

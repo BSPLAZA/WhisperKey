@@ -72,6 +72,10 @@ jobs:
     
     - name: Build
       run: |
+        # IMPORTANT: The '|| true' is intentional!
+        # Xcode's sandbox blocks library copying in Release builds.
+        # We handle this by copying libraries manually in the next step.
+        # See docs/BUILD_PROCESS.md for full explanation.
         xcodebuild build -project WhisperKey/WhisperKey.xcodeproj \
           -scheme WhisperKey \
           -destination 'platform=macOS' \
