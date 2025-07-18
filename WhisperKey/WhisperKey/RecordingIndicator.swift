@@ -24,14 +24,16 @@ class RecordingIndicatorWindow: NSWindow {
         // Window configuration
         self.isOpaque = false
         self.backgroundColor = .clear
-        self.level = .statusBar
-        self.collectionBehavior = [.canJoinAllSpaces, .stationary]
+        // Use floating window level + 1 to be above normal windows but below system panels
+        self.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.floatingWindow)) + 1)
+        self.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]
         self.isMovableByWindowBackground = false
         self.titleVisibility = .hidden
         self.titlebarAppearsTransparent = true
         
-        // Make it appear on all spaces
-        self.collectionBehavior.insert(.canJoinAllSpaces)
+        // Ensure window stays visible even when app is not active
+        self.hidesOnDeactivate = false
+        self.canHide = false
         
         // Disable mouse events
         self.ignoresMouseEvents = true

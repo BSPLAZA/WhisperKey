@@ -5,10 +5,16 @@
 ## Current Status
 
 **Phase**: Released 🎉  
-**Status**: v1.0.0 Available for Download  
-**Version**: 1.0.0  
-**Released**: 2025-07-14  
-**Download**: [WhisperKey-1.0.0.dmg](https://github.com/BSPLAZA/WhisperKey/releases/download/v1.0.0/WhisperKey-1.0.0.dmg)
+**Status**: v1.0.2 Available for Download  
+**Version**: 1.0.2  
+**Released**: 2025-07-18  
+**Download**: [WhisperKey-1.0.2.dmg](https://github.com/BSPLAZA/WhisperKey/releases/download/v1.0.2/WhisperKey-1.0.2.dmg)
+
+### Recent Updates (v1.0.2)
+- ✅ Fixed keyboard focus restoration after dictation
+- ✅ Recording indicator stays visible above other windows
+- ✅ Professional DMG installer with clear instructions
+- ⚠️ Known limitation: Brave browser requires manual click after dictation
 
 ## 🎯 Project Summary
 
@@ -116,6 +122,7 @@ WhisperKey is a privacy-focused local dictation app for macOS that uses OpenAI's
 - [DECISIONS](DECISIONS.md) - Architecture Decision Records
 
 ### Implementation Guides  
+- [BUILD_PROCESS](BUILD_PROCESS.md) - **Build process and sandbox handling**
 - [RIGHT_OPTION_SETUP](RIGHT_OPTION_SETUP.md) - Hotkey implementation
 - [QUICK_REFERENCE](QUICK_REFERENCE.md) - Constants and snippets
 - [API_REFERENCE](API_REFERENCE.md) - Internal APIs

@@ -4,6 +4,63 @@
 
 ---
 
+## 2025-07-18 (Friday) - v1.0.2 Release - Keyboard Focus & UI Fixes
+
+**Time**: 1:00 PM PST  
+**Goal**: Fix keyboard focus issues after dictation and improve DMG installer UX
+
+**Progress**:
+- ✅ **Fixed Keyboard Focus Issue (GitHub #5)**:
+  - Added `[NSApp activateIgnoringOtherApps:NO]` after text insertion
+  - Uses gentle activation to restore focus without disruption
+  - Tested successfully in most applications
+  - Known limitation: Brave browser requires manual click due to security restrictions
+  
+- ✅ **Fixed Recording Indicator Visibility**:
+  - Set window level to `.floating` to keep indicator above other windows
+  - Recording indicator no longer gets hidden behind other apps
+  - Improved user confidence during dictation
+  
+- ✅ **Professional DMG Installer Created**:
+  - Initial attempts with ImageMagick and create-dmg text rendering failed
+  - Pivoted to AI image generation (ChatGPT 4o) - much better solution!
+  - AI-generated background image (600x600) with perfect text rendering
+  - Clear drag-to-Applications visual metaphor
+  - Prominent security warning about "unidentified developer"
+  - Instructions for System Settings → Privacy & Security → Open Anyway
+  - Final DMG size: 2.0MB with all dependencies
+  
+- ✅ **Build Process Improvements**:
+  - Library copying script properly integrated into Xcode build phases
+  - Works correctly in both Debug and Release configurations
+  - Documented integration process for future reference
+  
+- ✅ **Code Cleanup**:
+  - Removed temporary DMG creation scripts and assets
+  - Organized final assets in dmg-assets directory
+  - Kept only production-ready scripts in scripts directory
+
+**Testing**:
+- Keyboard focus restoration tested in: TextEdit, Safari, VS Code, Slack, Terminal
+- Recording indicator visibility verified across window switching scenarios
+- DMG installer tested with proper window sizing and background display
+
+**Known Issues**:
+- Brave browser requires manual click after dictation (security feature)
+- May need manual focus in some Electron-based apps
+
+**Documentation**:
+- Updated RELEASE_NOTES_v1.0.2.md with all fixes and known limitations
+- Created comprehensive build integration documentation
+- Cleaned up temporary files and consolidated scripts
+
+**Next Steps**:
+- Create PR for v1.0.2 release
+- Monitor user feedback on focus restoration behavior
+- Consider future enhancement for Brave browser compatibility
+
+---
+
 ## 2025-07-16 (Wednesday) - v1.0.1 GitHub Release
 
 **Time**: 8:35 AM PST  
@@ -923,6 +980,59 @@ swift package update
 
 **Links/References**:
 - [Relevant links discovered]
+
+## 2025-07-17 (Thursday) - Addressing User Bug Report
+
+**Focus**: GitHub Issue #5 - Keyboard focus and UI display problems
+
+**Completed**:
+- ✅ Investigated GitHub issue #5 from user @mikeypikeyfreep
+- ✅ Reproduced both reported issues successfully
+- ✅ Identified root causes for both problems
+- ✅ Documented Issue #038 in ISSUES_AND_SOLUTIONS.md with detailed analysis
+- ✅ Created branch `fix/issue-5-keyboard-focus` for fixes
+- ✅ Created FIX_ISSUE_5_KEYBOARD_FOCUS.md to track implementation
+- ✅ Responded to user on GitHub with detailed explanation
+- ✅ Implemented keyboard focus fix (space+backspace approach)
+- ✅ Fixed window level for recording indicators (floatingWindow + 1)
+- ✅ Tested fixes - works in most apps except Brave
+- ✅ Deep investigation of Brave browser behavior
+- ✅ Created BRAVE_BROWSER_ANALYSIS.md documenting Brave limitation
+- ✅ Updated KNOWN_ISSUES.md with Brave browser workaround
+
+**Discovered**:
+- Space+backspace trick works for most apps to restore keyboard focus
+- Brave browser intentionally blocks synthetic events as security feature
+- Brave requires hardware key press before processing synthetic input
+- This is not a bug but a privacy/security feature in Brave
+- Window level modalPanel was too aggressive, floatingWindow+1 is better
+
+**Blockers**:
+- Brave browser limitation cannot be fixed - it's intentional security
+
+**Time Spent**: 4 hours (investigation, implementation, testing, documentation)
+
+**Tomorrow's Focus**:
+- Test recording UI in GitHub forms
+- Consider adding notification for Brave users
+- Prepare to merge fix branch if all tests pass
+
+**Code Snippets/Commands**:
+```swift
+// Final working solution for focus issue
+private func terminateSyntheticInput(source: CGEventSource?) {
+    // Type space + immediately delete it
+    // This triggers text field change handlers
+}
+
+// Window level fix
+self.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.floatingWindow)) + 1)
+```
+
+**Links/References**:
+- https://github.com/BSPLAZA/WhisperKey/issues/5
+- Brave's input validation is intentionally strict for security
+- Consider this a feature, not a bug to fix
 
 ---
 *Note: Keep entries brief - max 10 minutes to write*

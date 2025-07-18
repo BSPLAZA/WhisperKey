@@ -105,6 +105,15 @@
 ### Web Browsers
 - Some web apps may need page refresh after granting permissions
 - Complex web editors (Google Docs) work but may need testing
+- **Brave Browser URL Bar**: Requires pressing Space then Enter after dictation (security feature - see below)
+
+### 7. Brave Browser Keyboard Focus Issue
+**Severity**: Low  
+**Symptoms**: After dictation in Brave URL bar, must press Space before Enter works  
+**Cause**: Brave's security feature blocks synthetic keyboard events until hardware key pressed  
+**Workaround**: Press Space then Enter after dictation in Brave URL bars  
+**Fix**: This is intentional browser security - not a bug. See [BRAVE_BROWSER_ANALYSIS.md](BRAVE_BROWSER_ANALYSIS.md)  
+**Note**: Regular text fields in Brave work fine, only URL bar affected
 
 ## Reporting New Issues
 

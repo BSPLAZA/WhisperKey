@@ -27,11 +27,11 @@ class WhisperService: ObservableObject {
     private var whisperSearchPaths: [String] {
         var paths: [String] = []
         
-        // FIRST: Check for bundled whisper-cli in app bundle
+        // FIRST: Check for bundled whisper-cli in MacOS directory (moved from Resources to avoid conflict)
         // This must be computed at runtime, not init time
         let bundlePath = Bundle.main.bundlePath
-        let resourcePath = (bundlePath as NSString).appendingPathComponent("Contents/Resources")
-        let whisperPath = (resourcePath as NSString).appendingPathComponent("whisper-cli")
+        let macOSPath = (bundlePath as NSString).appendingPathComponent("Contents/MacOS")
+        let whisperPath = (macOSPath as NSString).appendingPathComponent("whisper-cli")
         paths.append(whisperPath)
         DebugLogger.log("WhisperService: Checking bundle path: \(whisperPath)")
         

@@ -271,7 +271,7 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(BUILT_PRODUCTS_DIR)/$(WRAPPER_NAME)/Contents/MacOS/whisper-cli",
+				"$(BUILT_PRODUCTS_DIR)/$(WRAPPER_NAME)/Contents/Resources/whisper-cli",
 				"$(BUILT_PRODUCTS_DIR)/$(WRAPPER_NAME)/Contents/Frameworks/",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
