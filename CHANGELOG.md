@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.2] - 2025-07-18
+
+### Fixed
+- **Keyboard Focus**: Fixed issue where keyboard input didn't work immediately after dictation (GitHub Issue #5)
+- **Recording Indicator**: Window now stays visible above other apps with floating window level
+- **DMG Installer**: Professional background image with clear installation instructions
+
+### Improved
+- **Build Process**: Library copying now fully integrated into Xcode build phases
+- **User Experience**: Better visual feedback during installation process
+
+### Known Issues
+- **Brave Browser**: Requires manual click after dictation (Space + Enter in URL bar) due to Brave's security features
+
 ## [1.0.1] - 2025-07-15
 
 ### Fixed

@@ -19,6 +19,11 @@ enum KeyCode {
     static let v: CGKeyCode = 0x09
     static let backspace: CGKeyCode = 0x33
     
+    // Modifier keys
+    static let option: CGKeyCode = 0x3A
+    static let control: CGKeyCode = 0x3B
+    static let shift: CGKeyCode = 0x38
+    
     // Historical F5 constants (kept for reference/future use)
     static let f5Standard: UInt16 = 0x60
     static let f5DictationHID: UInt32 = 0x000c00cf

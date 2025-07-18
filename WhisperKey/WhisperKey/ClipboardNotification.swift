@@ -37,11 +37,16 @@ class ClipboardNotificationManager: ObservableObject {
             window.contentView = hostingView
             window.isOpaque = false
             window.backgroundColor = .clear
-            window.level = .floating
-            window.collectionBehavior = [.canJoinAllSpaces, .stationary]
+            // Use floating window level + 1 to be above normal windows but below system panels
+            window.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.floatingWindow)) + 1)
+            window.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]
             window.isMovableByWindowBackground = false
             window.hasShadow = true
             window.isReleasedWhenClosed = false // Prevent premature release
+            
+            // Ensure window stays visible even when app is not active
+            window.hidesOnDeactivate = false
+            window.canHide = false
             
             // Position at bottom center of screen
             if let screen = NSScreen.main {

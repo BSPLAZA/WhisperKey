@@ -1621,17 +1621,22 @@ The bundled whisper-cli binary was dynamically linked with @rpath references poi
   - Web browser forms may have different window layering
   - Recording window might not be set to proper level for these contexts
 
-**Solution**: (In Development)
+**Solution**: ✅ FIXED (Except Brave browser - documented limitation)
 1. **For Focus Issue**:
-   - Send a "null" keyboard event after text insertion to terminate synthetic input
-   - Explicitly restore focus to the text field using AX API
-   - Add small delay and release all modifier keys to reset state
-   - Consider sending a focus event or clicking at insertion point
+   - Added `terminateSyntheticInput()` that types space + backspace
+   - ✅ Works for regular text fields (TextEdit, etc.)
+   - ✅ Works for Safari, Chrome, Firefox URL bars
+   - ⚠️ BRAVE BROWSER EXCEPTION: Requires manual space+Enter (security feature)
+   - See BRAVE_BROWSER_ANALYSIS.md for detailed explanation
 2. **For UI Issue**:
-   - Investigate window level settings for recording indicator
-   - Check if web contexts require different window presentation
-   - Add fallback visual feedback mechanism
-   - Ensure clipboard notification shows even when main UI fails
+   - Changed window level to `floatingWindow + 1` (not modalPanel)
+   - Less intrusive while still visible in web contexts
+   - Added `hidesOnDeactivate = false` and `canHide = false`
+   - Applied to both RecordingIndicator and ClipboardNotification
+   - 🔄 Still needs testing in GitHub forms
+
+**Brave Browser Note**: 
+Brave intentionally blocks synthetic keyboard events until a hardware key is pressed. This is a security feature to prevent automation/keylogging. Users must press Space then Enter after dictation in Brave URL bars.
 
 **Code Examples**:
 ```swift
@@ -1646,29 +1651,25 @@ private func tryKeyboardSimulation(_ text: String) -> Bool {
     return true  // Just returns without cleanup!
 }
 
-// Fixed version - properly terminates and restores focus
-private func tryKeyboardSimulation(_ text: String) -> Bool {
-    let source = CGEventSource(stateID: .hidSystemState)
-    
-    for character in text {
-        // ... send key events ...
+// Fixed version - triggers field change handlers with space+backspace
+private func terminateSyntheticInput(source: CGEventSource?) {
+    // Type a space character
+    if let spaceDown = CGEvent(keyboardEventSource: source, virtualKey: 0x31, keyDown: true),
+       let spaceUp = CGEvent(keyboardEventSource: source, virtualKey: 0x31, keyDown: false) {
+        spaceDown.post(tap: .cghidEventTap)
+        usleep(5000) // 5ms
+        spaceUp.post(tap: .cghidEventTap)
     }
     
-    // CRITICAL: Send null event to terminate synthetic input
-    if let nullEvent = CGEvent(keyboardEventSource: source, virtualKey: 0xFF, keyDown: false) {
-        nullEvent.flags = []
-        nullEvent.post(tap: .cghidEventTap)
+    usleep(10000) // 10ms
+    
+    // Delete the space with backspace
+    if let backDown = CGEvent(keyboardEventSource: source, virtualKey: KeyCode.backspace, keyDown: true),
+       let backUp = CGEvent(keyboardEventSource: source, virtualKey: KeyCode.backspace, keyDown: false) {
+        backDown.post(tap: .cghidEventTap)
+        usleep(5000) // 5ms
+        backUp.post(tap: .cghidEventTap)
     }
-    
-    // Small delay to let system process
-    usleep(50000) // 50ms
-    
-    // Attempt to restore focus if we have the element
-    if let element = self.lastFocusedElement {
-        AXUIElementSetAttributeValue(element, kAXFocusedAttribute as CFString, true as CFBoolean)
-    }
-    
-    return true
 }
 ```
 
@@ -1682,4 +1683,94 @@ private func tryKeyboardSimulation(_ text: String) -> Bool {
 **Time Lost**: 3 hours (investigation + fix development)
 
 ---
-*Last Updated: 2025-07-17 09:45 PST*
+
+## Issue #039: Library Copying Not Integrated into Xcode Build Process
+
+**Discovered**: 2025-07-18 - v1.0.2 Development  
+**Severity**: High  
+**Symptoms**: 
+- Build succeeds but app crashes on launch with library not found
+- copy-whisper-libraries.sh exists but isn't being executed
+- Manual library copying required after each build
+- Release builds especially problematic due to sandbox restrictions
+
+**Root Cause**: 
+- Script was created for v1.0.1 but never integrated into Xcode build phases
+- Build process didn't automatically run the library copying script
+- Each build required manual intervention to copy libraries
+
+**Solution**: ✅ FIXED
+1. Created Ruby script to programmatically add build phase to Xcode project
+2. Added "Copy Whisper Libraries" build phase that runs copy-whisper-libraries.sh
+3. Build phase positioned correctly after "Copy Bundle Resources"
+4. Works for both Debug and Release configurations
+
+**Implementation**:
+```ruby
+# integrate-build-phase.sh
+#!/usr/bin/env ruby
+require 'xcodeproj'
+
+project = Xcodeproj::Project.open('WhisperKey/WhisperKey.xcodeproj')
+target = project.targets.find { |t| t.name == 'WhisperKey' }
+
+# Create new run script build phase
+phase = target.new_shell_script_build_phase("Copy Whisper Libraries")
+phase.shell_script = '"${SRCROOT}/copy-whisper-libraries.sh"'
+
+# Position after Copy Bundle Resources
+copy_resources_index = target.build_phases.index { |p| p.is_a?(Xcodeproj::Project::Object::PBXResourcesBuildPhase) }
+if copy_resources_index
+  target.build_phases.move(phase, copy_resources_index + 1)
+end
+
+project.save
+```
+
+**Prevention**: 
+- Always integrate build scripts into Xcode project directly
+- Don't rely on manual post-build steps for production apps
+- Test clean builds in new environments to catch missing automation
+- Document all build requirements in project
+
+**Time Lost**: 30 minutes
+
+---
+
+## Issue #040: DMG Background Text Rendering Issues
+
+**Discovered**: 2025-07-18 - v1.0.2 Development  
+**Severity**: Medium  
+**Symptoms**: 
+- ImageMagick-generated text was garbled/unreadable
+- Multiple attempts with different fonts and settings failed
+- create-dmg tool's built-in text rendering also failed
+- Professional DMG appearance compromised
+
+**Root Cause**: 
+- ImageMagick text rendering issues on macOS
+- Font rendering differences between systems
+- Complex text layout requirements for installer instructions
+- Traditional DMG creation tools limited in design capabilities
+
+**Solution**: ✅ FIXED
+1. After multiple failed attempts with ImageMagick and create-dmg text features
+2. Pivoted to AI image generation (ChatGPT 4o) as superior solution
+3. AI created perfect text rendering with proper typography
+4. Much faster and better results than traditional tools
+5. Removed placeholder boxes that conflicted with actual icons
+6. Final image: 600x600 pixels, displayed in 600x650 window
+
+**Recommendation**: 
+For professional DMG backgrounds, skip traditional image generation tools and use AI image generation (ChatGPT, DALL-E, etc.) from the start. The results are significantly better and save hours of tweaking.
+
+**Prevention**: 
+- Use AI image generation tools for complex visual assets
+- Don't waste time with ImageMagick text rendering on macOS
+- Let AI handle typography and visual design
+- Keep prompts specific about dimensions and layout needs
+
+**Time Lost**: 2 hours (could have been 5 minutes with AI from the start)
+
+---
+*Last Updated: 2025-07-18 13:00 PST*

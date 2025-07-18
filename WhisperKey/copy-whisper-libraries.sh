@@ -30,11 +30,17 @@ if [ ! -d "$WHISPER_PATH" ]; then
     exit 1
 fi
 
+# Note: WhisperKey v1.0.2 is tested with whisper.cpp as of July 2024
+# Future versions of whisper.cpp should maintain API compatibility
+
 # Copy whisper-cli binary
 WHISPER_CLI="${WHISPER_PATH}/build/bin/whisper-cli"
 if [ -f "$WHISPER_CLI" ]; then
-    cp "$WHISPER_CLI" "$APP_PATH/Contents/Resources/"
-    echo "WhisperKey: ✓ Copied whisper-cli"
+    # Create MacOS directory if it doesn't exist
+    mkdir -p "$APP_PATH/Contents/MacOS"
+    # Copy to MacOS directory to avoid Resources conflict
+    cp "$WHISPER_CLI" "$APP_PATH/Contents/MacOS/"
+    echo "WhisperKey: ✓ Copied whisper-cli to MacOS directory"
 else
     echo "error: whisper-cli not found at $WHISPER_CLI"
     echo "error: Please build whisper.cpp first"

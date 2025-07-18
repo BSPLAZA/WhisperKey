@@ -3,11 +3,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![macOS](https://img.shields.io/badge/macOS-12.0%2B-blue.svg)](https://www.apple.com/macos)
 [![Swift](https://img.shields.io/badge/Swift-5.9-orange.svg)](https://swift.org)
-[![Release](https://img.shields.io/badge/Version-1.0.1-green.svg)](https://github.com/BSPLAZA/WhisperKey/releases/tag/v1.0.1)
+[![Release](https://img.shields.io/badge/Version-1.0.2-green.svg)](https://github.com/BSPLAZA/WhisperKey/releases/tag/v1.0.2)
 
 **Privacy-focused local dictation for macOS**
 
-> 🚀 **v1.0.1 Released!** (July 15, 2025): Critical fixes including bundled whisper.cpp - no manual installation needed! [See release notes](docs/RELEASE_NOTES_v1.0.1.md)
+> 🚀 **v1.0.2 Released!** (July 18, 2025): Fixed keyboard focus issues and improved installer experience! [See release notes](RELEASE_NOTES_v1.0.2.md)
 
 WhisperKey brings the power of OpenAI's Whisper AI to your Mac for fast, accurate speech-to-text that works in any app. Your voice never leaves your device.
 
@@ -140,8 +140,8 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ## Known Issues
 
+- **Brave Browser**: Requires manual click after dictation (press Space then Enter in URL bar). This is a Brave security feature.
 - System sounds may be transcribed (e.g., notifications appear as "bell dings")
-- Recording indicator may appear behind full-screen apps
 - No formatting preservation (plain text only)
 - Single audio device support (doesn't handle switching mid-recording)
 - Custom vocabulary not yet supported

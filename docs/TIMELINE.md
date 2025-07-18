@@ -8,7 +8,8 @@
 **MVP Achieved**: 2025-07-01 (Day 1!)  
 **v1.0.0 Released**: 2025-07-14 🎉  
 **v1.0.1 Released**: 2025-07-15 🎉  
-**Last Updated**: 2025-07-15 (17:45 PST)  
+**v1.0.2 Released**: 2025-07-18 🎉  
+**Last Updated**: 2025-07-18 (13:00 PST)  
 **Methodology**: Iterative development with daily progress tracking
 
 ### Progress Summary
@@ -469,6 +470,44 @@
 - ✅ **Build Integration** (automated library copying)
 - ✅ **CI/CD Pipeline** (fixed all GitHub Actions)
 - ✅ **Universal Binary** (Intel + Apple Silicon support)
+
+---
+
+## v1.0.2 Bug Fix Release
+
+**Started**: 2025-07-18 (12:00 PM PST)
+**Completed**: 2025-07-18 (1:00 PM PST)
+**Status**: ✅ Complete
+**Focus**: Keyboard focus restoration and UI improvements
+
+### Fixed Issues:
+- ✅ **Keyboard Focus After Dictation** (GitHub Issue #5):
+  - Added `[NSApp activateIgnoringOtherApps:NO]` after text insertion
+  - Gentle activation preserves target app's focus
+  - Tested in: TextEdit, Safari, VS Code, Slack, Terminal
+  - Known limitation: Brave browser requires manual click
+
+- ✅ **Recording Indicator Visibility**:
+  - Set window level to `.floating`
+  - Indicator stays above other windows during recording
+  - No more confusion about recording state
+
+- ✅ **Professional DMG Installer**:
+  - AI-generated background (600x650 window)
+  - Clear drag-to-Applications visual
+  - Prominent security warning for first-time setup
+  - Improved user onboarding experience
+
+- ✅ **Build Process Improvements**:
+  - Library copying fully integrated into Xcode build phases
+  - Works correctly in both Debug and Release configurations
+  - No more manual intervention needed
+
+### Release Details:
+- **WhisperKey-1.0.2.dmg** (2.0MB)
+- SHA256: dbb48ec486259f9f22d022a7aa727de7a19380d16bb51c8544dcd4a6849d54f0
+- All keyboard focus issues resolved (except Brave)
+- Professional installer experience
 
 ### User Feedback (July 16):
 - Request: Live transcription like Apple dictation

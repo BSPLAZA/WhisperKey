@@ -2,7 +2,7 @@
 
 *Step-by-step guide for building, packaging, and distributing WhisperKey*
 
-> **Update**: v1.0.0 has been released! See the [release page](https://github.com/BSPLAZA/WhisperKey/releases/tag/v1.0.0) for the latest build.
+> **Update**: v1.0.2 has been released! See the [release page](https://github.com/BSPLAZA/WhisperKey/releases/tag/v1.0.2) for the latest build with keyboard focus fixes.
 
 ## Overview
 
@@ -72,31 +72,26 @@ xcodebuild -exportArchive \
   -exportOptionsPlist ExportOptions.plist
 ```
 
-### 5. Bundle whisper-cli (v1.0.1+)
+### 5. Bundle whisper-cli (Automated in v1.0.2+)
 
-**Important**: As of v1.0.1, WhisperKey includes a bundled whisper-cli binary.
+**Important**: As of v1.0.2, library bundling is fully automated in the Xcode build process.
 
-1. Build whisper.cpp with Metal support:
-   ```bash
-   git clone https://github.com/ggerganov/whisper.cpp
-   cd whisper.cpp
-   WHISPER_METAL=1 make -j
-   cp main whisper-cli
-   ```
+The build automatically:
+- Copies whisper-cli binary to the app bundle
+- Includes all required GGML libraries (libggml.dylib, libwhisper.dylib, etc.)
+- Sets correct library paths for distribution
+- Works in both Debug and Release configurations
 
-2. Copy to Resources folder:
-   ```bash
-   cp whisper-cli WhisperKey.app/Contents/Resources/
-   chmod +x WhisperKey.app/Contents/Resources/whisper-cli
-   ```
+To manually verify libraries are bundled:
+```bash
+ls -la WhisperKey.app/Contents/MacOS/
+# Should show whisper-cli and all .dylib files
 
-3. Verify it's included:
-   ```bash
-   ls -la WhisperKey.app/Contents/Resources/whisper-cli
-   # Should show executable permissions
-   ```
+otool -L WhisperKey.app/Contents/MacOS/whisper-cli
+# Should show @executable_path relative paths
+```
 
-**Note**: The copy-whisper-cli.sh script handles this automatically during build.
+**Note**: The copy-whisper-libraries.sh script is automatically run by Xcode during every build.
 
 ## Creating DMG Installer
 
@@ -106,32 +101,45 @@ xcodebuild -exportArchive \
 brew install create-dmg
 ```
 
-### 2. Prepare Resources
+### 2. Use Automated Script (Recommended)
 
-Create folder structure:
-```
-WhisperKey-DMG/
-├── WhisperKey.app
-├── Applications (symlink)
-└── .background/
-    └── background.png (600x400)
+As of v1.0.2, use the automated script:
+```bash
+cd /Users/orion/Omni/WhisperKey
+./scripts/create-release-dmg.sh
 ```
 
-### 3. Create DMG
+This script:
+- Builds the app with proper library bundling
+- Creates a professional DMG with AI-generated background
+- Includes security warning and installation instructions
+- Sets proper window size (600x650) for optimal viewing
+
+**Note**: The background image was created using ChatGPT 4o's image generation after traditional tools (ImageMagick, create-dmg text features) failed to produce readable text. AI image generation is now the recommended approach for professional DMG backgrounds.
+
+### 3. Manual DMG Creation (Alternative)
 
 ```bash
+# Build first
+xcodebuild -project WhisperKey.xcodeproj \
+           -scheme WhisperKey \
+           -configuration Release \
+           -derivedDataPath build \
+           clean build
+
+# Create DMG
 create-dmg \
   --volname "WhisperKey" \
-  --volicon "WhisperKey.app/Contents/Resources/AppIcon.icns" \
-  --background "background.png" \
+  --background "dmg-assets/dmg-background-square.png" \
   --window-pos 200 120 \
-  --window-size 600 400 \
-  --icon-size 100 \
-  --icon "WhisperKey.app" 150 200 \
+  --window-size 600 650 \
+  --icon-size 80 \
+  --icon "WhisperKey.app" 150 300 \
   --hide-extension "WhisperKey.app" \
-  --app-drop-link 450 200 \
-  "WhisperKey-1.0.0.dmg" \
-  "WhisperKey-DMG/"
+  --app-drop-link 450 300 \
+  --no-internet-enable \
+  "WhisperKey-1.0.2.dmg" \
+  "build/Build/Products/Release/WhisperKey.app"
 ```
 
 ### 4. Test DMG

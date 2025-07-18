@@ -12,6 +12,8 @@ import ApplicationServices
 import IOKit
 
 class TextInsertionService {
+    /// Store the last focused element for restoration
+    private var lastFocusedElement: AXUIElement?
     
     /// Static method to check if we're in a secure field
     static func isInSecureField() -> Bool {
@@ -80,6 +82,7 @@ class TextInsertionService {
         try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
         
         let focusedElement = getFocusedElement()
+        lastFocusedElement = focusedElement
         
         // If we have a focused element, check if it's suitable and try AX insertion
         if let element = focusedElement {
@@ -356,6 +359,12 @@ class TextInsertionService {
             }
         }
         
+        // CRITICAL: Terminate the synthetic input stream
+        terminateSyntheticInput(source: source)
+        
+        // Don't try to restore focus - it's unreliable and the space+backspace
+        // approach should handle triggering the field's change handlers
+        
         return true
     }
     
@@ -467,6 +476,148 @@ class TextInsertionService {
         info += "Secure: \(isSecureField(element))\n"
         
         return info
+    }
+    
+    /// Terminate the synthetic input stream to restore normal keyboard handling
+    private func terminateSyntheticInput(source: CGEventSource?) {
+        // CRITICAL: Different approaches needed for different contexts
+        // Brave browser has unique event handling that requires special treatment
+        
+        // Get the frontmost application
+        let frontApp = NSWorkspace.shared.frontmostApplication
+        let isBrave = frontApp?.bundleIdentifier == "com.brave.Browser"
+        let isBrowserURLBar = isInBrowserURLBar()
+        
+        if isBrave {
+            DebugLogger.log("TextInsertionService: Detected Brave browser - known limitation, user must press Space+Enter")
+            // Brave intentionally blocks synthetic events as a security feature
+            // Users must press a hardware key (like Space) then Enter
+            // See BRAVE_BROWSER_ANALYSIS.md for detailed explanation
+            
+            // TODO: Show notification to user about Brave limitation
+            // NotificationManager.show("Press Space then Enter", "Brave requires a keypress after dictation")
+            
+        } else if isBrowserURLBar {
+            // For other browser URL bars, use arrow key
+            usleep(20000) // 20ms delay
+            
+            // Press right arrow key to move cursor to end
+            if let rightDown = CGEvent(keyboardEventSource: source, virtualKey: 0x7C, keyDown: true),
+               let rightUp = CGEvent(keyboardEventSource: source, virtualKey: 0x7C, keyDown: false) {
+                rightDown.post(tap: .cghidEventTap)
+                usleep(5000) // 5ms
+                rightUp.post(tap: .cghidEventTap)
+            }
+            
+            usleep(20000) // 20ms delay
+        } else {
+            // For regular text fields, use space+backspace
+            usleep(10000) // 10ms
+            
+            // Type a space character
+            if let spaceDown = CGEvent(keyboardEventSource: source, virtualKey: 0x31, keyDown: true),
+               let spaceUp = CGEvent(keyboardEventSource: source, virtualKey: 0x31, keyDown: false) {
+                spaceDown.post(tap: .cghidEventTap)
+                usleep(5000) // 5ms between down and up
+                spaceUp.post(tap: .cghidEventTap)
+            }
+            
+            usleep(10000) // 10ms
+            
+            // Delete the space with backspace
+            if let backDown = CGEvent(keyboardEventSource: source, virtualKey: KeyCode.backspace, keyDown: true),
+               let backUp = CGEvent(keyboardEventSource: source, virtualKey: KeyCode.backspace, keyDown: false) {
+                backDown.post(tap: .cghidEventTap)
+                usleep(5000) // 5ms between down and up
+                backUp.post(tap: .cghidEventTap)
+            }
+            
+            usleep(10000) // 10ms
+        }
+    }
+    
+    /// Restore focus to the previously focused element
+    private func restoreFocus() {
+        guard let element = lastFocusedElement else { 
+            DebugLogger.log("TextInsertionService: No stored element to restore focus to")
+            return 
+        }
+        
+        DebugLogger.log("TextInsertionService: Attempting to restore focus")
+        
+        // Try to restore focus
+        let result = AXUIElementSetAttributeValue(
+            element,
+            kAXFocusedAttribute as CFString,
+            true as CFBoolean
+        )
+        
+        if result == .success {
+            DebugLogger.log("TextInsertionService: Focus restored successfully")
+        } else {
+            DebugLogger.log("TextInsertionService: Failed to restore focus, error: \(result.rawValue)")
+            
+            // Fallback: Try to make the element main 
+            let mainResult = AXUIElementSetAttributeValue(
+                element,
+                kAXMainAttribute as CFString,
+                true as CFBoolean
+            )
+            
+            if mainResult == .success {
+                DebugLogger.log("TextInsertionService: Element set as main successfully")
+            }
+        }
+        
+        // Clear the stored element
+        lastFocusedElement = nil
+    }
+    
+    /// Check if we're currently in a browser URL bar
+    private func isInBrowserURLBar() -> Bool {
+        // Get the frontmost application
+        guard let frontApp = NSWorkspace.shared.frontmostApplication else { return false }
+        
+        // Check if it's a known browser
+        let browserIdentifiers = [
+            "com.apple.Safari",
+            "com.google.Chrome", 
+            "com.brave.Browser",
+            "org.mozilla.firefox",
+            "com.microsoft.edgemac"
+        ]
+        
+        guard let bundleId = frontApp.bundleIdentifier,
+              browserIdentifiers.contains(bundleId) else { return false }
+        
+        // Check if focused element has URL-related attributes
+        if let element = lastFocusedElement {
+            var role: CFTypeRef?
+            AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &role)
+            
+            var description: CFTypeRef?
+            AXUIElementCopyAttributeValue(element, kAXDescriptionAttribute as CFString, &description)
+            
+            var title: CFTypeRef?
+            AXUIElementCopyAttributeValue(element, kAXTitleAttribute as CFString, &title)
+            
+            // Check for URL bar indicators
+            if let descString = description as? String {
+                let urlBarKeywords = ["address", "location", "url", "search"]
+                if urlBarKeywords.contains(where: { descString.lowercased().contains($0) }) {
+                    return true
+                }
+            }
+            
+            if let titleString = title as? String {
+                let urlBarKeywords = ["address", "location", "url", "search"]
+                if urlBarKeywords.contains(where: { titleString.lowercased().contains($0) }) {
+                    return true
+                }
+            }
+        }
+        
+        return false
     }
 }
 

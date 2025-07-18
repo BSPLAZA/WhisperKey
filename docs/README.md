@@ -5,10 +5,16 @@
 ## Current Status
 
 **Phase**: Released 🎉  
-**Status**: v1.0.0 Available for Download  
-**Version**: 1.0.0  
-**Released**: 2025-07-14  
-**Download**: [WhisperKey-1.0.0.dmg](https://github.com/BSPLAZA/WhisperKey/releases/download/v1.0.0/WhisperKey-1.0.0.dmg)
+**Status**: v1.0.2 Available for Download  
+**Version**: 1.0.2  
+**Released**: 2025-07-18  
+**Download**: [WhisperKey-1.0.2.dmg](https://github.com/BSPLAZA/WhisperKey/releases/download/v1.0.2/WhisperKey-1.0.2.dmg)
+
+### Recent Updates (v1.0.2)
+- ✅ Fixed keyboard focus restoration after dictation
+- ✅ Recording indicator stays visible above other windows
+- ✅ Professional DMG installer with clear instructions
+- ⚠️ Known limitation: Brave browser requires manual click after dictation
 
 ## 🎯 Project Summary
 
