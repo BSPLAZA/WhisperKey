@@ -467,11 +467,42 @@ struct ModelsTab: View {
     
     private var modelDisplayName: String {
         switch whisperModel {
+        case "tiny.en": return "Tiny (39 MB)"
         case "base.en": return "Base (141 MB)"
         case "small.en": return "Small (465 MB)"
         case "medium.en": return "Medium (1.4 GB)"
         case "large-v3": return "Large V3 (3.1 GB)"
         default: return whisperModel
+        }
+    }
+    
+    private var performanceLabel: String {
+        switch whisperModel {
+        case "tiny.en": return "Speed Mode"
+        case "base.en": return "Balanced"
+        case "small.en": return "Quality"
+        case "medium.en": return "Accuracy"
+        default: return "Custom"
+        }
+    }
+    
+    private var performanceColor: Color {
+        switch whisperModel {
+        case "tiny.en": return .green
+        case "base.en": return .blue
+        case "small.en": return .orange
+        case "medium.en": return .red
+        default: return .gray
+        }
+    }
+    
+    private var performanceDescription: String {
+        switch whisperModel {
+        case "tiny.en": return "~200ms response"
+        case "base.en": return "~500ms response"
+        case "small.en": return "~1s response"
+        case "medium.en": return "~2s response"
+        default: return "Variable response"
         }
     }
     
@@ -481,7 +512,7 @@ struct ModelsTab: View {
                 // Model Selection Section
                 SettingsSection(title: "AI Models", icon: "cpu") {
                     VStack(alignment: .leading, spacing: 16) {
-                        // Current model display
+                        // Current model display with performance indicator
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Active Model")
@@ -493,6 +524,21 @@ struct ModelsTab: View {
                                     .fontWeight(.medium)
                             }
                             Spacer()
+                            
+                            // Performance indicator
+                            VStack(alignment: .trailing, spacing: 4) {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "speedometer")
+                                        .font(.caption)
+                                        .foregroundColor(performanceColor)
+                                    Text(performanceLabel)
+                                        .font(.caption)
+                                        .foregroundColor(performanceColor)
+                                }
+                                Text(performanceDescription)
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
                         }
                         .padding(12)
                         .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
@@ -512,7 +558,10 @@ struct ModelsTab: View {
                     VStack(alignment: .leading, spacing: 12) {
                         // Model descriptions
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("• Base: Fast but basic accuracy")
+                            Text("• Tiny: Ultra-fast, good for quick notes")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text("• Base: Fast with decent accuracy")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                             Text("• Small: Balanced speed and quality")

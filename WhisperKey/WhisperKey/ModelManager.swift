@@ -51,11 +51,18 @@ class ModelManager: ObservableObject {
     
     let availableModels: [ModelInfo] = [
         ModelInfo(
+            filename: "tiny.en",
+            downloadURL: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin",
+            size: 40_854_548, // ~39 MB
+            displayName: "Tiny (English)",
+            description: "Ultra-fast for quick notes"
+        ),
+        ModelInfo(
             filename: "base.en",
             downloadURL: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin",
             size: 147_964_211, // ~141 MB
             displayName: "Base (English)",
-            description: "Fastest, good for quick notes"
+            description: "Fast with decent accuracy"
         ),
         ModelInfo(
             filename: "small.en",

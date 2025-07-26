@@ -230,18 +230,22 @@ class DictationService: NSObject, ObservableObject {
         NSLog("=== WHISPERKEY: All checks passed, starting audio recording ===")
         debugLog("All checks passed, starting audio recording")
         
+        // Play start sound BEFORE recording begins
+        if UserDefaults.standard.bool(forKey: "playFeedbackSounds") {
+            playSound(named: "Tink")
+            // Small delay to let the sound finish playing
+            Thread.sleep(forTimeInterval: 0.2)
+        }
+        
         do {
             try startAudioRecording()
             isRecording = true
-            transcriptionStatus = "🔴 Recording... Speak clearly"
+            let modelName = UserDefaults.standard.string(forKey: "whisperModel") ?? "base.en"
+            let modelDisplay = modelName.replacingOccurrences(of: ".en", with: "").capitalized
+            transcriptionStatus = "🔴 Recording... (\(modelDisplay) model)"
             DebugLogger.log("=== WHISPERKEY: Recording started successfully ===")
             NSLog("=== WHISPERKEY: Recording started successfully ===")
             debugLog("Recording started successfully")
-            
-            // Play start sound if enabled
-            if UserDefaults.standard.bool(forKey: "playFeedbackSounds") {
-                playSound(named: "Tink")
-            }
             
             // Show visual feedback
             Task { @MainActor in
@@ -291,7 +295,9 @@ class DictationService: NSObject, ObservableObject {
         // Close the audio file to ensure all data is written
         audioFile = nil
         
-        transcriptionStatus = "⏳ Processing your speech..."
+        // Show more detailed processing status
+        let modelName = UserDefaults.standard.string(forKey: "whisperModel") ?? "base.en"
+        transcriptionStatus = "⏳ Processing with \(modelName.replacingOccurrences(of: ".en", with: "").capitalized) model..."
         
         // Process the audio file
         if let fileURL = audioFileURL {

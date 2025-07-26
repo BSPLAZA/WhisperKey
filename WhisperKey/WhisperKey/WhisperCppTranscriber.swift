@@ -81,6 +81,7 @@ class WhisperCppTranscriber {
         process.executableURL = URL(fileURLWithPath: whisperPath)
         
         // Use simple arguments for transcription
+        // Note: GPU acceleration is automatic if whisper.cpp was built with Metal support
         process.arguments = [
             "-m", modelPath,
             "-f", audioFileURL.path,
