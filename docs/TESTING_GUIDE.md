@@ -27,6 +27,13 @@ As a QA expert, I approach WhisperKey testing with these principles:
 - [x] Permission dialog auto-refresh - Updates when permissions granted
 - [ ] TCC database corruption handling
 
+### 🚀 Performance Tests (v1.0.3)
+- [ ] Tiny model (39MB) - Ultra-fast transcription
+- [ ] Model selection UI - Performance indicators work
+- [ ] Recording status - Shows active model name
+- [ ] Bell sound fix - Feedback sound not transcribed
+- [ ] Processing status - Shows which model is processing
+
 ### 🎤 Audio Tests
 - [x] Multiple microphone devices - Works with built-in and external
 - [ ] Bluetooth headset switching
@@ -477,6 +484,101 @@ tccutil reset Microphone com.whisperkey.WhisperKey
 □ Escape cancels operations
 □ Return confirms dialogs
 ```
+
+## Performance Testing (v1.0.3)
+
+### Pre-Test Setup
+
+1. **Download tiny model** (if not already):
+```bash
+cd ~/.whisperkey/models
+curl -L https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin -o ggml-tiny.en.bin
+```
+
+2. **Ensure whisper.cpp has Metal support**:
+```bash
+cd ~/Developer/whisper.cpp
+# Should have been built with: WHISPER_METAL=1 make -j
+```
+
+### Performance Test Cases
+
+#### Test 1: Model Speed Comparison
+**Objective**: Measure speed difference between models
+
+**Test Script**:
+```bash
+# Use the same 3-second audio clip for each model
+echo "Testing transcription speed for each model..."
+
+# Test phrase: "The quick brown fox jumps over the lazy dog"
+for model in tiny.en base.en small.en medium.en; do
+    echo "\nTesting $model..."
+    time {
+        # Record → Process → Insert
+        # Measure from F5 press to text appearance
+    }
+done
+```
+
+**Expected Results**:
+| Model | Processing Time | Use Case |
+|-------|----------------|----------|
+| tiny.en | 0.5-0.8s | Quick notes |
+| base.en | 2-3s | Daily use |
+| small.en | 3-4s | Quality focus |
+| medium.en | 5-7s | Maximum accuracy |
+
+#### Test 2: Visual Feedback
+1. Open Preferences → Models tab
+2. **Verify** performance indicators:
+   - 🟢 Speed Mode (tiny)
+   - 🔵 Balanced (base)
+   - 🟠 Quality (small)
+   - 🔴 Accuracy (medium)
+3. Start recording with each model
+4. **Verify** status shows: "🔴 Recording... (Tiny model)"
+5. **Verify** processing shows: "⏳ Processing with Tiny model..."
+
+#### Test 3: Bell Sound Fix
+1. Enable feedback sounds in Preferences
+2. Record with F5: "Testing bell sound"
+3. **Verify**: Transcription does NOT contain "Bell Dings" or similar
+4. **Verify**: Bell sound plays before recording indicator appears
+
+#### Test 4: First-Use Performance
+1. Restart WhisperKey
+2. Immediately press F5 and dictate
+3. **Measure**: Time from F5 to transcription
+4. **Note**: First use may be slower (model loading)
+
+#### Test 5: Rapid Sequential Use
+```bash
+# Test rapid dictation sessions
+for i in {1..10}; do
+    # Press F5
+    # Say "Test $i"
+    # Wait for insertion
+    # Measure time
+done
+```
+**Expected**: Performance should be consistent, no degradation
+
+### Memory & CPU Monitoring
+
+```bash
+# During testing, monitor resources
+while true; do
+    ps aux | grep WhisperKey | grep -v grep | awk '{print "CPU: "$3"% MEM: "$4"%"}'
+    sleep 1
+done
+```
+
+**Targets**:
+- Idle: <0.1% CPU, <100MB RAM
+- Recording: <10% CPU
+- Processing (tiny): <50% CPU for <1s
+- Processing (base): <80% CPU for 2-3s
 
 ### Test Result Documentation
 

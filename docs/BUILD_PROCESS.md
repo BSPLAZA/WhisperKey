@@ -18,12 +18,29 @@ error: Sandbox: cp(5077) deny(1) file-write-create .../WhisperKey.app/Contents/F
 - The sandbox blocks file writes to certain directories during build phases
 - This affects both local builds and CI/CD pipelines
 
+### Important Distinction: Two Types of Sandboxing
+
+1. **App Runtime Sandbox (DISABLED)**
+   - Setting: `com.apple.security.app-sandbox = false`
+   - WhisperKey intentionally disables this because it requires:
+     - Global keyboard event monitoring (CGEventTap)
+     - Accessibility API access (AXUIElement)
+     - Process launching (whisper.cpp subprocess)
+     - File system access for models
+   - A sandboxed app cannot perform these critical functions
+
+2. **Xcode Build Sandbox (ACTIVE)**
+   - This is what causes the "Operation not permitted" errors
+   - Cannot be disabled - it's part of Xcode's security
+   - Only affects the build process, not the running app
+
 ### Solution
-We handle this by running the library copying **after** the build completes, outside the sandbox:
+We handle this by making the build script fail gracefully:
 
 1. **During Build**: The "Copy Whisper Libraries" build phase attempts to copy but may fail
-2. **After Build**: We run the same script manually without sandbox restrictions
-3. **Result**: Libraries are properly bundled in the final app
+2. **Script continues**: Returns exit code 0 even on failure (see copy-whisper-libraries.sh)
+3. **After Build**: For releases, we run the same script manually without sandbox restrictions
+4. **Result**: Libraries are properly bundled in the final app
 
 ## Build Configurations
 
