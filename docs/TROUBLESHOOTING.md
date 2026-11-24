@@ -9,19 +9,14 @@ Before diving into detailed troubleshooting, try these quick fixes:
 1. **Restart WhisperKey** - Quit and relaunch from Applications
 2. **Check Permissions** - Both Microphone and Accessibility must be enabled
 3. **Test Hotkey** - Use the test area in Preferences → General
-4. **Update macOS** - WhisperKey requires macOS 12.0 or later
+4. **Check the download** - See [public installer status](INSTALL.md) for the exact macOS and processor requirements.
 
 ## Common Problems
 
 ### Installation Issues
 
 #### "WhisperKey is damaged and can't be opened"
-**Cause**: macOS Gatekeeper blocking unsigned app  
-**Solution**:
-1. Right-click WhisperKey.app
-2. Select "Open" from the menu
-3. Click "Open" in the dialog
-4. Only need to do this once
+Keep Gatekeeper enabled. The public v1.0.2 disk image contains an unsigned app. Verify the download and review the [installer findings](INSTALL.md) before proceeding.
 
 #### "whisper.cpp not found"
 **Cause**: Required component not installed  
