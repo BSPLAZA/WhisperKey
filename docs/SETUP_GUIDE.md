@@ -1,5 +1,7 @@
 # WhisperKey Development Setup Guide
 
+This guide describes a development environment. For public downloads, see the [verified installer status and requirements](INSTALL.md).
+
 > Step-by-step guide to set up the development environment
 
 ## Prerequisites
